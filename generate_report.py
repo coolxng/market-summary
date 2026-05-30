@@ -652,6 +652,18 @@ def generate_html():
   </div>
 """
 
+    def dedupe_tradingview_widget_sections(html):
+        """Keep a single TradingView widget block if a merge/regeneration duplicates it."""
+        first_idx = html.find(tradingview_widget_html)
+        if first_idx == -1:
+            return html
+        search_from = first_idx + len(tradingview_widget_html)
+        next_idx = html.find(tradingview_widget_html, search_from)
+        while next_idx != -1:
+            html = html[:next_idx] + html[next_idx + len(tradingview_widget_html):]
+            next_idx = html.find(tradingview_widget_html, search_from)
+        return html
+
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1970,6 +1982,8 @@ def generate_html():
 </script>
 </body>
 </html>"""
+
+    html_content = dedupe_tradingview_widget_sections(html_content)
 
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
