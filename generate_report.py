@@ -637,9 +637,9 @@ def generate_html():
         ],
         "fontSize": "10",
         "headerFontSize": "medium",
-        "autosize": true,
+        "autosize": false,
         "width": "100%",
-        "height": "100%",
+        "height": "520",
         "noTimeScale": false,
         "hideDateRanges": false,
         "hideMarketStatus": false,
@@ -651,6 +651,18 @@ def generate_html():
     </div>
   </div>
 """
+
+    def dedupe_tradingview_widget_sections(html):
+        """Keep a single TradingView widget block if a merge/regeneration duplicates it."""
+        first_idx = html.find(tradingview_widget_html)
+        if first_idx == -1:
+            return html
+        search_from = first_idx + len(tradingview_widget_html)
+        next_idx = html.find(tradingview_widget_html, search_from)
+        while next_idx != -1:
+            html = html[:next_idx] + html[next_idx + len(tradingview_widget_html):]
+            next_idx = html.find(tradingview_widget_html, search_from)
+        return html
 
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1566,25 +1578,28 @@ def generate_html():
   }}
 
   .tradingview-card {{
-    min-height: 520px;
-  }}
-
-  .tradingview-card .tradingview-widget-container {{
-    position: relative;
-    z-index: 1;
-    width: 100%;
     height: 520px;
   }}
 
-  .tradingview-card .tradingview-widget-container__widget {{
-    width: 100%;
-    height: calc(100% - 32px);
+  .tradingview-card .tradingview-widget-container,
+  .tradingview-card .tradingview-widget-container__widget,
+  .tradingview-card iframe {{
+    position: relative;
+    z-index: 1;
+    width: 100% !important;
+    height: 100% !important;
   }}
 
   .tradingview-card .tradingview-widget-copyright {{
-    padding: 6px 14px 10px;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    z-index: 2;
+    padding: 0 14px;
     font-size: 11px;
     color: var(--muted);
+    text-align: center;
   }}
 
   .tradingview-card .tradingview-widget-copyright a {{
@@ -1967,6 +1982,8 @@ def generate_html():
 </script>
 </body>
 </html>"""
+
+    html_content = dedupe_tradingview_widget_sections(html_content)
 
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
