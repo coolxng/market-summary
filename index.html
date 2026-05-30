@@ -425,6 +425,7 @@
   .co-list,
   .takeaway,
   .chart-wrap,
+  .tradingview-card,
   .table-wrap {
     position: relative;
     background: var(--surface);
@@ -442,6 +443,7 @@
   .co-list::before,
   .takeaway::before,
   .chart-wrap::before,
+  .tradingview-card::before,
   .table-wrap::before {
     content: '';
     position: absolute;
@@ -458,6 +460,7 @@
   .co-list:hover,
   .takeaway:hover,
   .chart-wrap:hover,
+  .tradingview-card:hover,
   .table-wrap:hover {
     transform: translateY(-6px);
     box-shadow: var(--shadow-glass-hover), inset 0 1px 0 var(--glass-sheen);
@@ -473,6 +476,7 @@
 
   .co-list,
   .chart-wrap,
+  .tradingview-card,
   .table-wrap {
     border-radius: 24px;
   }
@@ -907,6 +911,35 @@
     font-weight: 700;
   }
 
+  .tradingview-card {
+    height: 520px;
+  }
+
+  .tradingview-card .tradingview-widget-container,
+  .tradingview-card .tradingview-widget-container__widget,
+  .tradingview-card iframe {
+    position: relative;
+    z-index: 1;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .tradingview-card .tradingview-widget-copyright {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    z-index: 2;
+    padding: 0 14px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+
+  .tradingview-card .tradingview-widget-copyright a {
+    color: var(--accent);
+  }
+
   .footer {
     border-top: 1px solid var(--border);
     padding: 32px 60px;
@@ -1060,6 +1093,91 @@
     <div class="sec-title">Mega-Cap Tech &amp; AI Semiconductor Movers</div>
     <div class="sec-intro">Mega-cap platform companies and AI-linked semiconductor names drive a disproportionate share of index-level moves. Each row below shows the weekly close, absolute dollar change, and the intraweek 5-day high/low range alongside the analyst note.</div>
     <div class="co-list"><div class="co-row" data-ticker="AAPL"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/apple.svg" class="tkr-logo" alt="AAPL logo" onerror="this.style.display='none'"><span class="tkr">AAPL</span></div><div class="co-body"><div class="co-desc"><strong>Apple</strong> Closing at $312.06, a +2.32% weekly gain slightly outpaced the S&P 500's +1.8% advance, suggesting steady institutional accumulation ahead of the next product cycle rather than any momentum-driven rotation.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$312.06</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$7.07</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$315.00</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$305.84</span></span></div></div><span class="co-mv pos">▲ +2.32%</span></div><div class="co-row" data-ticker="MSFT"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/microsoft.svg" class="tkr-logo" alt="MSFT logo" onerror="this.style.display='none'"><span class="tkr">MSFT</span></div><div class="co-body"><div class="co-desc"><strong>Microsoft</strong> A +7.43% surge to $450.24 — roughly four times the index's weekly move — signals that enterprise AI spending narratives are being re-priced aggressively upward, with cloud and copilot monetization increasingly credible to the buy side.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$450.24</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$31.15</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$450.33</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$409.58</span></span></div></div><span class="co-mv pos">▲ +7.43%</span></div><div class="co-row" data-ticker="NVDA"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/nvidia.svg" class="tkr-logo" alt="NVDA logo" onerror="this.style.display='none'"><span class="tkr">NVDA</span></div><div class="co-body"><div class="co-desc"><strong>Nvidia</strong> Slipping -3.81% to close at $211.14 even as the broader market rallied, the pullback points to profit-taking and growing investor scrutiny over whether AI infrastructure capex growth can sustain current GPU demand expectations.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$211.14</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val neg">$8.37</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$221.01</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$208.78</span></span></div></div><span class="co-mv neg">▼ -3.81%</span></div><div class="co-row" data-ticker="AMZN"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/amazon.svg" class="tkr-logo" alt="AMZN logo" onerror="this.style.display='none'"><span class="tkr">AMZN</span></div><div class="co-body"><div class="co-desc"><strong>Amazon</strong> At $270.64, a modest +0.81% gain — lagging the index by nearly a full percentage point — reflects market ambivalence about near-term AWS margin expansion against a backdrop of rising capital expenditure commitments.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$270.64</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$2.18</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$274.75</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$262.07</span></span></div></div><span class="co-mv pos">▲ +0.81%</span></div><div class="co-row" data-ticker="META"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/meta-platforms.svg" class="tkr-logo" alt="META logo" onerror="this.style.display='none'"><span class="tkr">META</span></div><div class="co-body"><div class="co-desc"><strong>Meta Platforms</strong> Advancing +4.14% to $632.51, the move reflects renewed conviction in digital advertising resilience and disciplined cost management, with the stock increasingly treated as a high-quality compounder rather than a speculative AI play.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$632.51</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$25.13</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$643.00</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$605.30</span></span></div></div><span class="co-mv pos">▲ +4.14%</span></div><div class="co-row" data-ticker="SNDK"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/sandisk.svg" class="tkr-logo" alt="SNDK logo" onerror="this.style.display='none'"><span class="tkr">SNDK</span></div><div class="co-body"><div class="co-desc"><strong>SanDisk</strong> Rocketing +9.9% to $1,694.98, the outsized weekly gain suggests the market is pricing in a meaningful recovery in NAND flash pricing, a bullish read-through for the broader memory storage supply chain.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$1,694.98</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$152.74</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$1,708.80</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$1,473.52</span></span></div></div><span class="co-mv pos">▲ +9.9%</span></div><div class="co-row" data-ticker="AMD"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/advanced-micro-devices.svg" class="tkr-logo" alt="AMD logo" onerror="this.style.display='none'"><span class="tkr">AMD</span></div><div class="co-body"><div class="co-desc"><strong>Advanced Micro Devices</strong> Surging +14.79% to $516.10, the week's standout performer among large-cap semis signals aggressive repositioning by investors who see the company as a credible alternative to Nvidia in AI accelerator deployments, with competitive GPU traction being sharply re-rated.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$516.10</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$66.51</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$527.20</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$461.71</span></span></div></div><span class="co-mv pos">▲ +14.79%</span></div><div class="co-row" data-ticker="INTC"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/intel.svg" class="tkr-logo" alt="INTC logo" onerror="this.style.display='none'"><span class="tkr">INTC</span></div><div class="co-body"><div class="co-desc"><strong>Intel</strong> Declining -3.22% to $114.68 while peers like AMD posted double-digit gains underscores deepening investor skepticism about Intel's foundry execution timeline and its ability to recapture data center market share in a rapidly shifting competitive landscape.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$114.68</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val neg">$3.82</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$126.64</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$113.54</span></span></div></div><span class="co-mv neg">▼ -3.22%</span></div><div class="co-row" data-ticker="MU"><div class="tkr-wrap"><img src="https://s3-symbol-logo.tradingview.com/micron-technology.svg" class="tkr-logo" alt="MU logo" onerror="this.style.display='none'"><span class="tkr">MU</span></div><div class="co-body"><div class="co-desc"><strong>Micron Technology</strong> An extraordinary +27.41% weekly advance to $971.00 — by far the largest move in this universe — indicates a decisive sentiment shift on DRAM and HBM supply-demand dynamics, with the market now pricing in a sharp cyclical earnings recovery well ahead of consensus estimates.</div><div class="co-stats"><span class="co-stat"><span class="co-stat-lbl">Close</span> <span class="co-stat-val">$971.00</span></span><span class="co-stat"><span class="co-stat-lbl">$ Chg</span> <span class="co-stat-val pos">+$208.90</span></span><span class="co-stat"><span class="co-stat-lbl">5D High</span> <span class="co-stat-val">$981.00</span></span><span class="co-stat"><span class="co-stat-lbl">5D Low</span> <span class="co-stat-val">$747.20</span></span></div></div><span class="co-mv pos">▲ +27.41%</span></div></div>
+  </div>
+
+  <div class="section tradingview-section">
+    <div class="tradingview-card">
+      <!-- TradingView Widget BEGIN -->
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">World markets</span></a> by TradingView</div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+        {
+        "lineWidth": 2,
+        "lineType": 0,
+        "chartType": "area",
+        "fontColor": "rgb(106, 109, 120)",
+        "gridLineColor": "rgba(242, 242, 242, 0.06)",
+        "volumeUpColor": "rgba(34, 171, 148, 0.5)",
+        "volumeDownColor": "rgba(247, 82, 95, 0.5)",
+        "backgroundColor": "#0F0F0F",
+        "widgetFontColor": "#DBDBDB",
+        "upColor": "#22ab94",
+        "downColor": "#f7525f",
+        "borderUpColor": "#22ab94",
+        "borderDownColor": "#f7525f",
+        "wickUpColor": "#22ab94",
+        "wickDownColor": "#f7525f",
+        "colorTheme": "dark",
+        "isTransparent": false,
+        "locale": "en",
+        "chartOnly": false,
+        "scalePosition": "right",
+        "scaleMode": "Normal",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+        "valuesTracking": "1",
+        "changeMode": "price-and-percent",
+        "symbols": [
+          [
+            "NASDAQ:AAPL|1D"
+          ],
+          [
+            "NASDAQ:MSFT|1D"
+          ],
+          [
+            "NASDAQ:NVDA|1D"
+          ],
+          [
+            "NASDAQ:AMZN|1D"
+          ],
+          [
+            "NASDAQ:META|1D"
+          ],
+          [
+            "NASDAQ:SNDK|1D"
+          ],
+          [
+            "amd|1D"
+          ],
+          [
+            "NASDAQ:INTC|1D"
+          ],
+          [
+            "NASDAQ:MU|1D"
+          ]
+        ],
+        "dateRanges": [
+          "1d|1",
+          "1m|30",
+          "3m|60",
+          "12m|1D",
+          "60m|1W",
+          "all|1M"
+        ],
+        "fontSize": "10",
+        "headerFontSize": "medium",
+        "autosize": true,
+        "width": "100%",
+        "height": "100%",
+        "noTimeScale": false,
+        "hideDateRanges": false,
+        "hideMarketStatus": false,
+        "hideSymbolLogo": false
+      }
+        </script>
+      </div>
+      <!-- TradingView Widget END -->
+    </div>
   </div>
 
   <div class="section">

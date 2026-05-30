@@ -565,6 +565,93 @@ def generate_html():
       + global_row("Hang Seng (HK)", hsi, global_status["hsi"])
     )
 
+
+    tradingview_widget_html = """  <div class="section tradingview-section">
+    <div class="tradingview-card">
+      <!-- TradingView Widget BEGIN -->
+      <div class="tradingview-widget-container">
+        <div class="tradingview-widget-container__widget"></div>
+        <div class="tradingview-widget-copyright"><a href="https://www.tradingview.com/markets/" rel="noopener nofollow" target="_blank"><span class="blue-text">World markets</span></a> by TradingView</div>
+        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+        {
+        "lineWidth": 2,
+        "lineType": 0,
+        "chartType": "area",
+        "fontColor": "rgb(106, 109, 120)",
+        "gridLineColor": "rgba(242, 242, 242, 0.06)",
+        "volumeUpColor": "rgba(34, 171, 148, 0.5)",
+        "volumeDownColor": "rgba(247, 82, 95, 0.5)",
+        "backgroundColor": "#0F0F0F",
+        "widgetFontColor": "#DBDBDB",
+        "upColor": "#22ab94",
+        "downColor": "#f7525f",
+        "borderUpColor": "#22ab94",
+        "borderDownColor": "#f7525f",
+        "wickUpColor": "#22ab94",
+        "wickDownColor": "#f7525f",
+        "colorTheme": "dark",
+        "isTransparent": false,
+        "locale": "en",
+        "chartOnly": false,
+        "scalePosition": "right",
+        "scaleMode": "Normal",
+        "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+        "valuesTracking": "1",
+        "changeMode": "price-and-percent",
+        "symbols": [
+          [
+            "NASDAQ:AAPL|1D"
+          ],
+          [
+            "NASDAQ:MSFT|1D"
+          ],
+          [
+            "NASDAQ:NVDA|1D"
+          ],
+          [
+            "NASDAQ:AMZN|1D"
+          ],
+          [
+            "NASDAQ:META|1D"
+          ],
+          [
+            "NASDAQ:SNDK|1D"
+          ],
+          [
+            "amd|1D"
+          ],
+          [
+            "NASDAQ:INTC|1D"
+          ],
+          [
+            "NASDAQ:MU|1D"
+          ]
+        ],
+        "dateRanges": [
+          "1d|1",
+          "1m|30",
+          "3m|60",
+          "12m|1D",
+          "60m|1W",
+          "all|1M"
+        ],
+        "fontSize": "10",
+        "headerFontSize": "medium",
+        "autosize": true,
+        "width": "100%",
+        "height": "100%",
+        "noTimeScale": false,
+        "hideDateRanges": false,
+        "hideMarketStatus": false,
+        "hideSymbolLogo": false
+      }
+        </script>
+      </div>
+      <!-- TradingView Widget END -->
+    </div>
+  </div>
+"""
+
     html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -992,6 +1079,7 @@ def generate_html():
   .co-list,
   .takeaway,
   .chart-wrap,
+  .tradingview-card,
   .table-wrap {{
     position: relative;
     background: var(--surface);
@@ -1009,6 +1097,7 @@ def generate_html():
   .co-list::before,
   .takeaway::before,
   .chart-wrap::before,
+  .tradingview-card::before,
   .table-wrap::before {{
     content: '';
     position: absolute;
@@ -1025,6 +1114,7 @@ def generate_html():
   .co-list:hover,
   .takeaway:hover,
   .chart-wrap:hover,
+  .tradingview-card:hover,
   .table-wrap:hover {{
     transform: translateY(-6px);
     box-shadow: var(--shadow-glass-hover), inset 0 1px 0 var(--glass-sheen);
@@ -1040,6 +1130,7 @@ def generate_html():
 
   .co-list,
   .chart-wrap,
+  .tradingview-card,
   .table-wrap {{
     border-radius: 24px;
   }}
@@ -1474,6 +1565,35 @@ def generate_html():
     font-weight: 700;
   }}
 
+  .tradingview-card {{
+    height: 520px;
+  }}
+
+  .tradingview-card .tradingview-widget-container,
+  .tradingview-card .tradingview-widget-container__widget,
+  .tradingview-card iframe {{
+    position: relative;
+    z-index: 1;
+    width: 100% !important;
+    height: 100% !important;
+  }}
+
+  .tradingview-card .tradingview-widget-copyright {{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 8px;
+    z-index: 2;
+    padding: 0 14px;
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }}
+
+  .tradingview-card .tradingview-widget-copyright a {{
+    color: var(--accent);
+  }}
+
   .footer {{
     border-top: 1px solid var(--border);
     padding: 32px 60px;
@@ -1629,6 +1749,7 @@ def generate_html():
     <div class="co-list">{megacap_html}</div>
   </div>
 
+{tradingview_widget_html}
   <div class="section">
     <div class="sec-label">SECTION 05</div>
     <div class="sec-title">Cryptocurrency Market Recap</div>
