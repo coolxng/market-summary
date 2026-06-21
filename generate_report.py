@@ -1,8 +1,11 @@
-import yfinance as yf
 import datetime
+import html
 import json
 import os
 import urllib.request
+from zoneinfo import ZoneInfo
+
+import yfinance as yf
 
 # ─────────────────────────────────────────────
 # CONFIGURATION
@@ -37,6 +40,9 @@ FALLBACKS = {
     "CL=F": "USO",
 }
 
+CORE_TICKERS = ("^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "DX-Y.NYB")
+NY_TZ = ZoneInfo("America/New_York")
+
 # ─────────────────────────────────────────────
 # DATA FETCHING
 # ─────────────────────────────────────────────
@@ -46,21 +52,77 @@ def is_sane(ticker_symbol, value):
     lo, hi = SANITY_BOUNDS[ticker_symbol]
     return lo <= value <= hi
 
-def fetch_weekly_data(ticker_symbol):
+
+def current_market_now():
+    return datetime.datetime.now(NY_TZ)
+
+
+def compute_week_window(now=None):
+    now = now or current_market_now()
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=NY_TZ)
+    weekday = now.weekday()
+    days_since_friday = (weekday - 4) % 7
+    end_date = now.date() - datetime.timedelta(days=days_since_friday)
+    start_date = end_date - datetime.timedelta(days=7)
+    return start_date, end_date
+
+
+def format_display_range(end_date):
+    start_date = end_date - datetime.timedelta(days=4)
+    return start_date, end_date
+
+
+def render_html_text(value):
+    return html.escape(str(value), quote=True)
+
+
+def render_html_with_strong(value):
+    escaped = render_html_text(value)
+    escaped = escaped.replace("&lt;strong&gt;", "<strong>")
+    escaped = escaped.replace("&lt;/strong&gt;", "</strong>")
+    return escaped
+
+
+def sanitize_text_map(values, allow_strong=False):
+    sanitizer = render_html_with_strong if allow_strong else render_html_text
+    return {key: sanitizer(value) for key, value in values.items()}
+
+
+def validate_dataset(dataset, label, allow_zero=False):
+    if dataset.get("error"):
+        raise ValueError(f"{label} data unavailable: {dataset['error']}")
+    end_price = float(dataset.get("end_price", 0.0) or 0.0)
+    closes = dataset.get("closes") or []
+    if not allow_zero and end_price <= 0:
+        raise ValueError(f"{label} end price is invalid: {end_price}")
+    if not closes:
+        raise ValueError(f"{label} did not return any closes.")
+    if dataset.get("ticker_used") and not is_sane(dataset["ticker_used"], end_price):
+        raise ValueError(f"{label} end price failed sanity bounds: {end_price}")
+
+
+def validate_core_datasets(dataset_map):
+    for ticker in CORE_TICKERS:
+        validate_dataset(dataset_map[ticker], ticker)
+
+def fetch_weekly_data(ticker_symbol, start_date=None, end_date=None):
     tickers_to_try = [ticker_symbol]
     if ticker_symbol in FALLBACKS:
         tickers_to_try.append(FALLBACKS[ticker_symbol])
     for tk in tickers_to_try:
         try:
             ticker = yf.Ticker(tk)
-            hist   = ticker.history(period="10d")
+            if start_date and end_date:
+                history_end = end_date + datetime.timedelta(days=1)
+                hist = ticker.history(start=start_date.isoformat(), end=history_end.isoformat(), interval="1d")
+            else:
+                hist = ticker.history(period="10d")
+            hist = hist.dropna(subset=["Close"])
             if len(hist) < 2:
                 continue
-            if len(hist) > 5:
-                prev_close = hist['Close'].iloc[-6]
-            else:
-                prev_close = hist['Close'].iloc[0]
-            chart_hist = hist.iloc[-5:]
+            prev_close = float(hist['Close'].iloc[0])
+            chart_hist = hist.iloc[1:] if len(hist) > 2 else hist.iloc[-1:]
             dates      = [d.strftime('%a %m/%d') for d in chart_hist.index]
             closes     = [round(float(v), 2) for v in chart_hist['Close'].tolist()]
             highs      = [round(float(v), 2) for v in chart_hist['High'].tolist()]
@@ -88,11 +150,15 @@ def fetch_weekly_data(ticker_symbol):
             "abs_change": 0.0, "prev_close": 0.0, "week_high": 0.0, "week_low": 0.0,
             "ticker_used": ticker_symbol, "error": f"Data unavailable for {ticker_symbol}"}
 
-def fetch_weekly_chart_data(ticker_symbol):
+def fetch_weekly_chart_data(ticker_symbol, start_date=None, end_date=None):
     """Fetch hourly price points for the chart while keeping daily data for summary stats."""
     try:
         ticker = yf.Ticker(ticker_symbol)
-        hist = ticker.history(period="5d", interval="1h")
+        if start_date and end_date:
+            history_end = end_date + datetime.timedelta(days=1)
+            hist = ticker.history(start=start_date.isoformat(), end=history_end.isoformat(), interval="1h")
+        else:
+            hist = ticker.history(period="5d", interval="1h")
         if len(hist) < 2:
             raise ValueError("Not enough hourly data returned")
         hist = hist.dropna(subset=["Close"])
@@ -101,7 +167,7 @@ def fetch_weekly_chart_data(ticker_symbol):
         return {"dates": dates, "closes": closes, "error": None}
     except Exception as e:
         print(f"  Exception fetching hourly chart data for {ticker_symbol}: {e} — using daily chart fallback")
-        fallback = fetch_weekly_data(ticker_symbol)
+        fallback = fetch_weekly_data(ticker_symbol, start_date=start_date, end_date=end_date)
         return {"dates": fallback["dates"], "closes": fallback["closes"], "error": fallback.get("error")}
 
 # ─────────────────────────────────────────────
@@ -147,6 +213,10 @@ def claude_json(prompt, required_keys, max_tokens=600, fallback=None):
         print(f"  Claude JSON parse error: {e} — using fallback.")
         return fallback or {}
 
+
+def should_use_ai():
+    return bool(ANTHROPIC_API_KEY)
+
 # ─────────────────────────────────────────────
 # CLAUDE-POWERED SECTION GENERATORS
 # ─────────────────────────────────────────────
@@ -179,7 +249,24 @@ def generate_lookahead_claude(market_context):
         "Respond ONLY with a JSON object with these exact keys: macro, fed_policy, earnings_and_catalysts, risk_factors. "
         "No markdown, no preamble."
     )
-    fallback = {
+    fallback = build_lookahead_fallback(market_context)
+    result = claude_json(
+        prompt,
+        required_keys={"macro", "fed_policy", "earnings_and_catalysts", "risk_factors"},
+        max_tokens=600, fallback=fallback,
+    )
+    print("  Section 08 generated via Claude.")
+    return result
+
+
+def build_lookahead_fallback(market_context):
+    vix = market_context["vix_close"]
+    tnx = market_context["tnx_close"]
+    tnx_pct = market_context["tnx_pct"]
+    dxy = market_context["dxy_close"]
+    top1 = market_context["top_sectors"].split(", ")[0]
+    bot1 = market_context["bottom_sectors"].split(", ")[0]
+    return {
         "macro": (
             f"Next week's macro tape should be judged through the rates channel: with the 10-year yield at {tnx:.2f}%, "
             f"inflation, jobs, and consumer data need to confirm that growth is cooling without breaking. A hotter print "
@@ -202,13 +289,6 @@ def generate_lookahead_claude(market_context):
               "quickly turn a constructive tape into a profit-taking event."
         ),
     }
-    result = claude_json(
-        prompt,
-        required_keys={"macro", "fed_policy", "earnings_and_catalysts", "risk_factors"},
-        max_tokens=600, fallback=fallback,
-    )
-    print("  Section 08 generated via Claude.")
-    return result
 
 # ─────────────────────────────────────────────
 # FORMATTING HELPERS
@@ -244,43 +324,45 @@ def get_t_item(name, val, pct, is_yield=False, abs_val=None, is_points=False):
 # ─────────────────────────────────────────────
 def generate_html():
     print("Fetching market data...")
-    sp   = fetch_weekly_data("^GSPC")
-    nd   = fetch_weekly_data("^IXIC")
-    dj   = fetch_weekly_data("^DJI")
-    rut  = fetch_weekly_data("^RUT")
-    vix  = fetch_weekly_data("^VIX")
-    tnx  = fetch_weekly_data("^TNX")
-    irx  = fetch_weekly_data("^IRX")
-    dxy  = fetch_weekly_data("DX-Y.NYB")
-    gold = fetch_weekly_data("GC=F")
-    oil  = fetch_weekly_data("CL=F")
-    btc  = fetch_weekly_data("BTC-USD")
-    eth  = fetch_weekly_data("ETH-USD")
-    sol  = fetch_weekly_data("SOL-USD")
-    xrp  = fetch_weekly_data("XRP-USD")
-    n225 = fetch_weekly_data("^N225")
-    stoxx= fetch_weekly_data("^STOXX50E")
-    ftse = fetch_weekly_data("^FTSE")
-    hsi  = fetch_weekly_data("^HSI")
-
-    if sp["dates"]:
-        sp_ticker   = yf.Ticker("^GSPC")
-        sp_hist     = sp_ticker.history(period="10d")
-        trading_days= sp_hist.iloc[-5:] if len(sp_hist) >= 5 else sp_hist
-        start_dt    = trading_days.index[0].to_pydatetime()
-        end_dt      = trading_days.index[-1].to_pydatetime()
-        week_start_str = fmt_date(start_dt)
-        today_str      = fmt_date(end_dt)
-        year_str       = end_dt.strftime('%Y')
-        full_date      = fmt_date(end_dt, include_day=False)
-        week_end_date  = full_date
+    previous_week_end, week_end = compute_week_window()
+    report_start, report_end = format_display_range(week_end)
+    ai_enabled = should_use_ai()
+    if ai_enabled:
+        print("AI mode enabled.")
     else:
-        now            = datetime.datetime.now()
-        week_start_str = fmt_date(now - datetime.timedelta(days=4))
-        today_str      = fmt_date(now)
-        year_str       = now.strftime('%Y')
-        full_date      = fmt_date(now, include_day=False)
-        week_end_date  = full_date
+        print("AI mode disabled; using deterministic fallback copy for all narrative sections.")
+
+    sp   = fetch_weekly_data("^GSPC", start_date=previous_week_end, end_date=week_end)
+    nd   = fetch_weekly_data("^IXIC", start_date=previous_week_end, end_date=week_end)
+    dj   = fetch_weekly_data("^DJI", start_date=previous_week_end, end_date=week_end)
+    rut  = fetch_weekly_data("^RUT", start_date=previous_week_end, end_date=week_end)
+    vix  = fetch_weekly_data("^VIX", start_date=previous_week_end, end_date=week_end)
+    tnx  = fetch_weekly_data("^TNX", start_date=previous_week_end, end_date=week_end)
+    irx  = fetch_weekly_data("^IRX", start_date=previous_week_end, end_date=week_end)
+    dxy  = fetch_weekly_data("DX-Y.NYB", start_date=previous_week_end, end_date=week_end)
+    gold = fetch_weekly_data("GC=F", start_date=previous_week_end, end_date=week_end)
+    oil  = fetch_weekly_data("CL=F", start_date=previous_week_end, end_date=week_end)
+    btc  = fetch_weekly_data("BTC-USD", start_date=previous_week_end, end_date=week_end)
+    eth  = fetch_weekly_data("ETH-USD", start_date=previous_week_end, end_date=week_end)
+    sol  = fetch_weekly_data("SOL-USD", start_date=previous_week_end, end_date=week_end)
+    xrp  = fetch_weekly_data("XRP-USD", start_date=previous_week_end, end_date=week_end)
+    n225 = fetch_weekly_data("^N225", start_date=previous_week_end, end_date=week_end)
+    stoxx= fetch_weekly_data("^STOXX50E", start_date=previous_week_end, end_date=week_end)
+    ftse = fetch_weekly_data("^FTSE", start_date=previous_week_end, end_date=week_end)
+    hsi  = fetch_weekly_data("^HSI", start_date=previous_week_end, end_date=week_end)
+
+    datasets = {
+        "^GSPC": sp, "^IXIC": nd, "^DJI": dj, "^RUT": rut, "^VIX": vix, "^TNX": tnx, "^IRX": irx,
+        "DX-Y.NYB": dxy, "GC=F": gold, "CL=F": oil, "BTC-USD": btc, "ETH-USD": eth,
+        "SOL-USD": sol, "XRP-USD": xrp, "^N225": n225, "^STOXX50E": stoxx, "^FTSE": ftse, "^HSI": hsi,
+    }
+    validate_core_datasets(datasets)
+
+    week_start_str = fmt_date(report_start)
+    today_str = fmt_date(report_end)
+    year_str = report_end.strftime('%Y')
+    full_date = fmt_date(datetime.datetime.combine(report_end, datetime.time(), tzinfo=NY_TZ), include_day=False)
+    week_end_date = full_date
 
     sectors = {
         "Technology (XLK)": "XLK", "Financials (XLF)": "XLF",
@@ -290,8 +372,11 @@ def generate_html():
         "Utilities (XLU)": "XLU", "Materials (XLB)": "XLB",
         "Comm. Services (XLC)": "XLC",
     }
-    sector_perf   = {name: fetch_weekly_data(ticker)["pct_change"] for name, ticker in sectors.items()}
+    sector_results = {name: fetch_weekly_data(ticker, start_date=previous_week_end, end_date=week_end) for name, ticker in sectors.items()}
+    sector_perf   = {name: result["pct_change"] for name, result in sector_results.items() if not result.get("error")}
     sorted_sectors= sorted(sector_perf.items(), key=lambda x: x[1], reverse=True)
+    if len(sorted_sectors) < 4:
+        raise ValueError("Insufficient sector data to build the weekly report.")
     top_sectors   = sorted_sectors[:4]
     bottom_sectors= sorted_sectors[-4:]
 
@@ -319,7 +404,11 @@ def generate_html():
         "bot_bullet1": f"<strong>{bottom_sectors[0][0]}</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.",
         "bot_bullet2": f"{bottom_sectors[1][0]} also faced structural headwinds, underperforming relative to the core index benchmarks.",
     }
-    sector_bullets = claude_json(sector_prompt, required_keys={"top_bullet1","top_bullet2","bot_bullet1","bot_bullet2"}, max_tokens=300, fallback=sector_fallback)
+    sector_bullets = (
+        claude_json(sector_prompt, required_keys={"top_bullet1","top_bullet2","bot_bullet1","bot_bullet2"}, max_tokens=300, fallback=sector_fallback)
+        if ai_enabled else sector_fallback
+    )
+    sector_bullets = sanitize_text_map(sector_bullets, allow_strong=True)
 
     # Claude: mega-cap descriptions
     print("Generating mega-cap descriptions via Claude...")
@@ -334,7 +423,7 @@ def generate_html():
         "INTC": "Intel",
         "MU": "Micron Technology",
     }
-    megacap_data = {tk: {"name": name, "result": fetch_weekly_data(tk)} for tk, name in megacaps.items()}
+    megacap_data = {tk: {"name": name, "result": fetch_weekly_data(tk, start_date=previous_week_end, end_date=week_end)} for tk, name in megacaps.items()}
     mc_lines = "\n".join(
         f"- {tk} ({v['name']}) closed at ${v['result']['end_price']:,.2f}, "
         f"{'+' if v['result']['pct_change'] >= 0 else ''}{v['result']['pct_change']}% WTD"
@@ -354,7 +443,8 @@ def generate_html():
         tk: f"Closed the week at ${v['result']['end_price']:,.2f}, posting a {'+' if v['result']['pct_change'] >= 0 else ''}{v['result']['pct_change']}% move."
         for tk, v in megacap_data.items()
     }
-    mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=900, fallback=mc_fallback)
+    mc_descriptions = claude_json(mc_prompt, required_keys=set(megacap_data.keys()), max_tokens=900, fallback=mc_fallback) if ai_enabled else mc_fallback
+    mc_descriptions = sanitize_text_map(mc_descriptions)
 
     # TradingView stock logos
     # Pattern: https://s3-symbol-logo.tradingview.com/{slug}.svg
@@ -403,7 +493,7 @@ def generate_html():
 
     # Claude: section 08 lookahead
     print("Generating Section 08 via Claude...")
-    lookahead = generate_lookahead_claude({
+    lookahead_context = {
         "sp_pct": sp_pct, "nd_pct": nd["pct_change"],
         "vix_close": vix_close, "tnx_close": tnx["end_price"], "tnx_pct": tnx_pct,
         "dxy_close": dxy["end_price"], "dxy_pct": dxy["pct_change"],
@@ -411,7 +501,9 @@ def generate_html():
         "bottom_sectors": ", ".join(s[0] for s in bottom_sectors[:2]),
         "btc_pct": btc["pct_change"], "oil_pct": oil["pct_change"], "gold_pct": gold["pct_change"],
         "week_end_date": week_end_date,
-    })
+    }
+    lookahead = generate_lookahead_claude(lookahead_context) if ai_enabled else build_lookahead_fallback(lookahead_context)
+    lookahead = sanitize_text_map(lookahead)
 
     # Claude: global market status
     print("Generating global market context via Claude...")
@@ -432,7 +524,8 @@ def generate_html():
         "ftse":   "UK large-caps reflected commodity sensitivity and sterling moves against the dollar.",
         "hsi":    "Hong Kong shares traded on China policy cues and tech sector sentiment.",
     }
-    global_status = claude_json(global_prompt, required_keys={"nikkei","stoxx","ftse","hsi"}, max_tokens=300, fallback=global_fallback)
+    global_status = claude_json(global_prompt, required_keys={"nikkei","stoxx","ftse","hsi"}, max_tokens=300, fallback=global_fallback) if ai_enabled else global_fallback
+    global_status = sanitize_text_map(global_status)
 
     # Claude: crypto descriptions
     print("Generating crypto descriptions via Claude...")
@@ -453,7 +546,8 @@ def generate_html():
         "sol": f"Finished at ${sol['end_price']:.2f}, moving in line with broader high-beta crypto exposure.",
         "xrp": f"Printed at ${xrp['end_price']:.4f}, with regulatory and payments-sector headlines driving the tape.",
     }
-    crypto_descriptions = claude_json(crypto_prompt, required_keys={"btc","eth","sol","xrp"}, max_tokens=400, fallback=crypto_fallback)
+    crypto_descriptions = claude_json(crypto_prompt, required_keys={"btc","eth","sol","xrp"}, max_tokens=400, fallback=crypto_fallback) if ai_enabled else crypto_fallback
+    crypto_descriptions = sanitize_text_map(crypto_descriptions)
 
     # TradingView crypto logos (with fallback hiding on error)
     # Pattern: s3-symbol-logo.tradingview.com/crypto/XTVC{SYMBOL}.svg
@@ -515,7 +609,8 @@ def generate_html():
         f"For next week, the key test is whether rates at {tnx['end_price']:.2f}% and the dollar at {dxy['end_price']:.2f} "
         f"stay contained enough for risk appetite to broaden beyond the current winners."
     )
-    takeaway_text = claude(takeaway_prompt, max_tokens=400, fallback=takeaway_fallback)
+    takeaway_text = claude(takeaway_prompt, max_tokens=400, fallback=takeaway_fallback) if ai_enabled else takeaway_fallback
+    takeaway_text = render_html_text(takeaway_text)
 
     # Build ticker bar
     t_items = (
@@ -541,9 +636,29 @@ def generate_html():
     top_tags = "".join(f'<span class="tag g">{s[0]} ({chr(43) if s[1] >= 0 else ""}{s[1]}%)</span>' for s in top_sectors)
     bot_tags = "".join(f'<span class="tag r">{s[0]} ({chr(43) if s[1] >= 0 else ""}{s[1]}%)</span>' for s in bottom_sectors)
 
-    sp_chart = fetch_weekly_chart_data("^GSPC")
+    sp_chart = fetch_weekly_chart_data("^GSPC", start_date=report_start, end_date=week_end)
     sp_dates = sp_chart["dates"]
     sp_data  = sp_chart["closes"]
+
+    spy = fetch_weekly_data("SPY", start_date=previous_week_end, end_date=week_end)
+    rspy = fetch_weekly_data("RSP", start_date=previous_week_end, end_date=week_end)
+    advances = sum(1 for value in sector_perf.values() if value > 0)
+    declines = sum(1 for value in sector_perf.values() if value < 0)
+    breadth_share = round((advances / len(sector_perf)) * 100, 1) if sector_perf else 0.0
+    breadth_summary = (
+        f"{advances} of {len(sector_perf)} sectors finished positive, while {declines} declined."
+        if sector_perf else "Sector breadth data was unavailable."
+    )
+    breadth_cards = {
+        "Cap-Weighted S&P 500": f"{sp_pct:+.2f}%",
+        "Equal-Weight S&P 500": f"{rspy['pct_change']:+.2f}%" if not rspy.get("error") else "N/A",
+        "SPY ETF Check": f"{spy['pct_change']:+.2f}%" if not spy.get("error") else "N/A",
+        "Positive Sector Share": f"{breadth_share:.1f}%"
+    }
+    breadth_html = "".join(
+        f'<div class="dcell"><div class="dc-lbl">{render_html_text(label)}</div><div class="dc-val">{render_html_text(value)}</div></div>'
+        for label, value in breadth_cards.items()
+    )
 
     # Global market table rows (Section 06)
     def global_row(name, data, status_text):
@@ -1785,12 +1900,21 @@ def generate_html():
 
   <div class="section">
     <div class="sec-label">SECTION 07</div>
+    <div class="sec-title">Market Breadth &amp; Participation</div>
+    <div class="sec-intro">{render_html_text(breadth_summary)} Equal-weight performance and sector participation help distinguish a broad advance from another narrow mega-cap-led move.</div>
+    <div class="data-row">
+      {breadth_html}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-label">SECTION 08</div>
     <div class="sec-title">Investor Takeaway: Positioning Read-Through</div>
     <div class="takeaway">{takeaway_text}</div>
   </div>
 
   <div class="section">
-    <div class="sec-label">SECTION 08</div>
+    <div class="sec-label">SECTION 09</div>
     <div class="sec-title">Looking Ahead: What Could Move Markets</div>
     <div class="ahead-grid" style="margin-bottom:24px;">
       <div class="ahead-cell">
@@ -1813,7 +1937,7 @@ def generate_html():
   </div>
 
   <div class="section">
-    <div class="sec-label">SECTION 09</div>
+    <div class="sec-label">SECTION 10</div>
     <div class="sec-title">S&amp;P 500 &mdash; Hourly Week View {week_start_str}&ndash;{today_str}, {year_str}</div>
     <div class="chart-wrap">
       <div class="chart-hdr">
@@ -1829,7 +1953,7 @@ def generate_html():
 
 <div class="footer">
   <div>Automated Weekly Market Summary &bull; Post-Market Close Edition</div>
-  <div>Live Data via yfinance &bull; AI Analysis via Claude &bull; {full_date}</div>
+  <div>Live Data via yfinance &bull; Narrative Mode: {"Claude" if ai_enabled else "Deterministic Fallback"} &bull; {full_date}</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -1985,8 +2109,40 @@ def generate_html():
 
     html_content = dedupe_tradingview_widget_sections(html_content)
 
+    snapshot = {
+        "generated_at": current_market_now().isoformat(),
+        "report_mode": "ai" if ai_enabled else "deterministic_fallback",
+        "report_window": {
+            "start_date": report_start.isoformat(),
+            "end_date": report_end.isoformat(),
+            "comparison_start": previous_week_end.isoformat(),
+            "comparison_end": week_end.isoformat(),
+        },
+        "market_data": datasets,
+        "sector_performance": sector_perf,
+        "top_sectors": top_sectors,
+        "bottom_sectors": bottom_sectors,
+        "market_breadth": {
+            "advances": advances,
+            "declines": declines,
+            "positive_sector_share": breadth_share,
+            "spy_pct_change": spy["pct_change"] if not spy.get("error") else None,
+            "rsp_pct_change": rspy["pct_change"] if not rspy.get("error") else None,
+        },
+        "narrative": {
+            "sector_bullets": sector_bullets,
+            "megacap_descriptions": mc_descriptions,
+            "global_status": global_status,
+            "crypto_descriptions": crypto_descriptions,
+            "takeaway_text": takeaway_text,
+            "lookahead": lookahead,
+        },
+    }
+
     with open('index.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
+    with open('report_snapshot.json', 'w', encoding='utf-8') as f:
+        json.dump(snapshot, f, indent=2)
     print(f"Successfully generated index.html for {full_date}")
 
 

@@ -35,10 +35,17 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python generate_report.py
 
+      - name: Run Tests
+        run: python -m unittest -v
+
+      - name: Validate Generated Artifacts
+        run: |
+          python -c "import json; from pathlib import Path; snapshot = json.loads(Path('report_snapshot.json').read_text()); assert Path('index.html').exists(); assert snapshot['market_data']['^GSPC']['end_price'] > 0; assert snapshot['market_data']['^IXIC']['end_price'] > 0; assert snapshot['market_data']['^TNX']['end_price'] > 0; assert snapshot['market_breadth']['positive_sector_share'] >= 0"
+
       - name: Commit and Push changes
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html report_snapshot.json
           git commit -m "Automated Weekly Market Summary update" || echo "No changes to commit"
           git push
