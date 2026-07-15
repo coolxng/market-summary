@@ -2139,11 +2139,12 @@ def generate_html():
         },
     }
 
-    with open('index.html', 'w', encoding='utf-8') as f:
+    os.makedirs('public', exist_ok=True)
+    with open('public/legacy-report.html', 'w', encoding='utf-8') as f:
         f.write(html_content)
     with open('report_snapshot.json', 'w', encoding='utf-8') as f:
         json.dump(snapshot, f, indent=2)
-    print(f"Successfully generated index.html for {full_date}")
+    print(f"Successfully generated report_snapshot.json and public/legacy-report.html for {full_date}")
 
 
 if __name__ == "__main__":
