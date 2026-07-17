@@ -1,338 +1,362 @@
 {
-  "generated_at": "2026-07-10T17:39:51.260844-04:00",
+  "generated_at": "2026-07-17T17:29:42.001483-04:00",
   "report_mode": "ai",
   "report_window": {
-    "start_date": "2026-07-06",
-    "end_date": "2026-07-10",
-    "comparison_start": "2026-07-03",
-    "comparison_end": "2026-07-10"
+    "start_date": "2026-07-13",
+    "end_date": "2026-07-17",
+    "comparison_start": "2026-07-10",
+    "comparison_end": "2026-07-17"
   },
   "market_data": {
     "^GSPC": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        7503.85,
-        7482.71,
-        7543.64,
-        7575.39
+        7515.34,
+        7543.59,
+        7572.4,
+        7533.77,
+        7457.69
       ],
-      "end_price": 7575.39,
-      "pct_change": 0.5,
-      "abs_change": 37.96,
-      "prev_close": 7537.43,
-      "week_high": 7579.93,
-      "week_low": 7421.82,
+      "end_price": 7457.69,
+      "pct_change": -1.55,
+      "abs_change": -117.7,
+      "prev_close": 7575.39,
+      "week_high": 7581.5,
+      "week_low": 7431.26,
       "ticker_used": "^GSPC",
       "error": null
     },
     "^IXIC": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        25818.69,
-        25870.65,
-        26206.89,
-        26281.61
+        25873.18,
+        26107.01,
+        26269.23,
+        25881.95,
+        25520.24
       ],
-      "end_price": 26281.61,
-      "pct_change": 0.61,
-      "abs_change": 160.45,
-      "prev_close": 26121.16,
-      "week_high": 26301.54,
-      "week_low": 25526.46,
+      "end_price": 25520.24,
+      "pct_change": -2.9,
+      "abs_change": -761.37,
+      "prev_close": 26281.61,
+      "week_high": 26316.81,
+      "week_low": 25250.63,
       "ticker_used": "^IXIC",
       "error": null
     },
     "^DJI": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        52925.15,
-        52348.39,
-        52487.41,
-        52637.01
+        52498.64,
+        52508.27,
+        52658.64,
+        52552.97,
+        52146.42
       ],
-      "end_price": 52637.01,
-      "pct_change": -0.79,
-      "abs_change": -418.9,
-      "prev_close": 53055.91,
-      "week_high": 53289.3,
-      "week_low": 52069.87,
+      "end_price": 52146.42,
+      "pct_change": -0.93,
+      "abs_change": -490.59,
+      "prev_close": 52637.01,
+      "week_high": 52924.86,
+      "week_low": 51986.74,
       "ticker_used": "^DJI",
       "error": null
     },
     "^RUT": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        2982.49,
-        2956.39,
-        2992.54,
-        2977.81
+        2953.17,
+        2964.76,
+        2976.26,
+        2974.57,
+        2962.22
       ],
-      "end_price": 2977.81,
-      "pct_change": -1.05,
-      "abs_change": -31.73,
-      "prev_close": 3009.54,
-      "week_high": 3016.57,
-      "week_low": 2927.12,
+      "end_price": 2962.22,
+      "pct_change": -0.52,
+      "abs_change": -15.59,
+      "prev_close": 2977.81,
+      "week_high": 2996.28,
+      "week_low": 2934.12,
       "ticker_used": "^RUT",
       "error": null
     },
     "^VIX": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        16.13,
-        16.9,
-        15.84,
-        15.03
+        17.16,
+        16.5,
+        15.67,
+        16.73,
+        18.77
       ],
-      "end_price": 15.03,
-      "pct_change": -3.47,
-      "abs_change": -0.54,
-      "prev_close": 15.57,
-      "week_high": 18.91,
-      "week_low": 14.96,
+      "end_price": 18.77,
+      "pct_change": 24.88,
+      "abs_change": 3.74,
+      "prev_close": 15.03,
+      "week_high": 19.5,
+      "week_low": 15.64,
       "ticker_used": "^VIX",
       "error": null
     },
     "^TNX": {
       "dates": [
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
+        4.61,
+        4.59,
+        4.55,
         4.57,
-        4.54,
-        4.57
+        4.54
       ],
-      "end_price": 4.57,
-      "pct_change": 0.91,
-      "abs_change": 0.04,
-      "prev_close": 4.53,
-      "week_high": 4.6,
-      "week_low": 4.53,
+      "end_price": 4.54,
+      "pct_change": -0.63,
+      "abs_change": -0.03,
+      "prev_close": 4.57,
+      "week_high": 4.62,
+      "week_low": 4.51,
       "ticker_used": "^TNX",
       "error": null
     },
     "^IRX": {
       "dates": [
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        3.72,
-        3.68,
-        3.7
+        3.73,
+        3.7,
+        3.69,
+        3.7,
+        3.71
       ],
-      "end_price": 3.7,
-      "pct_change": -0.67,
-      "abs_change": -0.02,
-      "prev_close": 3.72,
-      "week_high": 3.73,
+      "end_price": 3.71,
+      "pct_change": 0.41,
+      "abs_change": 0.02,
+      "prev_close": 3.69,
+      "week_high": 3.75,
       "week_low": 3.67,
       "ticker_used": "^IRX",
       "error": null
     },
     "DX-Y.NYB": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        101.14,
-        101.05,
+        101.28,
         100.94,
-        100.96
+        100.5,
+        100.73,
+        100.75
       ],
-      "end_price": 100.96,
-      "pct_change": 0.11,
-      "abs_change": 0.11,
-      "prev_close": 100.85,
-      "week_high": 101.28,
-      "week_low": 100.6,
+      "end_price": 100.75,
+      "pct_change": -0.22,
+      "abs_change": -0.22,
+      "prev_close": 100.97,
+      "week_high": 101.33,
+      "week_low": 100.35,
       "ticker_used": "DX-Y.NYB",
       "error": null
     },
     "GC=F": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        4145.3,
-        4070.9,
-        4130.6,
-        4128.9
+        3997.0,
+        4061.1,
+        4044.0,
+        3985.6,
+        4023.0
       ],
-      "end_price": 4128.9,
-      "pct_change": -0.63,
-      "abs_change": -26.2,
-      "prev_close": 4155.1,
-      "week_high": 4167.2,
-      "week_low": 4053.0,
+      "end_price": 4023.0,
+      "pct_change": -1.98,
+      "abs_change": -81.1,
+      "prev_close": 4104.1,
+      "week_high": 4091.2,
+      "week_low": 3963.0,
       "ticker_used": "GC=F",
       "error": null
     },
     "CL=F": {
       "dates": [
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        70.44,
-        73.52,
-        72.08,
-        71.51
+        78.14,
+        79.34,
+        79.6,
+        78.95,
+        81.77
       ],
-      "end_price": 71.51,
-      "pct_change": 4.32,
-      "abs_change": 2.96,
-      "prev_close": 68.55,
-      "week_high": 76.08,
-      "week_low": 68.58,
+      "end_price": 81.77,
+      "pct_change": 14.51,
+      "abs_change": 10.36,
+      "prev_close": 71.41,
+      "week_high": 82.07,
+      "week_low": 72.61,
       "ticker_used": "CL=F",
       "error": null
     },
     "BTC-USD": {
       "dates": [
-        "Sat 07/04",
-        "Sun 07/05",
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Sat 07/11",
+        "Sun 07/12",
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        63088.3,
-        63547.88,
-        63995.02,
-        63297.39,
-        62257.57,
-        63193.15,
-        63942.85
+        63802.03,
+        63758.22,
+        62239.12,
+        64956.11,
+        64712.38,
+        63789.28,
+        64182.61
       ],
-      "end_price": 63942.85,
-      "pct_change": 2.24,
-      "abs_change": 1398.65,
-      "prev_close": 62544.2,
-      "week_high": 64597.57,
-      "week_low": 61275.83,
+      "end_price": 64182.61,
+      "pct_change": 0.09,
+      "abs_change": 55.47,
+      "prev_close": 64127.14,
+      "week_high": 65507.59,
+      "week_low": 61769.0,
       "ticker_used": "BTC-USD",
       "error": null
     },
     "ETH-USD": {
       "dates": [
-        "Sat 07/04",
-        "Sun 07/05",
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Sat 07/11",
+        "Sun 07/12",
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        1779.03,
-        1783.01,
-        1797.57,
-        1768.51,
-        1742.68,
-        1744.48,
-        1792.81
+        1788.1,
+        1805.79,
+        1773.5,
+        1889.48,
+        1916.94,
+        1863.19,
+        1845.26
       ],
-      "end_price": 1792.81,
-      "pct_change": 2.07,
-      "abs_change": 36.29,
-      "prev_close": 1756.52,
-      "week_high": 1829.51,
-      "week_low": 1711.9,
+      "end_price": 1845.26,
+      "pct_change": 2.76,
+      "abs_change": 49.57,
+      "prev_close": 1795.69,
+      "week_high": 1944.16,
+      "week_low": 1749.35,
       "ticker_used": "ETH-USD",
       "error": null
     },
     "SOL-USD": {
       "dates": [
-        "Sat 07/04",
-        "Sun 07/05",
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Sat 07/11",
+        "Sun 07/12",
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        81.65,
-        81.42,
-        81.92,
-        80.65,
-        77.79,
-        78.05,
-        77.96
+        76.82,
+        76.87,
+        74.86,
+        77.76,
+        77.26,
+        75.27,
+        75.14
       ],
-      "end_price": 77.96,
-      "pct_change": -5.25,
-      "abs_change": -4.32,
-      "prev_close": 82.28,
-      "week_high": 83.81,
-      "week_low": 76.26,
+      "end_price": 75.14,
+      "pct_change": -3.75,
+      "abs_change": -2.93,
+      "prev_close": 78.07,
+      "week_high": 78.88,
+      "week_low": 73.4,
       "ticker_used": "SOL-USD",
       "error": null
     },
     "XRP-USD": {
       "dates": [
-        "Sat 07/04",
-        "Sun 07/05",
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Sat 07/11",
+        "Sun 07/12",
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        1.16,
-        1.16,
-        1.14,
+        1.1,
+        1.09,
+        1.07,
+        1.11,
         1.11,
         1.09,
-        1.09,
-        1.1
+        1.09
       ],
-      "end_price": 1.1,
-      "pct_change": -2.99,
-      "abs_change": -0.03,
-      "prev_close": 1.13,
-      "week_high": 1.18,
-      "week_low": 1.07,
+      "end_price": 1.09,
+      "pct_change": -1.26,
+      "abs_change": -0.01,
+      "prev_close": 1.1,
+      "week_high": 1.13,
+      "week_low": 1.06,
       "ticker_used": "XRP-USD",
       "error": null
     },
@@ -350,167 +374,167 @@
     },
     "^STOXX50E": {
       "dates": [
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        6398.01,
-        6319.86,
-        6204.91,
-        6284.27,
-        6269.97
+        6271.02,
+        6280.19,
+        6265.58,
+        6283.61,
+        6230.87
       ],
-      "end_price": 6269.97,
-      "pct_change": -2.23,
-      "abs_change": -142.71,
-      "prev_close": 6412.68,
-      "week_high": 6431.42,
-      "week_low": 6180.94,
+      "end_price": 6230.87,
+      "pct_change": -0.62,
+      "abs_change": -39.1,
+      "prev_close": 6269.97,
+      "week_high": 6296.04,
+      "week_low": 6194.39,
       "ticker_used": "^STOXX50E",
       "error": null
     },
     "^FTSE": {
       "dates": [
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09",
-        "Fri 07/10"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16",
+        "Fri 07/17"
       ],
       "closes": [
-        10651.8,
-        10665.9,
-        10489.0,
-        10472.5,
-        10497.29
+        10498.3,
+        10529.4,
+        10515.9,
+        10572.2,
+        10600.37
       ],
-      "end_price": 10497.29,
-      "pct_change": -1.7,
-      "abs_change": -181.71,
-      "prev_close": 10679.0,
-      "week_high": 10747.0,
-      "week_low": 10397.5,
+      "end_price": 10600.37,
+      "pct_change": 0.98,
+      "abs_change": 103.07,
+      "prev_close": 10497.3,
+      "week_high": 10623.69,
+      "week_low": 10423.0,
       "ticker_used": "^FTSE",
       "error": null
     },
     "^HSI": {
       "dates": [
-        "Mon 07/06",
-        "Tue 07/07",
-        "Wed 07/08",
-        "Thu 07/09"
+        "Mon 07/13",
+        "Tue 07/14",
+        "Wed 07/15",
+        "Thu 07/16"
       ],
       "closes": [
-        23616.32,
-        23496.89,
-        24199.46,
-        24030.18
+        24213.72,
+        24340.73,
+        24681.1,
+        25008.6
       ],
-      "end_price": 24030.18,
-      "pct_change": 2.91,
-      "abs_change": 680.15,
-      "prev_close": 23350.03,
-      "week_high": 24353.76,
-      "week_low": 23229.38,
+      "end_price": 25008.6,
+      "pct_change": 3.45,
+      "abs_change": 833.48,
+      "prev_close": 24175.12,
+      "week_high": 25221.44,
+      "week_low": 23902.05,
       "ticker_used": "^HSI",
       "error": null
     }
   },
   "sector_performance": {
-    "Technology (XLK)": 1.2,
-    "Financials (XLF)": -0.77,
-    "Energy (XLE)": 3.67,
-    "Healthcare (XLV)": -0.69,
-    "Industrials (XLI)": -1.96,
-    "Cons. Discretionary (XLY)": -0.65,
-    "Cons. Staples (XLP)": 0.02,
-    "Real Estate (XLRE)": 0.36,
-    "Utilities (XLU)": 0.24,
-    "Materials (XLB)": -2.1,
-    "Comm. Services (XLC)": 1.3
+    "Technology (XLK)": -5.48,
+    "Financials (XLF)": 0.99,
+    "Energy (XLE)": 4.72,
+    "Healthcare (XLV)": 0.16,
+    "Industrials (XLI)": -1.38,
+    "Cons. Discretionary (XLY)": -1.54,
+    "Cons. Staples (XLP)": 1.27,
+    "Real Estate (XLRE)": 2.18,
+    "Utilities (XLU)": -0.53,
+    "Materials (XLB)": -0.71,
+    "Comm. Services (XLC)": -0.89
   },
   "top_sectors": [
     [
       "Energy (XLE)",
-      3.67
-    ],
-    [
-      "Comm. Services (XLC)",
-      1.3
-    ],
-    [
-      "Technology (XLK)",
-      1.2
+      4.72
     ],
     [
       "Real Estate (XLRE)",
-      0.36
+      2.18
+    ],
+    [
+      "Cons. Staples (XLP)",
+      1.27
+    ],
+    [
+      "Financials (XLF)",
+      0.99
     ]
   ],
   "bottom_sectors": [
     [
-      "Healthcare (XLV)",
-      -0.69
-    ],
-    [
-      "Financials (XLF)",
-      -0.77
+      "Comm. Services (XLC)",
+      -0.89
     ],
     [
       "Industrials (XLI)",
-      -1.96
+      -1.38
     ],
     [
-      "Materials (XLB)",
-      -2.1
+      "Cons. Discretionary (XLY)",
+      -1.54
+    ],
+    [
+      "Technology (XLK)",
+      -5.48
     ]
   ],
   "market_breadth": {
-    "advances": 6,
-    "declines": 5,
-    "positive_sector_share": 54.5,
-    "spy_pct_change": 0.49,
-    "rsp_pct_change": -0.33
+    "advances": 5,
+    "declines": 6,
+    "positive_sector_share": 45.5,
+    "spy_pct_change": -1.54,
+    "rsp_pct_change": -0.43
   },
   "narrative": {
     "sector_bullets": {
-      "top_bullet1": "Energy (XLE) surged +3.67% to lead all sectors, outpacing the S&amp;P 500&#x27;s +0.5% weekly gain by a wide margin as oil-related equities attracted the bulk of risk-on flows.",
-      "top_bullet2": "Communication Services (XLC) and Technology (XLK) added +1.3% and +1.2%, respectively, with mega-cap internet and semiconductor names continuing to underpin broad-based strength in growth-oriented sectors.",
-      "bot_bullet1": "Materials (XLB) was the week&#x27;s worst-performing sector at -2.1%, pressured by softening commodity prices and a stronger dollar that weighed on metals and chemical producers.",
-      "bot_bullet2": "Industrials (XLI) fell -1.96% amid ongoing concerns about slowing capital expenditure cycles, while Financials (XLF) slipped -0.77% as the elevated 10-year yield of 4.57% stoked net interest margin uncertainty across bank and insurance names."
+      "top_bullet1": "Capital rotated strongly into <strong>Energy (XLE)</strong>, making it the top performing segment of the S&amp;amp;P 500 this week.",
+      "top_bullet2": "Real Estate (XLRE) also exhibited strong relative momentum, capturing positive institutional inflows.",
+      "bot_bullet1": "<strong>Comm. Services (XLC)</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.",
+      "bot_bullet2": "Industrials (XLI) also faced structural headwinds, underperforming relative to the core index benchmarks."
     },
     "megacap_descriptions": {
-      "AAPL": "Closing at $315.32, a modest +0.85% gain slightly outpaced the S&amp;P 500&#x27;s +0.5% weekly advance, suggesting stable but uninspired institutional demand ahead of the next product cycle catalyst.",
-      "MSFT": "A -0.42% slip to $385.10 against a broadly positive tape indicates mild rotation out of the name, with elevated rates at 4.57% continuing to pressure valuation multiples on longer-duration software assets.",
-      "NVDA": "Surging +7.88% to close at $210.96, this was the standout momentum trade of the week, reinforcing that AI infrastructure spending narratives remain firmly intact and capable of driving outsized moves even at scale.",
-      "AMZN": "Settling at $245.34 with a +0.48% gain that tracked nearly in line with the index, the stock appears to be consolidating recent strength rather than breaking out, with cloud and advertising fundamentals offering a stable but unexciting near-term floor.",
-      "META": "An explosive +11.48% weekly rally to $669.21 \u2014 far outpacing the broader market \u2014 signals a decisive re-rating event, likely driven by earnings or ad-revenue upside that has restored conviction among large-cap growth allocators.",
-      "SNDK": "Vaulting +9.83% to $1,915.92, the move reflects deal-driven or restructuring-related re-pricing rather than broad sector momentum, and warrants scrutiny as to whether the catalyst is durable or purely event-specific.",
-      "AMD": "Edging up +1.06% to $557.89 in a week when peer NVDA gained nearly eight times as much, the relative underperformance highlights that AI semiconductor upside is still being narrowly concentrated rather than broadly distributed across the space.",
-      "INTC": "A punishing -10.11% decline to $109.84 stands as the week&#x27;s clearest sector divergence signal, underscoring deepening investor skepticism about the company&#x27;s competitive positioning and execution timeline versus its fabless rivals.",
-      "MU": "Drifting -0.55% to $979.30 in a week of otherwise strong semiconductor headlines, the flat-to-negative close suggests the market is awaiting fresh inventory or pricing data before committing to the next leg of the memory cycle trade."
+      "AAPL": "Closed the week at $333.74, posting a +5.84% move.",
+      "MSFT": "Closed the week at $393.82, posting a +2.26% move.",
+      "NVDA": "Closed the week at $202.81, posting a -3.86% move.",
+      "AMZN": "Closed the week at $247.23, posting a +0.77% move.",
+      "META": "Closed the week at $646.01, posting a -3.47% move.",
+      "SNDK": "Closed the week at $1,354.82, posting a -29.29% move.",
+      "AMD": "Closed the week at $495.76, posting a -11.14% move.",
+      "INTC": "Closed the week at $95.04, posting a -13.47% move.",
+      "MU": "Closed the week at $848.95, posting a -13.31% move."
     },
     "global_status": {
-      "nikkei": "Trading was halted or unavailable for the week, leaving the index unchanged at 0.00 with no price discovery to report.",
-      "stoxx": "European blue chips shed 2.23% to close at 6,269.97, marking one of the steeper weekly declines among developed markets and underperforming the S&amp;P 500&#x27;s modest 0.5% gain by a wide margin.",
-      "ftse": "London&#x27;s large-cap benchmark slid 1.7% to 10,497.29, with the index dragged lower even as a relatively subdued VIX of 15.03 suggested the selloff was driven more by domestic or sector-specific pressures than broad risk-off sentiment.",
-      "hsi": "Hong Kong outpaced every other major index tracked this week, surging 2.91% to 24,030.18 and standing in stark contrast to broad weakness across European markets."
+      "nikkei": "Japanese equities tracked broader global momentum flows this week.",
+      "stoxx": "European blue-chip stocks digested the latest economic policy signaling.",
+      "ftse": "UK large-caps reflected commodity sensitivity and sterling moves against the dollar.",
+      "hsi": "Hong Kong shares traded on China policy cues and tech sector sentiment."
     },
     "crypto_descriptions": {
-      "btc": "A recovery from the $61,276 weekly low to a close near $63,943 signals resilient demand at support, with bulls failing to sustain a push above the $64,598 ceiling despite a 2.24% weekly gain.",
-      "eth": "Trading in a tight $118 range between $1,712 and $1,830, the 2.07% weekly gain masked underlying indecision, with price closing at $1,793 and struggling to reclaim the $1,800 psychological level.",
-      "sol": "Underperforming the broader market by a wide margin, the 5.25% weekly decline to $77.96 stood in stark contrast to modest gains in BTC and ETH, suggesting asset-specific selling pressure rather than macro-driven weakness.",
-      "xrp": "A 2.99% decline to a $1.10 close diverged from the modest risk-on tone reflected in the S&amp;P 500&#x27;s 0.5% gain and a contained VIX of 15.03, pointing to waning speculative appetite specific to the asset."
+      "btc": "Closed at $64,183 with a 5-day range of $61,769\u2013$65,508, tracking broad risk sentiment.",
+      "eth": "Settled at $1,845, with relative performance to BTC reflecting shifts in layer-1 narrative flow.",
+      "sol": "Finished at $75.14, moving in line with broader high-beta crypto exposure.",
+      "xrp": "Printed at $1.0900, with regulatory and payments-sector headlines driving the tape."
     },
-    "takeaway_text": "The S&amp;P 500&#x27;s modest +0.5% weekly gain masked a significant divergence under the surface, with cyclical defensives and rate-sensitive sectors bearing the brunt of a 10-year yield that crept back to 4.57% \u2014 Materials and Industrials shedding -2.1% and -1.96% respectively as the reflation/infrastructure trade unwound, while Energy&#x27;s surge on the back of crude&#x27;s +4.32% weekly rip and megacap tech&#x27;s resilience carried the index and widened the Nasdaq-DJIA spread to over 140 basis points of relative performance. The VIX&#x27;s compression to 15.03 suggests the options market is not pricing meaningful near-term tail risk despite the rates overhang, a complacency that warrants scrutiny given Euro Stoxx 50&#x27;s -2.23% decline signals global growth anxiety that U.S. equities have yet to fully discount. Into next week, the positioning bias favors staying overweight Energy and large-cap Tech while remaining underweight rate-duration-exposed sectors \u2014 Financials&#x27; -0.77% despite the yield move is a particular red flag, suggesting credit concerns are offsetting the NIM benefit and making XLF a sector to avoid until the yield curve narrative clarifies.",
+    "takeaway_text": "A 14.5% crude spike alongside a 25% VIX surge points to a supply-shock scare (Energy leading, defensives like Staples and Real Estate outperforming) that hit growth duration hardest, with XLK&#x27;s 5.48% drubbing dragging Nasdaq down 2.9% even as falling yields (10-yr to 4.54%) failed to offer the usual mega-cap tech offset. The rotation into Financials and away from Discretionary/Industrials signals investors are hedging stagflationary risk\u2014higher input costs squeezing margins\u2014rather than pricing a growth scare, a distinction confirmed by gold&#x27;s 2% pullback and a still-firm dollar. Into next week, trim crowded tech/duration-sensitive longs, favor energy and quality defensives on any bounce, and watch whether oil holds above $80 and VIX stays elevated above 18, as a break either way will dictate whether this is a rotation or the start of a broader risk-off leg.",
     "lookahead": {
-      "macro": "Watch Tuesday&#x27;s CPI print closely \u2014 with the 10-year yield already up 9 basis points this week to 4.57%, any upside surprise above the consensus 3.4% YoY could push yields toward the 4.70% resistance level and pressure equity multiples further. The DXY held near 101 despite modest weekly gains, suggesting dollar strength is not yet a consensus trade, but a hot inflation print could reignite that thesis and weigh on emerging market assets and commodities simultaneously.",
-      "fed_policy": "Fed speakers scheduled throughout the week, including appearances from Waller and Williams, will be scrutinized for any softening in their higher-for-longer stance given crude oil&#x27;s 4.32% weekly surge adding renewed cost-push pressure to the pipeline. Markets are currently pricing fewer than two cuts for 2025, and any hawkish reaffirmation could extend the yield curve flattening trend and continue to punish rate-sensitive sectors like XLF, which already underperformed this week.",
-      "earnings_and_catalysts": "Retail earnings from Walmart and Home Depot mid-week serve as a critical real-time read on the U.S. consumer, particularly whether margin guidance reflects input cost pressure from the crude oil rally or demand softening from persistent 4.5%-plus mortgage rates. Strength in XLC this week suggests markets are still rewarding growth narratives, so any upside from consumer discretionary-adjacent names could reinforce that sector rotation and offer tactical long opportunities in communication services into month-end.",
-      "risk_factors": "The combination of VIX at 15.03 \u2014 low but no longer at complacency lows \u2014 and gold&#x27;s 0.63% weekly decline signals that safe-haven demand is muted but hedging appetite may be quietly building, particularly if geopolitical risk around energy supply chains re-emerges given crude&#x27;s sharp weekly move. Investors should monitor crude oil&#x27;s ability to hold above the $83 level; a sustained breakout would pressure airline and transportation stocks, reignite stagflation concerns, and potentially reverse this week&#x27;s thin S&amp;P 500 gains of just 0.5% with limited breadth to absorb the shock."
+      "macro": "Next week&#x27;s macro tape should be judged through the rates channel: with the 10-year yield at 4.54%, inflation, jobs, and consumer data need to confirm that growth is cooling without breaking. A hotter print would likely pressure duration-sensitive groups such as Comm. Services (XLC), while a benign release could extend the bid in leadership sectors.",
+      "fed_policy": "Fed communication is the key valuation swing factor after the 10-year yield moved lower by 0.63% this week. Investors should watch whether officials validate easier financial conditions or push back against them; the answer will shape multiples for growth and AI-linked equities.",
+      "earnings_and_catalysts": "Earnings follow-through matters because Energy (XLE) is carrying market leadership while Comm. Services (XLC) is lagging. Guidance on AI spending, margins, and enterprise demand will determine whether the rally broadens or remains concentrated in a narrow set of winners.",
+      "risk_factors": "The VIX at 18.77 leaves little cushion for disappointment. Watch for a reversal in mega-cap momentum, a sharp move in yields or the dollar, or commodity volatility that could quickly turn a constructive tape into a profit-taking event."
     }
   }
 }
