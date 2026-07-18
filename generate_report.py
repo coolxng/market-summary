@@ -2,6 +2,7 @@ import datetime
 import html
 import json
 import os
+import re
 import urllib.request
 from zoneinfo import ZoneInfo
 
@@ -29,7 +30,7 @@ SANITY_BOUNDS = {
     "^TNX":      (0.1,  20),
     "^IRX":      (0.0,  20),
     "DX-Y.NYB":  (50,   200),
-    "^N225":     (10000, 60000),
+    "^N225":     (10000, 100000),
     "^STOXX50E": (2000,  7000),
     "^FTSE":     (4000,  15000),
     "^HSI":      (10000, 50000),
@@ -42,6 +43,7 @@ FALLBACKS = {
 
 CORE_TICKERS = ("^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "DX-Y.NYB")
 NY_TZ = ZoneInfo("America/New_York")
+PREMIUM_DESIGN_MARKER = "DESIGN TOKENS · Editorial-Finance Premium Minimalist"
 
 # ─────────────────────────────────────────────
 # DATA FETCHING
@@ -82,6 +84,24 @@ def render_html_with_strong(value):
     escaped = escaped.replace("&lt;strong&gt;", "<strong>")
     escaped = escaped.replace("&lt;/strong&gt;", "</strong>")
     return escaped
+
+
+def preserve_premium_shell(existing_html, title, body_html):
+    """Reuse the checked-in premium design shell while refreshing report content."""
+    if PREMIUM_DESIGN_MARKER not in existing_html:
+        return None
+    style_end = existing_html.find("</style>")
+    if style_end == -1:
+        return None
+    shell = existing_html[:style_end + len("</style>")]
+    shell = re.sub(
+        r"<title>.*?</title>",
+        f"<title>{render_html_text(title)}</title>",
+        shell,
+        count=1,
+        flags=re.DOTALL,
+    )
+    return f"{shell}\n</head>\n<body>\n{body_html}\n</body>\n</html>\n"
 
 
 def sanitize_text_map(values, allow_strong=False):
@@ -399,7 +419,7 @@ def generate_html():
         f"S&P 500 WTD: {sp_pct}%, VIX: {vix_close:.2f}, 10-yr yield: {tnx['end_price']:.2f}%"
     )
     sector_fallback = {
-        "top_bullet1": f"Capital rotated strongly into <strong>{top_sectors[0][0]}</strong>, making it the top performing segment of the S&amp;P 500 this week.",
+        "top_bullet1": f"Capital rotated strongly into <strong>{top_sectors[0][0]}</strong>, making it the top performing segment of the S&P 500 this week.",
         "top_bullet2": f"{top_sectors[1][0]} also exhibited strong relative momentum, capturing positive institutional inflows.",
         "bot_bullet1": f"<strong>{bottom_sectors[0][0]}</strong> lagged the broader market, absorbing the heaviest selling pressure over the 5-day period.",
         "bot_bullet2": f"{bottom_sectors[1][0]} also faced structural headwinds, underperforming relative to the core index benchmarks.",
@@ -602,7 +622,7 @@ def generate_html():
         f"Euro Stoxx 50: {'+' if stoxx['pct_change'] >= 0 else ''}{stoxx['pct_change']}% WTD"
     )
     takeaway_fallback = (
-        f"U.S. equities closed the week {direction}, with the S&amp;P 500 finishing at {sp['end_price']:,.2f} "
+        f"U.S. equities closed the week {direction}, with the S&P 500 finishing at {sp['end_price']:,.2f} "
         f"and the VIX at {vix_close:.2f}, signaling {vix_note}. "
         f"Leadership remained selective: {top_sectors[0][0]} led the tape while {bottom_sectors[0][0]} lagged, "
         f"keeping the market dependent on growth and AI-linked momentum rather than broad participation. "
@@ -2108,6 +2128,200 @@ def generate_html():
 </html>"""
 
     html_content = dedupe_tradingview_widget_sections(html_content)
+
+    # The premium redesign lives in the checked-in index.html. Keep its CSS shell
+    # canonical and refresh only the report body so scheduled generation cannot
+    # silently replace the design with the legacy template above.
+    existing_index = ""
+    if os.path.exists("index.html"):
+        with open("index.html", "r", encoding="utf-8") as existing_file:
+            existing_index = existing_file.read()
+
+    def premium_change(data, suffix="WTD"):
+        pct = data["pct_change"]
+        css_class = "positive" if pct >= 0 else "negative"
+        arrow = "▲" if pct >= 0 else "▼"
+        sign = "+" if pct >= 0 else "−"
+        return css_class, f"{arrow} {sign}{abs(pct):.2f}% {suffix}"
+
+    def premium_index_card(name, data):
+        css_class, change = premium_change(data)
+        return (
+            '<div class="index-card">'
+            f'<div class="index-name">{render_html_text(name)}</div>'
+            f'<div class="index-value">{data["end_price"]:,.2f}</div>'
+            f'<div class="index-change {css_class}"><span class="index-arrow">'
+            f'{"▲" if data["pct_change"] >= 0 else "▼"}</span><span>{change[2:]}</span></div>'
+            '</div>'
+        )
+
+    def premium_ticker_item(name, value, data):
+        css_class, change = premium_change(data)
+        return (
+            '<div class="ticker-item">'
+            f'<div class="ticker-name">{render_html_text(name)}</div>'
+            f'<div class="ticker-value">{value}</div>'
+            f'<div class="ticker-change {css_class}">{change}</div>'
+            '</div>'
+        )
+
+    def premium_global_row(name, data, status):
+        css_class, change = premium_change(data)
+        return (
+            '<tr>'
+            f'<td>{render_html_text(name)}</td>'
+            f'<td class="value">{data["end_price"]:,.2f}</td>'
+            f'<td class="value {css_class}">{change[2:]}</td>'
+            f'<td>{status}</td>'
+            '</tr>'
+        )
+
+    def premium_crypto_card(name, data, description, decimals=0):
+        price = f'${data["end_price"]:,.{decimals}f}'
+        return (
+            '<div class="stat-card">'
+            f'<div class="stat-label">{render_html_text(name)}</div>'
+            f'<div class="stat-value">{price}</div>'
+            f'<div class="stat-note">5D range: ${data["week_low"]:,.{decimals}f}–'
+            f'${data["week_high"]:,.{decimals}f}. {description}</div>'
+            '</div>'
+        )
+
+    ticker_grid = "".join((
+        premium_ticker_item("S&P 500", f'{sp["end_price"]:,.2f}', sp),
+        premium_ticker_item("Nasdaq", f'{nd["end_price"]:,.2f}', nd),
+        premium_ticker_item("VIX", f'{vix["end_price"]:.2f}', vix),
+        premium_ticker_item("10-Yr Yield", f'{tnx["end_price"]:.2f}%', tnx),
+    ))
+    index_cards = "".join((
+        premium_index_card("S&P 500", sp),
+        premium_index_card("Nasdaq Composite", nd),
+        premium_index_card("Dow Jones", dj),
+    ))
+    global_table_rows = "".join((
+        premium_global_row("Nikkei 225", n225, global_status["nikkei"]),
+        premium_global_row("Euro Stoxx 50", stoxx, global_status["stoxx"]),
+        premium_global_row("FTSE 100", ftse, global_status["ftse"]),
+        premium_global_row("Hang Seng", hsi, global_status["hsi"]),
+    ))
+    crypto_stats = "".join((
+        premium_crypto_card("Bitcoin", btc, crypto_descriptions["btc"], decimals=0),
+        premium_crypto_card("Ethereum", eth, crypto_descriptions["eth"], decimals=0),
+        premium_crypto_card("Solana", sol, crypto_descriptions["sol"], decimals=2),
+    ))
+    market_direction = "advance" if sp_pct >= 0 else "close under pressure"
+    accent_direction = "with broadening momentum" if breadth_share >= 50 else "as leadership narrows"
+    top_sector_name = render_html_text(top_sectors[0][0])
+    bottom_sector_name = render_html_text(bottom_sectors[0][0])
+    premium_body = f"""
+<!-- HEADER -->
+<header class="header">
+  <div class="header-inner">
+    <a class="header-logo" href="#top">Market Summary</a>
+    <nav class="header-nav" aria-label="Report sections">
+      <a href="#sections">Weekly Review</a>
+      <a href="#data">Markets</a>
+      <a href="#crypto">Digital Assets</a>
+    </nav>
+    <a class="header-cta" href="#outlook">Outlook</a>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <h1 class="hero-headline">Markets {market_direction} <span class="accent">{accent_direction}</span></h1>
+  <p class="hero-subheading">
+    Weekly review for {week_start_str}–{today_str}, {year_str}. The S&amp;P 500 moved {sp_pct:+.2f}%,
+    the VIX finished at {vix_close:.2f}, and the 10-year Treasury yield closed at {tnx["end_price"]:.2f}%.
+  </p>
+  <div class="hero-actions">
+    <a class="hero-btn-primary" href="#sections">Read Full Report</a>
+    <a class="hero-btn-secondary" href="#data">View Markets →</a>
+  </div>
+</section>
+
+<!-- TICKER SNAPSHOT -->
+<section class="ticker-section" aria-label="Key market indices">
+  <div class="ticker-label">Key Indices</div>
+  <div class="ticker-grid">{ticker_grid}</div>
+</section>
+
+<main class="container">
+  <section class="section" id="sections">
+    <div class="section-label">Section 01</div>
+    <h2 class="section-title">Major U.S. Indices</h2>
+    <p class="section-intro">{breadth_summary} The tape was led by {top_sector_name}, while {bottom_sector_name} carried the weakest relative momentum.</p>
+    <div class="indices-grid">{index_cards}</div>
+    <div class="content-section">
+      <h3>What Happened</h3>
+      <ul>
+        <li>{sector_bullets["top_bullet1"]}</li>
+        <li>{sector_bullets["top_bullet2"]}</li>
+        <li>{sector_bullets["bot_bullet1"]}</li>
+        <li>{sector_bullets["bot_bullet2"]}</li>
+      </ul>
+      <div class="callout"><p><strong>Investor takeaway:</strong> {takeaway_text}</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="data">
+    <div class="section-label">Section 02</div>
+    <h2 class="section-title">Macro &amp; Rates</h2>
+    <p class="section-intro">Rates, dollar liquidity, and volatility remain the main valuation channels for the coming week.</p>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-label">10-Year Treasury</div><div class="stat-value">{tnx["end_price"]:.2f}%</div><div class="stat-note">Moved {tnx["pct_change"]:+.2f}% WTD and remains the primary discount-rate anchor for equities.</div></div>
+      <div class="stat-card"><div class="stat-label">U.S. Dollar Index</div><div class="stat-value">{dxy["end_price"]:.2f}</div><div class="stat-note">Changed {dxy["pct_change"]:+.2f}% WTD, shaping financial conditions and commodity sensitivity.</div></div>
+      <div class="stat-card"><div class="stat-label">Volatility (VIX)</div><div class="stat-value">{vix_close:.2f}</div><div class="stat-note">Changed {vix["pct_change"]:+.2f}% WTD and frames the market's current demand for protection.</div></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-label">Section 03</div>
+    <h2 class="section-title">Global Markets</h2>
+    <p class="section-intro">Cross-border performance shows where policy, currency, and growth expectations are diverging from the U.S. tape.</p>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Index</th><th>Close</th><th>Weekly Change</th><th>Status</th></tr></thead>
+        <tbody>{global_table_rows}</tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="section" id="crypto">
+    <div class="section-label">Section 04</div>
+    <h2 class="section-title">Cryptocurrency Market</h2>
+    <p class="section-intro">Digital assets remain a high-beta read on liquidity and risk appetite alongside the equity and rates backdrop.</p>
+    <div class="stat-grid">{crypto_stats}</div>
+  </section>
+
+  <section class="section" id="outlook">
+    <div class="section-label">Section 05</div>
+    <h2 class="section-title">Looking Ahead</h2>
+    <p class="section-intro">The next session's setup depends on whether macro data and policy communication validate the week's positioning.</p>
+    <div class="content-section">
+      <h3>Macro</h3><p>{lookahead["macro"]}</p>
+      <h3>Fed Policy</h3><p>{lookahead["fed_policy"]}</p>
+      <h3>Earnings &amp; Catalysts</h3><p>{lookahead["earnings_and_catalysts"]}</p>
+      <div class="callout"><p><strong>Risk factors:</strong> {lookahead["risk_factors"]}</p></div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-col"><h4>Market Data</h4><ul><li><a href="#sections">U.S. Equities</a></li><li><a href="#data">Rates &amp; Macro</a></li><li><a href="#crypto">Digital Assets</a></li></ul></div>
+    <div class="footer-col"><h4>Research</h4><ul><li><a href="#sections">Weekly Summary</a></li><li><a href="#outlook">Forward Outlook</a></li></ul></div>
+    <div class="footer-col"><h4>Report</h4><ul><li>{week_start_str}–{today_str}, {year_str}</li><li>{"AI narrative" if ai_enabled else "Deterministic narrative"}</li></ul></div>
+  </div>
+  <div class="footer-bottom"><div>© {year_str} Market Summary. Published weekly.</div><div>Data via yfinance · Editorial analysis via Claude</div></div>
+</footer>"""
+    premium_html = preserve_premium_shell(
+        existing_index,
+        f"Weekly Market Summary – {week_start_str}–{today_str}, {year_str}",
+        premium_body,
+    )
+    if premium_html is not None:
+        html_content = premium_html
 
     snapshot = {
         "generated_at": current_market_now().isoformat(),

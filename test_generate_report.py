@@ -21,6 +21,26 @@ class GenerateReportTests(unittest.TestCase):
         self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", sanitized)
         self.assertIn("<strong>Leader</strong>", sanitized)
 
+    def test_preserve_premium_shell_replaces_body_and_title(self):
+        legacy = "<title>Old</title><style>body { color: black; }</style><body>old</body>"
+        self.assertIsNone(generate_report.preserve_premium_shell(legacy, "New", "<main>new</main>"))
+
+        premium = legacy.replace(
+            "<style>",
+            f"<style>/* {generate_report.PREMIUM_DESIGN_MARKER} */",
+        )
+        rendered = generate_report.preserve_premium_shell(
+            premium,
+            "New & Safe",
+            "<main>new</main>",
+        )
+        self.assertIn("<title>New &amp; Safe</title>", rendered)
+        self.assertIn("<main>new</main>", rendered)
+        self.assertNotIn("<body>old</body>", rendered)
+
+    def test_nikkei_sanity_bound_accepts_current_index_levels(self):
+        self.assertTrue(generate_report.is_sane("^N225", 64141.12))
+
     def test_validate_dataset_rejects_zeroed_core_data(self):
         with self.assertRaisesRegex(ValueError, "end price is invalid"):
             generate_report.validate_dataset(
