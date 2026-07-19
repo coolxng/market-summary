@@ -947,33 +947,27 @@ def generate_html():
 <style>
 /* {PREMIUM_DESIGN_MARKER} */
 :root {{
-  --bg:#05050d; --surface:rgba(255,255,255,.065); --surface-2:rgba(255,255,255,.035);
-  --border:rgba(255,255,255,.1); --text:rgba(255,255,255,.94); --muted:rgba(255,255,255,.52);
+  --bg:#000000; --surface:#080808; --surface-2:#101010;
+  --border:rgba(255,255,255,.10); --border-hover:rgba(255,255,255,.18); --text:rgba(255,255,255,.94); --muted:rgba(255,255,255,.58);
   --green:#30d158; --red:#ff453a; --accent:#0a84ff; --purple:#bf5af2;
-  --blob-1:rgba(108,92,231,.18); --blob-2:rgba(0,206,201,.14); --blob-3:rgba(253,121,168,.12);
-  --shadow:0 18px 54px rgba(0,0,0,.28);
+  --shadow:none;
 }}
 * {{ box-sizing:border-box; }}
 html {{ background:var(--bg); scroll-behavior:smooth; }}
 body {{ margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.5; overflow-x:hidden; }}
 a {{ color:inherit; text-decoration:none; }}
 .positive {{ color:var(--green)!important; }} .negative {{ color:var(--red)!important; }}
-.aurora {{ position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0; }}
-.blob {{ position:absolute; border-radius:50%; filter:blur(120px); }}
-.blob.one {{ width:560px; height:560px; right:-160px; top:-180px; background:var(--blob-1); }}
-.blob.two {{ width:500px; height:500px; left:-160px; bottom:-200px; background:var(--blob-2); }}
-.blob.three {{ width:380px; height:380px; right:12%; top:40%; background:var(--blob-3); }}
-.report-shell {{ position:relative; z-index:1; }}
-.report-header {{ position:sticky; top:0; z-index:20; background:rgba(5,5,13,.76); border-bottom:1px solid var(--border); backdrop-filter:blur(30px) saturate(180%); }}
+.report-shell {{ position:relative; }}
+.report-header {{ position:sticky; top:0; z-index:20; background:#000; border-bottom:1px solid var(--border); }}
 .header-main {{ max-width:1320px; margin:auto; padding:18px 34px 14px; display:flex; align-items:center; justify-content:space-between; gap:18px; }}
 .report-id {{ display:flex; align-items:center; gap:14px; min-width:0; }}
-.report-mark {{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:linear-gradient(135deg,var(--accent),var(--purple)); font:700 13px 'Space Grotesk'; }}
+.report-mark {{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:var(--accent); color:#fff; font:700 13px 'Space Grotesk'; }}
 .report-title {{ min-width:0; }}
 .report-title strong {{ display:block; font:600 17px 'Space Grotesk'; letter-spacing:-.02em; }}
 .report-title span {{ display:block; color:var(--muted); font-size:11px; margin-top:2px; }}
 .header-meta {{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }}
 .tone-badge,.date-chip {{ padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:var(--surface-2); }}
-.ticker-window {{ overflow:hidden; border-top:1px solid var(--border); }}
+.ticker-window {{ overflow:hidden; border-top:1px solid var(--border); background:#000; }}
 .ticker-track {{ display:flex; width:max-content; animation:ticker 55s linear infinite; }}
 .ticker-track:hover {{ animation-play-state:paused; }}
 @keyframes ticker {{ to {{ transform:translateX(-50%); }} }}
@@ -983,8 +977,9 @@ a {{ color:inherit; text-decoration:none; }}
 .ticker-change {{ grid-column:2; font-size:9px; font-weight:700; }}
 .container {{ max-width:1320px; margin:auto; padding:26px 34px 80px; }}
 .metric-grid {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:26px; }}
-.metric-tile,.panel,.asset-card,.decision-card,.tradingview-card {{ background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); backdrop-filter:blur(28px) saturate(160%); }}
-.metric-tile {{ border-radius:16px; padding:14px 15px 10px; min-width:0; }}
+.metric-tile,.panel,.asset-card,.decision-card,.tradingview-card {{ background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); }}
+.metric-tile:hover,.panel:hover,.asset-card:hover,.decision-card:hover,.tradingview-card:hover,.takeaway-list li:hover {{ background:var(--surface-2); border-color:var(--border-hover); }}
+.metric-tile {{ border-radius:12px; padding:14px 15px 10px; min-width:0; }}
 .metric-head {{ display:flex; justify-content:space-between; gap:8px; align-items:center; }}
 .metric-name {{ color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.11em; font-weight:700; }}
 .metric-change {{ font-size:10px; font-weight:700; }}
@@ -998,7 +993,7 @@ a {{ color:inherit; text-decoration:none; }}
 .section-heading h2 {{ margin:2px 0 0; font:600 clamp(22px,3vw,32px) 'Space Grotesk'; letter-spacing:-.035em; }}
 .section-heading p {{ margin:0; color:var(--muted); max-width:560px; font-size:12px; text-align:right; }}
 .section-label {{ color:var(--accent); font-size:9px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }}
-.panel {{ border-radius:18px; padding:18px; }}
+.panel {{ border-radius:12px; padding:18px; }}
 .breadth-strip {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }}
 .breadth-stat {{ border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--surface-2); }}
 .breadth-stat span {{ color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }}
@@ -1035,7 +1030,7 @@ td {{ color:var(--muted); font-size:11px; }}
 .number {{ color:var(--text); font:600 11px 'Space Grotesk'; white-space:nowrap; }}
 .spark-cell {{ width:140px; height:45px; }}
 .asset-grid,.decision-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }}
-.asset-card,.decision-card {{ border-radius:15px; padding:15px; }}
+.asset-card,.decision-card {{ border-radius:12px; padding:15px; }}
 .asset-card span,.decision-card>span {{ color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.11em; font-weight:700; }}
 .asset-card strong {{ display:block; font:700 22px 'Space Grotesk'; margin-top:7px; }}
 .asset-card em {{ display:block; font-style:normal; font-size:10px; font-weight:700; margin-top:3px; }}
@@ -1048,7 +1043,7 @@ td {{ color:var(--muted); font-size:11px; }}
 .decision-list li {{ color:var(--muted); font-size:10px; padding-left:13px; position:relative; }}
 .decision-list li:before {{ content:'•'; position:absolute; left:0; color:var(--accent); }}
 .compact-heading {{ align-items:center; }}
-.tradingview-card {{ border-radius:18px; overflow:hidden; height:520px; }}
+.tradingview-card {{ border-radius:12px; overflow:hidden; height:520px; }}
 .tradingview-widget-container,.tradingview-widget-container__widget,.tradingview-card iframe {{ width:100%!important; height:100%!important; }}
 .footer {{ max-width:1320px; margin:auto; padding:30px 34px 46px; color:var(--muted); font-size:10px; display:flex; justify-content:space-between; gap:18px; border-top:1px solid var(--border); }}
 @media(max-width:1100px) {{
@@ -1072,7 +1067,6 @@ td {{ color:var(--muted); font-size:11px; }}
 </style>
 </head>
 <body>
-<div class="aurora" aria-hidden="true"><div class="blob one"></div><div class="blob two"></div><div class="blob three"></div></div>
 <div class="report-shell">
 <header class="report-header">
   <div class="header-main">
