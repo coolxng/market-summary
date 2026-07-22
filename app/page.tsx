@@ -30,6 +30,7 @@ type SessionChart = {
 type MegaCapSnapshot = {
   name: string;
   result: MarketDatum;
+  session_chart?: SessionChart;
 };
 
 type DailyReport = {
@@ -241,12 +242,21 @@ export default function Home() {
   const sectorAbsMax = Math.max(...sectorEntries.map(([, value]) => Math.abs(value)));
   const topSector = sectorEntries[0];
   const bottomSector = sectorEntries[sectorEntries.length - 1];
-  const megaCaps = useMemo(() => Object.keys(megaCapNames).map((ticker) => ({
-    ticker,
-    name: dailyReport.mega_cap_data?.[ticker]?.name ?? megaCapNames[ticker],
-    item: dailyReport.mega_cap_data?.[ticker]?.result ?? parseMegaCapFallback(ticker),
-    hasSessionRange: Boolean(dailyReport.mega_cap_data?.[ticker]),
-  })), []);
+  const megaCaps = useMemo(() => Object.keys(megaCapNames).map((ticker) => {
+    const snapshot = dailyReport.mega_cap_data?.[ticker];
+    const item = snapshot?.result ?? parseMegaCapFallback(ticker);
+    const chart = snapshot?.session_chart;
+    const chartTimes = chart?.times?.length ? chart.times : ["9:30 AM", "4:00 PM"];
+    return {
+      ticker,
+      name: snapshot?.name ?? megaCapNames[ticker],
+      item,
+      chartValues: chart?.closes?.length ? chart.closes : item.closes,
+      chartAxis: [chartTimes[0], chartTimes[Math.floor(chartTimes.length / 2)], chartTimes.at(-1)].filter(Boolean) as string[],
+      chartSource: chart?.source,
+      hasSessionRange: Boolean(snapshot),
+    };
+  }), []);
   const sp = market["^GSPC"];
   const nasdaq = market["^IXIC"];
   const russell = market["^RUT"];
@@ -368,7 +378,7 @@ export default function Home() {
         <section className="section-block" id="mega-cap">
           <div className="section-heading"><div><p className="section-kicker">03 / MEGA-CAP &amp; AI</p><h2>The leadership engine</h2></div><p>Close, session range, daily return, and the latest verified price path for the market’s most-watched technology names.</p></div>
           <div className="mega-grid">
-            {megaCaps.map(({ ticker, name, item, hasSessionRange }) => {
+            {megaCaps.map(({ ticker, name, item, chartValues, chartAxis, chartSource, hasSessionRange }) => {
               const positive = item.pct_change >= 0;
               return (
                 <article className="mega-card" key={ticker}>
@@ -381,7 +391,11 @@ export default function Home() {
                     <span>{hasSessionRange ? "DAY LOW" : "PREV CLOSE"} <b>${formatNumber(hasSessionRange ? item.day_low : item.prev_close)}</b></span>
                     <span>{hasSessionRange ? "DAY HIGH" : "SESSION CLOSE"} <b>${formatNumber(hasSessionRange ? item.day_high : item.end_price)}</b></span>
                   </div>
-                  <Sparkline values={item.closes} positive={positive} />
+                  <div className="mega-chart">
+                    <div className="mega-chart-meta"><span>REGULAR SESSION</span><small>{chartSource === "intraday_5m" ? "5 MIN" : "OPEN / CLOSE"}</small></div>
+                    <Sparkline values={chartValues} positive={positive} />
+                    <div className="mega-axis">{chartAxis.map((time, index) => <span key={`${ticker}-${time}-${index}`}>{time}</span>)}</div>
+                  </div>
                 </article>
               );
             })}

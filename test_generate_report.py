@@ -227,6 +227,8 @@ class GenerateReportTests(unittest.TestCase):
             self.assertIn("daily_market_breadth", snapshot)
             self.assertEqual(snapshot["mega_cap_data"]["NVDA"]["name"], "Nvidia")
             self.assertGreater(snapshot["mega_cap_data"]["NVDA"]["result"]["end_price"], 0)
+            self.assertEqual(snapshot["mega_cap_data"]["NVDA"]["session_chart"]["source"], "intraday_5m")
+            self.assertEqual(len(snapshot["mega_cap_data"]["NVDA"]["session_chart"]["closes"]), 3)
             self.assertNotIn("report_window", snapshot)
             self.assertNotIn("hourly_charts", snapshot)
             self.assertIn("Daily Market Summary", rendered)
