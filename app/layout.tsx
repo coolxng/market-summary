@@ -9,19 +9,19 @@ export async function generateMetadata(): Promise<Metadata> {
   const base = new URL(`${protocol}://${host}`);
   return {
     metadataBase: base,
-    title: "Market Summary — The Weekly Tape",
-    description: "A decisive, data-first read on the week in equities, rates, sectors, crypto, and global markets.",
+    title: "Market Summary — The Daily Tape",
+    description: "A decisive, data-first read on the latest completed U.S. trading session across equities, rates, sectors, crypto, and global markets.",
     icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
     openGraph: {
-      title: "The Weekly Tape",
-      description: "The market moved. Here is what mattered.",
+      title: "The Daily Tape",
+      description: "The session closed. Here is what mattered.",
       type: "website",
       images: [new URL("/og.png", base).toString()],
     },
     twitter: {
       card: "summary_large_image",
-      title: "The Weekly Tape",
-      description: "The market moved. Here is what mattered.",
+      title: "The Daily Tape",
+      description: "The session closed. Here is what mattered.",
       images: [new URL("/og.png", base).toString()],
     },
   };

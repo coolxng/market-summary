@@ -10,19 +10,54 @@ type MarketDatum = {
   pct_change: number;
   abs_change: number;
   prev_close: number;
-  week_high: number;
-  week_low: number;
+  session_open: number;
+  day_high: number;
+  day_low: number;
+  session_date: string | null;
+  previous_session_date: string | null;
   ticker_used: string;
   error: string | null;
 };
 
-const market = report.market_data as Record<string, MarketDatum>;
+type SessionChart = {
+  times: string[];
+  closes: number[];
+  source: "intraday_5m" | "daily_ohlc_fallback";
+  session_date: string;
+  error: string | null;
+};
+
+type DailyReport = {
+  report_type: "daily_market_close";
+  session_date: string;
+  previous_session_date: string;
+  generated_at: string;
+  report_mode: string;
+  market_data: Record<string, MarketDatum>;
+  session_charts: Record<string, SessionChart>;
+  daily_sector_performance: Record<string, number>;
+  daily_market_breadth: {
+    advances: number;
+    declines: number;
+    positive_sector_share: number;
+    spy_pct_change: number | null;
+    rsp_pct_change: number | null;
+  };
+  narrative: {
+    daily_takeaway: { what_moved: string; why: string; what_to_watch: string };
+    next_session_outlook: Record<"macro" | "fed_policy" | "earnings_and_catalysts" | "risk_factors", string[]>;
+  };
+};
+
+const dailyReport = report as unknown as DailyReport;
+const market = dailyReport.market_data;
+const sessionCharts = dailyReport.session_charts;
 const sections = [
   ["brief", "The brief"],
   ["scorecard", "Scorecard"],
   ["sectors", "Sectors"],
   ["macro", "Macro"],
-  ["ahead", "Next week"],
+  ["ahead", "Next session"],
 ];
 
 const globalMarkets = [
@@ -79,6 +114,7 @@ function Sparkline({ values, positive }: { values: number[]; positive: boolean }
 
 function IndexCard({ symbol, name, short }: { symbol: string; name: string; short: string }) {
   const item = market[symbol];
+  const chart = sessionCharts[symbol];
   const positive = item.pct_change >= 0;
   return (
     <article className="index-card">
@@ -88,7 +124,7 @@ function IndexCard({ symbol, name, short }: { symbol: string; name: string; shor
       </div>
       <div className="index-value">{formatNumber(item.end_price)}</div>
       <div className="index-name">{name}</div>
-      <Sparkline values={item.closes} positive={positive} />
+      <Sparkline values={chart?.closes ?? [item.session_open, item.end_price]} positive={positive} />
     </article>
   );
 }
@@ -111,17 +147,17 @@ export default function Home() {
   const [assetTab, setAssetTab] = useState<"sectors" | "crypto">("sectors");
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("weekly-tape-theme");
+    const saved = window.localStorage.getItem("daily-tape-theme");
     if (saved === "ink") setTheme("ink");
   }, []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("weekly-tape-theme", theme);
+    window.localStorage.setItem("daily-tape-theme", theme);
   }, [theme]);
 
   const sectorEntries = useMemo(
-    () => Object.entries(report.sector_performance).sort((a, b) => b[1] - a[1]),
+    () => Object.entries(dailyReport.daily_sector_performance).sort((a, b) => b[1] - a[1]),
     [],
   );
   const sectorAbsMax = Math.max(...sectorEntries.map(([, value]) => Math.abs(value)));
@@ -131,18 +167,31 @@ export default function Home() {
   const tenYear = market["^TNX"];
   const dxy = market["DX-Y.NYB"];
   const oil = market["CL=F"];
-  const breadth = report.market_breadth;
-  const dateStart = new Date(`${report.report_window.start_date}T12:00:00`);
-  const dateEnd = new Date(`${report.report_window.end_date}T12:00:00`);
-  const dateRange = `${dateStart.toLocaleDateString("en-US", { month: "short", day: "numeric" })} — ${dateEnd.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
-  const takeaway = decodeText(report.narrative.takeaway_text);
+  const breadth = dailyReport.daily_market_breadth;
+  const sessionDate = new Date(`${dailyReport.session_date}T12:00:00`);
+  const previousSessionDate = new Date(`${dailyReport.previous_session_date}T12:00:00`);
+  const generatedDate = new Date(`${dailyReport.generated_at.slice(0, 10)}T12:00:00`);
+  const sessionDateLabel = sessionDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const previousSessionLabel = previousSessionDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const dailyTakeaway = dailyReport.narrative.daily_takeaway;
+  const spChart = sessionCharts["^GSPC"];
+  const chartTimes = spChart?.times ?? ["9:30 AM", "4:00 PM"];
+  const chartAxis = [chartTimes[0], chartTimes[Math.floor(chartTimes.length / 2)], chartTimes.at(-1)].filter(Boolean) as string[];
+  const marketDirection = sp.pct_change >= 0 ? "higher" : "lower";
+  const breadthDescription = breadth.positive_sector_share >= 60 ? "was broad" : breadth.positive_sector_share <= 40 ? "was narrow" : "was mixed";
+  const outlookItems: Array<[string, string, string[]]> = [
+    ["01", "Macro data", dailyReport.narrative.next_session_outlook.macro],
+    ["02", "Fed & rates", dailyReport.narrative.next_session_outlook.fed_policy],
+    ["03", "Earnings & AI", dailyReport.narrative.next_session_outlook.earnings_and_catalysts],
+    ["04", "Risk dashboard", dailyReport.narrative.next_session_outlook.risk_factors],
+  ];
 
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="The Weekly Tape home">
+        <a className="brand" href="#top" aria-label="The Daily Tape home">
           <span className="brand-mark"><i /><i /><i /></span>
-          <span>THE WEEKLY TAPE</span>
+          <span>THE DAILY TAPE</span>
         </a>
         <nav aria-label="Report sections">
           {sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}
@@ -155,35 +204,35 @@ export default function Home() {
       <div className="page" id="top">
         <section className="hero" id="brief">
           <div className="issue-line">
-            <span>WEEKLY MARKET INTELLIGENCE</span>
-            <span>ISSUE 26.25</span>
-            <span>{dateRange.toUpperCase()}</span>
+            <span>DAILY MARKET CLOSE</span>
+            <span>U.S. SESSION</span>
+            <span>{sessionDateLabel.toUpperCase()}</span>
           </div>
           <div className="hero-grid">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>
-              <h1>Growth won the week.<br /><em>Breadth never joined.</em></h1>
-              <p className="dek">The Nasdaq led a risk-on rebound while equal-weight equities lagged, the dollar strengthened, and crude’s sharp break lower left a more fragile setup than the headline indices suggest.</p>
+              <h1>Markets closed {marketDirection}.<br /><em>Breadth {breadthDescription}.</em></h1>
+              <p className="dek">{decodeText(dailyTakeaway.what_moved)}</p>
               <div className="hero-tags">
-                <span className="tag up">Risk appetite ↑</span>
-                <span className="tag down">Participation ↓</span>
-                <span className="tag neutral">Conviction: selective</span>
+                <span className={`tag ${sp.pct_change >= 0 ? "up" : "down"}`}>S&amp;P {formatPct(sp.pct_change)}</span>
+                <span className={`tag ${breadth.positive_sector_share >= 50 ? "up" : "down"}`}>{breadth.advances} of 11 sectors advanced</span>
+                <span className="tag neutral">Compared with {previousSessionLabel}</span>
               </div>
             </div>
             <aside className="regime-card" aria-label="Market regime signals">
-              <div className="regime-heading"><span>REGIME MONITOR</span><span className="live-dot">WEEK CLOSED</span></div>
-              <Signal label="Risk appetite" value="Constructive" note={`S&P ${formatPct(sp.pct_change)} · VIX ${formatNumber(vix.end_price)}`} tone="good" />
-              <Signal label="Participation" value="Narrow" note={`${breadth.advances} of 11 sectors advanced`} tone="warn" />
-              <Signal label="Rates impulse" value="Supportive" note={`10Y ${formatNumber(tenYear.end_price)}% · ${formatPct(tenYear.pct_change)}`} tone="good" />
-              <Signal label="Dollar impulse" value="Headwind" note={`DXY ${formatPct(dxy.pct_change)} WTD`} tone="warn" />
+              <div className="regime-heading"><span>SESSION MONITOR</span><span className="live-dot">CLOSE VERIFIED</span></div>
+              <Signal label="Index direction" value={sp.pct_change >= 0 ? "Higher" : "Lower"} note={`S&P ${formatPct(sp.pct_change)} · VIX ${formatNumber(vix.end_price)}`} tone={sp.pct_change >= 0 ? "good" : "warn"} />
+              <Signal label="Participation" value={breadthDescription.replace("was ", "")} note={`${breadth.advances} of 11 sectors advanced`} tone={breadth.positive_sector_share >= 50 ? "good" : "warn"} />
+              <Signal label="Rates move" value={tenYear.pct_change <= 0 ? "Lower" : "Higher"} note={`10Y ${formatNumber(tenYear.end_price)}% · ${formatPct(tenYear.pct_change)}`} tone="neutral" />
+              <Signal label="Dollar move" value={dxy.pct_change >= 0 ? "Higher" : "Lower"} note={`DXY ${formatPct(dxy.pct_change)} 1D`} tone="neutral" />
             </aside>
           </div>
         </section>
 
         <section className="scorecard section-block" id="scorecard">
           <div className="section-heading">
-            <div><p className="section-kicker">01 / SCORECARD</p><h2>The week, at a glance</h2></div>
-            <p>Close-to-close performance. Hover or tap each card for the intraweek path.</p>
+            <div><p className="section-kicker">01 / SCORECARD</p><h2>The session, at a glance</h2></div>
+            <p>Current close versus the immediately preceding trading-session close, with regular-hours intraday paths.</p>
           </div>
           <div className="index-grid">
             <IndexCard symbol="^GSPC" name="S&P 500" short="SPX" />
@@ -192,17 +241,17 @@ export default function Home() {
             <IndexCard symbol="^RUT" name="Russell 2000" short="RUT" />
           </div>
           <div className="pulse-strip">
-            <div><span>VOLATILITY</span><strong>{formatNumber(vix.end_price)}</strong><small className="positive">{formatPct(vix.pct_change)}</small></div>
-            <div><span>10Y TREASURY</span><strong>{formatNumber(tenYear.end_price)}%</strong><small className="positive">{formatPct(tenYear.pct_change)}</small></div>
-            <div><span>U.S. DOLLAR</span><strong>{formatNumber(dxy.end_price)}</strong><small className="negative">{formatPct(dxy.pct_change)}</small></div>
-            <div><span>WTI CRUDE</span><strong>${formatNumber(oil.end_price)}</strong><small className="negative">{formatPct(oil.pct_change)}</small></div>
+            <div><span>VOLATILITY</span><strong>{formatNumber(vix.end_price)}</strong><small className={vix.pct_change >= 0 ? "positive" : "negative"}>{formatPct(vix.pct_change)}</small></div>
+            <div><span>10Y TREASURY</span><strong>{formatNumber(tenYear.end_price)}%</strong><small className={tenYear.pct_change >= 0 ? "positive" : "negative"}>{formatPct(tenYear.pct_change)}</small></div>
+            <div><span>U.S. DOLLAR</span><strong>{formatNumber(dxy.end_price)}</strong><small className={dxy.pct_change >= 0 ? "positive" : "negative"}>{formatPct(dxy.pct_change)}</small></div>
+            <div><span>WTI CRUDE</span><strong>${formatNumber(oil.end_price)}</strong><small className={oil.pct_change >= 0 ? "positive" : "negative"}>{formatPct(oil.pct_change)}</small></div>
           </div>
         </section>
 
         <section className="thesis section-block">
           <div className="thesis-label"><span>THE HOUSE VIEW</span><span>3 MIN READ</span></div>
-          <blockquote>“The rally was real. The confirmation was not.”</blockquote>
-          <p>{takeaway}</p>
+          <blockquote>“Observed moves first. Inference second.”</blockquote>
+          <p>{decodeText(dailyTakeaway.why)}</p>
         </section>
 
         <section className="section-block" id="sectors">
@@ -245,8 +294,8 @@ export default function Home() {
         <section className="macro-grid section-block" id="macro">
           <div className="macro-copy">
             <p className="section-kicker">03 / MACRO PULSE</p>
-            <h2>Rates helped.<br />The dollar didn’t.</h2>
-            <p>A lower 10-year yield supported duration-sensitive growth, but the stronger dollar and collapsing crude price complicate the clean risk-on story.</p>
+            <h2>Rates moved {tenYear.pct_change >= 0 ? "higher" : "lower"}.<br />The dollar moved {dxy.pct_change >= 0 ? "higher" : "lower"}.</h2>
+            <p>The 10-year yield changed {formatPct(tenYear.pct_change)}, DXY changed {formatPct(dxy.pct_change)}, and crude changed {formatPct(oil.pct_change)} during the daily comparison. These are observed moves, not causal claims.</p>
             <div className="breadth-meter">
               <div className="meter-head"><span>POSITIVE SECTOR SHARE</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div>
               <div className="meter-track"><span style={{ width: `${breadth.positive_sector_share}%` }} /></div>
@@ -254,24 +303,25 @@ export default function Home() {
             </div>
           </div>
           <div className="chart-panel">
-            <div className="chart-header"><span>S&P 500 / WEEK PATH</span><strong>{formatNumber(sp.end_price)}</strong></div>
-            <Sparkline values={sp.closes} positive={sp.pct_change >= 0} />
-            <div className="chart-axis">{sp.dates.map((date) => <span key={date}>{date.split(" ")[0]}</span>)}</div>
+            <div className="chart-header"><span>S&amp;P 500 / REGULAR SESSION</span><strong>{formatNumber(sp.end_price)}</strong></div>
+            <Sparkline values={spChart?.closes ?? [sp.session_open, sp.end_price]} positive={sp.pct_change >= 0} />
+            <div className="chart-axis">{chartAxis.map((time, index) => <span key={`${time}-${index}`}>{time}</span>)}</div>
             <div className="chart-stats">
-              <div><span>WEEK LOW</span><strong>{formatNumber(sp.week_low)}</strong></div>
-              <div><span>WEEK HIGH</span><strong>{formatNumber(sp.week_high)}</strong></div>
-              <div><span>NASDAQ LEAD</span><strong className="positive">{formatPct(nasdaq.pct_change)}</strong></div>
+              <div><span>DAY LOW</span><strong>{formatNumber(sp.day_low)}</strong></div>
+              <div><span>DAY HIGH</span><strong>{formatNumber(sp.day_high)}</strong></div>
+              <div><span>NASDAQ 1D</span><strong className={nasdaq.pct_change >= 0 ? "positive" : "negative"}>{formatPct(nasdaq.pct_change)}</strong></div>
             </div>
+            <small className="chart-source">{spChart?.source === "intraday_5m" ? "Regular-hours 5-minute data" : "Session open/close fallback"}</small>
           </div>
         </section>
 
         <section className="section-block global-section">
           <div className="section-heading">
             <div><p className="section-kicker">04 / GLOBAL CHECK</p><h2>A split tape beyond Wall Street</h2></div>
-            <p>Regional closes and weekly direction from the report snapshot.</p>
+            <p>Latest completed daily closes around the represented U.S. session.</p>
           </div>
           <div className="global-table" role="table" aria-label="Global market performance">
-            <div className="global-row table-head" role="row"><span>MARKET</span><span>REGION</span><span>CLOSE</span><span>WEEK</span></div>
+            <div className="global-row table-head" role="row"><span>MARKET</span><span>REGION</span><span>CLOSE</span><span>1D</span></div>
             {globalMarkets.map(([symbol, name, region]) => {
               const item = market[symbol];
               const unavailable = Boolean(item.error);
@@ -288,27 +338,22 @@ export default function Home() {
 
         <section className="section-block ahead" id="ahead">
           <div className="section-heading">
-            <div><p className="section-kicker">05 / FORWARD LOOK</p><h2>What can break the setup</h2></div>
+            <div><p className="section-kicker">05 / NEXT SESSION OUTLOOK</p><h2>What to watch next</h2></div>
             <p>Four pressure points to carry into the next session.</p>
           </div>
           <div className="ahead-grid">
-            {[
-              ["01", "Macro data", report.narrative.lookahead.macro],
-              ["02", "Fed & rates", report.narrative.lookahead.fed_policy],
-              ["03", "Earnings & AI", report.narrative.lookahead.earnings_and_catalysts],
-              ["04", "Risk dashboard", report.narrative.lookahead.risk_factors],
-            ].map(([number, title, body]) => (
+            {outlookItems.map(([number, title, body]) => (
               <details key={number}>
                 <summary><span>{number}</span><strong>{title}</strong><i>+</i></summary>
-                <p>{decodeText(body)}</p>
+                <p>{body.map((item) => decodeText(item)).join(" ")}</p>
               </details>
             ))}
           </div>
         </section>
 
         <footer>
-          <div><strong>THE WEEKLY TAPE</strong><span>Signal over noise.</span></div>
-          <div className="footer-meta"><span>DATA: YFINANCE</span><span>REPORT MODE: {report.report_mode.replaceAll("_", " ").toUpperCase()}</span><span>GENERATED {new Date(report.generated_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}</span></div>
+          <div><strong>THE DAILY TAPE</strong><span>One completed session. Signal over noise.</span></div>
+          <div className="footer-meta"><span>DATA: YFINANCE</span><span>REPORT MODE: {dailyReport.report_mode.replaceAll("_", " ").toUpperCase()}</span><span>SESSION {sessionDateLabel.toUpperCase()}</span><span>GENERATED {generatedDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}</span></div>
         </footer>
       </div>
     </main>
