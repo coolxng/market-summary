@@ -1,10 +1,10 @@
-name: Generate Weekly Market Summary
+name: Generate Daily Market Summary
 
 on:
   schedule:
-    # Runs at 20:40 UTC every Friday (3:40PM CDT / 40 min after market close)
-    # Earlier fire time gives buffer for GitHub Actions scheduling delays
-    - cron: '40 20 * * 5'
+    # Runs weekdays at 21:30 UTC: 5:30 p.m. EDT or 4:30 p.m. EST, after the U.S. close.
+    # GitHub cron cannot exclude U.S. market holidays; the generator skips when no new session data exists.
+    - cron: '30 21 * * 1-5'
 
   # Allows manual trigger from the Actions tab
   workflow_dispatch:
@@ -25,12 +25,18 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install yfinance
 
-      - name: Generate the HTML Report
+      - name: Generate or Skip the Daily Report
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: python generate_report.py
@@ -40,12 +46,14 @@ jobs:
 
       - name: Validate Generated Artifacts
         run: |
-          python -c "import json; from pathlib import Path; snapshot = json.loads(Path('report_snapshot.json').read_text()); assert Path('index.html').exists(); assert snapshot['market_data']['^GSPC']['end_price'] > 0; assert snapshot['market_data']['^IXIC']['end_price'] > 0; assert snapshot['market_data']['^TNX']['end_price'] > 0; assert snapshot['market_breadth']['positive_sector_share'] >= 0"
+          python -c "import json; from pathlib import Path; snapshot = json.loads(Path('report_snapshot.json').read_text()); assert Path('public/legacy-report.html').exists(); assert snapshot['report_type'] == 'daily_market_close'; assert snapshot['session_date'] > snapshot['previous_session_date']; assert snapshot['market_data']['^GSPC']['end_price'] > 0; assert snapshot['market_data']['^IXIC']['end_price'] > 0; assert snapshot['market_data']['^TNX']['end_price'] > 0; assert snapshot['daily_market_breadth']['positive_sector_share'] >= 0"
+          npm ci --ignore-scripts
+          npm run build
 
-      - name: Commit and Push changes
+      - name: Commit and Push Daily Artifacts
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add index.html report_snapshot.json
-          git commit -m "Automated Weekly Market Summary update" || echo "No changes to commit"
+          git add report_snapshot.json public/legacy-report.html
+          git commit -m "Automated Daily Market Summary update" || echo "No new completed session to commit"
           git push

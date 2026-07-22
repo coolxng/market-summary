@@ -4,6 +4,7 @@ import json
 import os
 import re
 import urllib.request
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import yfinance as yf
@@ -54,6 +55,8 @@ SUMMARY_TILE_TICKERS = (
     ("Ethereum", "ETH-USD"),
 )
 NY_TZ = ZoneInfo("America/New_York")
+MARKET_CLOSE_SETTLE_TIME = datetime.time(16, 15)
+SESSION_LOOKBACK_DAYS = 15
 PREMIUM_DESIGN_MARKER = "DESIGN TOKENS · Editorial-Finance Premium Minimalist"
 
 
@@ -71,18 +74,70 @@ def current_market_now():
     return datetime.datetime.now(NY_TZ)
 
 
-def compute_week_window(now=None):
+def normalize_market_now(now=None):
     now = now or current_market_now()
     if now.tzinfo is None:
         now = now.replace(tzinfo=NY_TZ)
-    days_since_friday = (now.weekday() - 4) % 7
-    end_date = now.date() - datetime.timedelta(days=days_since_friday)
-    start_date = end_date - datetime.timedelta(days=7)
-    return start_date, end_date
+    return now.astimezone(NY_TZ)
 
 
-def format_display_range(end_date):
-    return end_date - datetime.timedelta(days=4), end_date
+def latest_completed_session_candidate(now=None):
+    """Return the latest date that could contain a completed U.S. session."""
+    market_now = normalize_market_now(now)
+    candidate = market_now.date()
+    if market_now.time() < MARKET_CLOSE_SETTLE_TIME:
+        candidate -= datetime.timedelta(days=1)
+    while candidate.weekday() >= 5:
+        candidate -= datetime.timedelta(days=1)
+    return candidate
+
+
+def index_date(value):
+    if hasattr(value, "to_pydatetime"):
+        value = value.to_pydatetime()
+    if isinstance(value, datetime.datetime):
+        return value.date()
+    if isinstance(value, datetime.date):
+        return value
+    return datetime.date.fromisoformat(str(value)[:10])
+
+
+def fetch_recent_session_dates(candidate_date):
+    """Use S&P 500 bars as the source of truth for U.S. trading sessions."""
+    history = yf.Ticker("^GSPC").history(
+        start=(candidate_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)).isoformat(),
+        end=(candidate_date + datetime.timedelta(days=1)).isoformat(),
+        interval="1d",
+    )
+    history = history.dropna(subset=["Close"])
+    return sorted({index_date(value) for value in history.index if index_date(value) <= candidate_date})
+
+
+def resolve_completed_sessions(now=None, session_dates=None):
+    """Resolve the current and preceding completed sessions, including holidays."""
+    candidate = latest_completed_session_candidate(now)
+    available_dates = session_dates if session_dates is not None else fetch_recent_session_dates(candidate)
+    completed_dates = sorted({date for date in available_dates if date <= candidate})
+    if len(completed_dates) < 2:
+        raise ValueError("Market data did not provide two completed U.S. trading sessions.")
+    return completed_dates[-1], completed_dates[-2]
+
+
+def snapshot_session_date(snapshot_path="report_snapshot.json"):
+    path = Path(snapshot_path)
+    if not path.exists():
+        return None
+    try:
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        value = snapshot.get("session_date")
+        return datetime.date.fromisoformat(value) if value else None
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return None
+
+
+def has_new_session(session_date, snapshot_path="report_snapshot.json"):
+    existing_session = snapshot_session_date(snapshot_path)
+    return existing_session is None or session_date > existing_session
 
 
 def render_html_text(value):
@@ -136,12 +191,29 @@ def validate_dataset(dataset, label, allow_zero=False):
         raise ValueError(f"{label} end price failed sanity bounds: {end_price}")
 
 
-def validate_core_datasets(dataset_map):
+def validate_core_datasets(
+    dataset_map,
+    expected_session_date=None,
+    expected_previous_session_date=None,
+):
     for ticker in CORE_TICKERS:
         validate_dataset(dataset_map[ticker], ticker)
+        if expected_session_date and dataset_map[ticker].get("session_date") != expected_session_date.isoformat():
+            raise ValueError(
+                f"{ticker} did not return the completed session {expected_session_date.isoformat()}."
+            )
+        if (
+            expected_previous_session_date
+            and dataset_map[ticker].get("previous_session_date")
+            != expected_previous_session_date.isoformat()
+        ):
+            raise ValueError(
+                f"{ticker} did not compare against {expected_previous_session_date.isoformat()}."
+            )
 
 
-def fetch_weekly_data(ticker_symbol, start_date=None, end_date=None):
+def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
+    """Fetch one completed session and its immediately preceding close."""
     tickers_to_try = [ticker_symbol]
     if ticker_symbol in FALLBACKS:
         tickers_to_try.append(FALLBACKS[ticker_symbol])
@@ -149,27 +221,32 @@ def fetch_weekly_data(ticker_symbol, start_date=None, end_date=None):
     for ticker_used in tickers_to_try:
         try:
             ticker = yf.Ticker(ticker_used)
-            if start_date and end_date:
-                history_end = end_date + datetime.timedelta(days=1)
-                hist = ticker.history(
-                    start=start_date.isoformat(),
-                    end=history_end.isoformat(),
-                    interval="1d",
-                )
-            else:
-                hist = ticker.history(period="10d")
+            hist = ticker.history(
+                start=(session_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)).isoformat(),
+                end=(session_date + datetime.timedelta(days=1)).isoformat(),
+                interval="1d",
+            )
 
             hist = hist.dropna(subset=["Close"])
-            if len(hist) < 2:
+            eligible_positions = [
+                position
+                for position, value in enumerate(hist.index)
+                if index_date(value) <= session_date
+            ]
+            if len(eligible_positions) < 2:
                 continue
 
-            prev_close = float(hist["Close"].iloc[0])
-            chart_hist = hist.iloc[1:] if len(hist) > 2 else hist.iloc[-1:]
-            dates = [date.strftime("%a %m/%d") for date in chart_hist.index]
-            closes = [round(float(value), 2) for value in chart_hist["Close"].tolist()]
-            highs = [round(float(value), 2) for value in chart_hist["High"].tolist()]
-            lows = [round(float(value), 2) for value in chart_hist["Low"].tolist()]
-            end_price = closes[-1]
+            current_position = eligible_positions[-1]
+            previous_position = eligible_positions[-2]
+            current_date = index_date(hist.index[current_position])
+            prior_date = index_date(hist.index[previous_position])
+            current_row = hist.iloc[current_position]
+            previous_row = hist.iloc[previous_position]
+            end_price = round(float(current_row["Close"]), 2)
+            prev_close = round(float(previous_row["Close"]), 2)
+            session_open = round(float(current_row.get("Open", end_price)), 2)
+            day_high = round(float(current_row.get("High", end_price)), 2)
+            day_low = round(float(current_row.get("Low", end_price)), 2)
 
             if not is_sane(ticker_used, end_price):
                 print(f"  Sanity check FAILED for {ticker_used}: end_price={end_price} — trying fallback")
@@ -177,14 +254,17 @@ def fetch_weekly_data(ticker_symbol, start_date=None, end_date=None):
 
             pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close else 0.0
             return {
-                "dates": dates,
-                "closes": closes,
+                "dates": [prior_date.isoformat(), current_date.isoformat()],
+                "closes": [prev_close, end_price],
                 "end_price": end_price,
                 "pct_change": round(pct_change, 2),
                 "abs_change": round(end_price - prev_close, 2),
-                "prev_close": round(prev_close, 2),
-                "week_high": max(highs) if highs else end_price,
-                "week_low": min(lows) if lows else end_price,
+                "prev_close": prev_close,
+                "session_open": session_open,
+                "day_high": day_high,
+                "day_low": day_low,
+                "session_date": current_date.isoformat(),
+                "previous_session_date": prior_date.isoformat(),
                 "ticker_used": ticker_used,
                 "error": None,
             }
@@ -199,45 +279,71 @@ def fetch_weekly_data(ticker_symbol, start_date=None, end_date=None):
         "pct_change": 0.0,
         "abs_change": 0.0,
         "prev_close": 0.0,
-        "week_high": 0.0,
-        "week_low": 0.0,
+        "session_open": 0.0,
+        "day_high": 0.0,
+        "day_low": 0.0,
+        "session_date": None,
+        "previous_session_date": None,
         "ticker_used": ticker_symbol,
         "error": f"Data unavailable for {ticker_symbol}",
     }
 
 
-def fetch_weekly_chart_data(ticker_symbol, start_date=None, end_date=None):
-    """Fetch hourly chart points; fall back to existing daily data behavior."""
+def market_datetime(value):
+    if hasattr(value, "to_pydatetime"):
+        value = value.to_pydatetime()
+    if not isinstance(value, datetime.datetime):
+        value = datetime.datetime.fromisoformat(str(value))
+    if value.tzinfo is None:
+        return value.replace(tzinfo=NY_TZ)
+    return value.astimezone(NY_TZ)
+
+
+def fetch_daily_chart_data(ticker_symbol, session_date, fallback_data=None):
+    """Fetch regular-hours intraday points for one completed session."""
     try:
         ticker = yf.Ticker(ticker_symbol)
-        if start_date and end_date:
-            history_end = end_date + datetime.timedelta(days=1)
-            hist = ticker.history(
-                start=start_date.isoformat(),
-                end=history_end.isoformat(),
-                interval="1h",
-            )
-        else:
-            hist = ticker.history(period="5d", interval="1h")
+        hist = ticker.history(
+            start=session_date.isoformat(),
+            end=(session_date + datetime.timedelta(days=1)).isoformat(),
+            interval="5m",
+            prepost=False,
+        )
 
         hist = hist.dropna(subset=["Close"])
-        if len(hist) < 2:
-            raise ValueError("Not enough hourly data returned")
+        regular_positions = []
+        regular_times = []
+        for position, value in enumerate(hist.index):
+            timestamp = market_datetime(value)
+            if (
+                timestamp.date() == session_date
+                and datetime.time(9, 30) <= timestamp.time() <= datetime.time(16, 0)
+            ):
+                regular_positions.append(position)
+                regular_times.append(timestamp)
+        if len(regular_positions) < 2:
+            raise ValueError("Not enough regular-hours intraday data returned")
 
         return {
-            "dates": [date.strftime("%a %m/%d %I:%M %p") for date in hist.index],
-            "closes": [round(float(value), 2) for value in hist["Close"].tolist()],
+            "times": [timestamp.strftime("%I:%M %p").lstrip("0") for timestamp in regular_times],
+            "closes": [round(float(hist["Close"].iloc[position]), 2) for position in regular_positions],
+            "source": "intraday_5m",
+            "session_date": session_date.isoformat(),
             "error": None,
         }
     except Exception as exc:
         print(
-            f"  Exception fetching hourly chart data for {ticker_symbol}: "
-            f"{exc} — using daily chart fallback"
+            f"  Exception fetching intraday chart data for {ticker_symbol}: "
+            f"{exc} — using session open/close fallback"
         )
-        fallback = fetch_weekly_data(ticker_symbol, start_date=start_date, end_date=end_date)
+        fallback = fallback_data or fetch_daily_data(ticker_symbol, session_date)
+        session_open = fallback.get("session_open") or fallback.get("end_price", 0.0)
+        session_close = fallback.get("end_price", 0.0)
         return {
-            "dates": fallback["dates"],
-            "closes": fallback["closes"],
+            "times": ["9:30 AM", "4:00 PM"],
+            "closes": [session_open, session_close],
+            "source": "daily_ohlc_fallback",
+            "session_date": session_date.isoformat(),
             "error": fallback.get("error"),
         }
 
@@ -302,7 +408,7 @@ def should_use_ai():
 # ─────────────────────────────────────────────
 # NARRATIVE GENERATORS
 # ─────────────────────────────────────────────
-def build_lookahead_fallback(market_context):
+def build_next_session_outlook_fallback(market_context):
     top1 = market_context["top_sectors"].split(", ")[0]
     bottom1 = market_context["bottom_sectors"].split(", ")[0]
     vix = market_context["vix_close"]
@@ -328,24 +434,26 @@ def build_lookahead_fallback(market_context):
     }
 
 
-def generate_lookahead_claude(market_context):
+def generate_next_session_outlook_claude(market_context):
     prompt = (
-        "You are a senior equity strategist writing a compact weekly market lookahead. "
+        "You are a senior equity strategist writing a compact next-session outlook after a completed U.S. market close. "
         "Return four arrays of exactly two short bullets each. Each bullet must be one sentence, "
-        "actionable, specific, and grounded in the supplied data. Avoid paragraphs and generic language.\n\n"
-        f"S&P 500: {market_context['sp_pct']:+.2f}% WTD\n"
+        "actionable, specific, and grounded in the supplied data. Treat possible drivers as inferences, not proven causes. "
+        "Avoid paragraphs and generic language.\n\n"
+        f"Completed session: {market_context['session_date']}\n"
+        f"S&P 500: {market_context['sp_pct']:+.2f}% 1D\n"
         f"VIX: {market_context['vix_close']:.2f}\n"
-        f"10-year yield: {market_context['tnx_close']:.2f}% ({market_context['tnx_pct']:+.2f}% WTD)\n"
-        f"DXY: {market_context['dxy_close']:.2f} ({market_context['dxy_pct']:+.2f}% WTD)\n"
-        f"Gold: {market_context['gold_pct']:+.2f}% WTD\n"
-        f"Crude: {market_context['oil_pct']:+.2f}% WTD\n"
-        f"BTC: {market_context['btc_pct']:+.2f}% WTD\n"
+        f"10-year yield: {market_context['tnx_close']:.2f}% ({market_context['tnx_pct']:+.2f}% 1D)\n"
+        f"DXY: {market_context['dxy_close']:.2f} ({market_context['dxy_pct']:+.2f}% 1D)\n"
+        f"Gold: {market_context['gold_pct']:+.2f}% 1D\n"
+        f"Crude: {market_context['oil_pct']:+.2f}% 1D\n"
+        f"BTC: {market_context['btc_pct']:+.2f}% 1D\n"
         f"Top sectors: {market_context['top_sectors']}\n"
         f"Bottom sectors: {market_context['bottom_sectors']}\n\n"
         "Respond ONLY as JSON with array-valued keys: macro, fed_policy, "
         "earnings_and_catalysts, risk_factors."
     )
-    fallback = build_lookahead_fallback(market_context)
+    fallback = build_next_session_outlook_fallback(market_context)
     return claude_json(
         prompt,
         required_keys={"macro", "fed_policy", "earnings_and_catalysts", "risk_factors"},
@@ -354,15 +462,15 @@ def generate_lookahead_claude(market_context):
     )
 
 
-def build_takeaway_fallback(context):
+def build_daily_takeaway_fallback(context):
     return {
         "what_moved": (
-            f"S&P 500 {context['sp_pct']:+.2f}% WTD; "
+            f"S&P 500 {context['sp_pct']:+.2f}% for the session; "
             f"{context['top_sector']} led while {context['bottom_sector']} lagged."
         ),
         "why": (
             f"Rates at {context['tnx']:.2f}% and VIX at {context['vix']:.2f} "
-            "kept leadership concentrated."
+            "were observed alongside the session's leadership pattern; causality is not established."
         ),
         "what_to_watch": (
             f"Watch whether yields and DXY at {context['dxy']:.2f} stay contained "
@@ -371,13 +479,15 @@ def build_takeaway_fallback(context):
     }
 
 
-def generate_takeaway_claude(context):
+def generate_daily_takeaway_claude(context):
     prompt = (
-        "You are a senior equity strategist. Return exactly three short decision bullets as JSON. "
-        "Each value must be one sentence and no more than 28 words. Do not write a paragraph.\n\n"
-        f"S&P 500: {context['sp_pct']:+.2f}% WTD\n"
-        f"Nasdaq: {context['nd_pct']:+.2f}% WTD\n"
-        f"DJIA: {context['dj_pct']:+.2f}% WTD\n"
+        "You are a senior equity strategist summarizing one completed U.S. trading session. "
+        "Return exactly three short decision bullets as JSON. Each value must be one sentence and no more than 28 words. "
+        "Separate observed moves from inferred explanations and never state an unsupported cause as fact.\n\n"
+        f"Completed session: {context['session_date']}\n"
+        f"S&P 500: {context['sp_pct']:+.2f}% 1D\n"
+        f"Nasdaq: {context['nd_pct']:+.2f}% 1D\n"
+        f"DJIA: {context['dj_pct']:+.2f}% 1D\n"
         f"VIX: {context['vix']:.2f}\n"
         f"10-year yield: {context['tnx']:.2f}%\n"
         f"DXY: {context['dxy']:.2f}\n"
@@ -385,7 +495,7 @@ def generate_takeaway_claude(context):
         f"Bottom sector: {context['bottom_sector']}\n\n"
         "Respond ONLY with JSON keys what_moved, why, what_to_watch."
     )
-    fallback = build_takeaway_fallback(context)
+    fallback = build_daily_takeaway_fallback(context)
     return claude_json(
         prompt,
         required_keys={"what_moved", "why", "what_to_watch"},
@@ -501,7 +611,7 @@ def render_sector_chart(all_sectors_ranked):
             f'<div class="sector-value {css_class}">{value:+.2f}%</div>'
             "</div>"
         )
-    return '<div class="sector-chart" role="img" aria-label="All eleven sectors ranked by weekly return">' + "".join(rows) + "</div>"
+    return '<div class="sector-chart" role="img" aria-label="All eleven sectors ranked by daily return">' + "".join(rows) + "</div>"
 
 
 def render_megacap_row(ticker, company, data, description, logo_slug):
@@ -528,9 +638,9 @@ def render_megacap_row(ticker, company, data, description, logo_slug):
         f'<div class="company-spark">{sparkline}</div>'
         '<div class="company-stats">'
         f'<span><small>Close</small>${data["end_price"]:,.2f}</span>'
-        f'<span><small>5D High</small>${data["week_high"]:,.2f}</span>'
-        f'<span><small>5D Low</small>${data["week_low"]:,.2f}</span>'
-        f'<span class="{css_class}"><small>WTD</small>{pct:+.2f}%</span>'
+        f'<span><small>Day High</small>${data["day_high"]:,.2f}</span>'
+        f'<span><small>Day Low</small>${data["day_low"]:,.2f}</span>'
+        f'<span class="{css_class}"><small>1D</small>{pct:+.2f}%</span>'
         "</div>"
         "</article>"
     )
@@ -564,7 +674,7 @@ def render_ticker_item(name, value, data):
         '<div class="ticker-item">'
         f'<span class="ticker-name">{render_html_text(name)}</span>'
         f'<span class="ticker-value">{value}</span>'
-        f'<span class="ticker-change {css_class}">{pct:+.2f}% WTD</span>'
+        f'<span class="ticker-change {css_class}">{pct:+.2f}% 1D</span>'
         "</div>"
     )
 
@@ -612,10 +722,13 @@ def tradingview_widget_html():
 # ─────────────────────────────────────────────
 # MAIN HTML GENERATOR
 # ─────────────────────────────────────────────
-def generate_html():
-    print("Fetching market data...")
-    previous_week_end, week_end = compute_week_window()
-    report_start, report_end = format_display_range(week_end)
+def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="public/legacy-report.html"):
+    session_date, previous_session_date = resolve_completed_sessions(now)
+    if not has_new_session(session_date, snapshot_path):
+        print(f"No new completed trading session after {session_date.isoformat()}; leaving artifacts unchanged.")
+        return False
+
+    print(f"Fetching market data for completed session {session_date.isoformat()}...")
     ai_enabled = should_use_ai()
 
     ticker_symbols = (
@@ -624,10 +737,14 @@ def generate_html():
         "^N225", "^STOXX50E", "^FTSE", "^HSI",
     )
     datasets = {
-        symbol: fetch_weekly_data(symbol, start_date=previous_week_end, end_date=week_end)
+        symbol: fetch_daily_data(symbol, session_date, previous_session_date)
         for symbol in ticker_symbols
     }
-    validate_core_datasets(datasets)
+    validate_core_datasets(
+        datasets,
+        expected_session_date=session_date,
+        expected_previous_session_date=previous_session_date,
+    )
 
     sp = datasets["^GSPC"]
     nd = datasets["^IXIC"]
@@ -648,11 +765,11 @@ def generate_html():
     ftse = datasets["^FTSE"]
     hsi = datasets["^HSI"]
 
-    week_start_str = fmt_date(report_start)
-    today_str = fmt_date(report_end)
-    year_str = report_end.strftime("%Y")
+    session_date_short = fmt_date(session_date)
+    previous_session_short = fmt_date(previous_session_date)
+    year_str = session_date.strftime("%Y")
     full_date = fmt_date(
-        datetime.datetime.combine(report_end, datetime.time(), tzinfo=NY_TZ),
+        datetime.datetime.combine(session_date, datetime.time(), tzinfo=NY_TZ),
         include_day=False,
     )
 
@@ -670,7 +787,7 @@ def generate_html():
         "Comm. Services (XLC)": "XLC",
     }
     sector_results = {
-        name: fetch_weekly_data(ticker, start_date=previous_week_end, end_date=week_end)
+        name: fetch_daily_data(ticker, session_date, previous_session_date)
         for name, ticker in sectors.items()
     }
     sector_perf = {
@@ -680,7 +797,7 @@ def generate_html():
     }
     sorted_sectors = sorted(sector_perf.items(), key=lambda item: item[1], reverse=True)
     if len(sorted_sectors) < 4:
-        raise ValueError("Insufficient sector data to build the weekly report.")
+        raise ValueError("Insufficient sector data to build the daily report.")
 
     all_sectors_ranked = sorted_sectors
     top_sectors = sorted_sectors[:4]
@@ -690,18 +807,18 @@ def generate_html():
         f"{name} {value:+.2f}%" for name, value in sorted_sectors
     )
     sector_prompt = (
-        "Write four one-sentence captions for a weekly sector ranking: two about leaders and two about laggards. "
-        "Be specific, cite percentages, and return only JSON keys top_bullet1, top_bullet2, "
+        "Write four one-sentence captions for a completed-session sector ranking: two about leaders and two about laggards. "
+        "Be specific, cite daily percentages, label explanations as inference, and return only JSON keys top_bullet1, top_bullet2, "
         "bot_bullet1, bot_bullet2.\n"
         f"All sectors: {all_sectors_str}\n"
         f"Top 4: {top_sectors}\nBottom 4: {bottom_sectors}\n"
-        f"S&P 500: {sp['pct_change']:+.2f}% WTD; VIX: {vix['end_price']:.2f}."
+        f"S&P 500: {sp['pct_change']:+.2f}% 1D; VIX: {vix['end_price']:.2f}."
     )
     sector_fallback = {
-        "top_bullet1": f"{top_sectors[0][0]} led the ranking at {top_sectors[0][1]:+.2f}% WTD.",
-        "top_bullet2": f"{top_sectors[1][0]} followed at {top_sectors[1][1]:+.2f}% WTD.",
-        "bot_bullet1": f"{bottom_sectors[0][0]} remained in the lower tier at {bottom_sectors[0][1]:+.2f}% WTD.",
-        "bot_bullet2": f"{bottom_sectors[-1][0]} ranked last at {bottom_sectors[-1][1]:+.2f}% WTD.",
+        "top_bullet1": f"{top_sectors[0][0]} led the session ranking at {top_sectors[0][1]:+.2f}%.",
+        "top_bullet2": f"{top_sectors[1][0]} followed at {top_sectors[1][1]:+.2f}% for the session.",
+        "bot_bullet1": f"{bottom_sectors[0][0]} remained in the lower tier at {bottom_sectors[0][1]:+.2f}%.",
+        "bot_bullet2": f"{bottom_sectors[-1][0]} ranked last at {bottom_sectors[-1][1]:+.2f}% for the session.",
     }
     sector_bullets = (
         claude_json(
@@ -715,12 +832,12 @@ def generate_html():
     )
     sector_bullets = sanitize_text_map(sector_bullets)
 
-    hourly_charts = {
-        symbol: fetch_weekly_chart_data(symbol, start_date=report_start, end_date=week_end)
+    session_charts = {
+        symbol: fetch_daily_chart_data(symbol, session_date, fallback_data=datasets[symbol])
         for _, symbol in SUMMARY_TILE_TICKERS
     }
     metric_tiles = "".join(
-        render_metric_tile(name, symbol, datasets[symbol], hourly_charts[symbol])
+        render_metric_tile(name, symbol, datasets[symbol], session_charts[symbol])
         for name, symbol in SUMMARY_TILE_TICKERS
     )
 
@@ -738,23 +855,23 @@ def generate_html():
     megacap_data = {
         ticker: {
             "name": company,
-            "result": fetch_weekly_data(ticker, start_date=previous_week_end, end_date=week_end),
+            "result": fetch_daily_data(ticker, session_date, previous_session_date),
         }
         for ticker, company in megacaps.items()
     }
     mc_lines = "\n".join(
         f"- {ticker} ({entry['name']}): ${entry['result']['end_price']:,.2f}, "
-        f"{entry['result']['pct_change']:+.2f}% WTD"
+        f"{entry['result']['pct_change']:+.2f}% 1D"
         for ticker, entry in megacap_data.items()
     )
     mc_prompt = (
-        "Write one concise analytical sentence per ticker. Do not start with the ticker or company name. "
-        "Return only a JSON object mapping each ticker to its sentence.\n"
-        f"S&P 500: {sp['pct_change']:+.2f}% WTD; VIX: {vix['end_price']:.2f}; "
+        "Write one concise analytical sentence per ticker about the completed session. Do not start with the ticker or company name. "
+        "Distinguish observed price action from inferred significance. Return only a JSON object mapping each ticker to its sentence.\n"
+        f"S&P 500: {sp['pct_change']:+.2f}% 1D; VIX: {vix['end_price']:.2f}; "
         f"10-year: {tnx['end_price']:.2f}%.\n{mc_lines}"
     )
     mc_fallback = {
-        ticker: f"Closed at ${entry['result']['end_price']:,.2f} after a {entry['result']['pct_change']:+.2f}% weekly move."
+        ticker: f"Closed at ${entry['result']['end_price']:,.2f} after a {entry['result']['pct_change']:+.2f}% session move."
         for ticker, entry in megacap_data.items()
     }
     mc_descriptions = (
@@ -791,11 +908,12 @@ def generate_html():
     )
 
     global_prompt = (
-        "Write one short status sentence for each global index. Return only JSON keys nikkei, stoxx, ftse, hsi.\n"
-        f"Nikkei: {n225['pct_change']:+.2f}% WTD\n"
-        f"Euro Stoxx 50: {stoxx['pct_change']:+.2f}% WTD\n"
-        f"FTSE 100: {ftse['pct_change']:+.2f}% WTD\n"
-        f"Hang Seng: {hsi['pct_change']:+.2f}% WTD"
+        "Write one short observed-status sentence for each index's latest daily close. "
+        "Do not claim a cause without supplied evidence. Return only JSON keys nikkei, stoxx, ftse, hsi.\n"
+        f"Nikkei: {n225['pct_change']:+.2f}% 1D\n"
+        f"Euro Stoxx 50: {stoxx['pct_change']:+.2f}% 1D\n"
+        f"FTSE 100: {ftse['pct_change']:+.2f}% 1D\n"
+        f"Hang Seng: {hsi['pct_change']:+.2f}% 1D"
     )
     global_fallback = {
         "nikkei": "Japanese equities reflected regional growth and currency positioning.",
@@ -824,8 +942,9 @@ def generate_html():
     )
 
     crypto_prompt = (
-        "Write one short analytical sentence for BTC, ETH, SOL, and XRP. Return only JSON keys btc, eth, sol, xrp.\n"
-        f"BTC {btc['pct_change']:+.2f}% WTD; ETH {eth['pct_change']:+.2f}%; "
+        "Write one short daily-close analytical sentence for BTC, ETH, SOL, and XRP. "
+        "Distinguish observations from inference. Return only JSON keys btc, eth, sol, xrp.\n"
+        f"BTC {btc['pct_change']:+.2f}% 1D; ETH {eth['pct_change']:+.2f}%; "
         f"SOL {sol['pct_change']:+.2f}%; XRP {xrp['pct_change']:+.2f}%."
     )
     crypto_fallback = {
@@ -847,6 +966,7 @@ def generate_html():
     crypto_descriptions = sanitize_text_map(crypto_descriptions)
 
     lookahead_context = {
+        "session_date": session_date.isoformat(),
         "sp_pct": sp["pct_change"],
         "vix_close": vix["end_price"],
         "tnx_close": tnx["end_price"],
@@ -859,16 +979,17 @@ def generate_html():
         "oil_pct": oil["pct_change"],
         "gold_pct": gold["pct_change"],
     }
-    lookahead = (
-        generate_lookahead_claude(lookahead_context)
+    next_session_outlook = (
+        generate_next_session_outlook_claude(lookahead_context)
         if ai_enabled
-        else build_lookahead_fallback(lookahead_context)
+        else build_next_session_outlook_fallback(lookahead_context)
     )
     for key in ("macro", "fed_policy", "earnings_and_catalysts", "risk_factors"):
-        if not isinstance(lookahead.get(key), list):
-            lookahead[key] = [str(lookahead.get(key, ""))]
+        if not isinstance(next_session_outlook.get(key), list):
+            next_session_outlook[key] = [str(next_session_outlook.get(key, ""))]
 
     takeaway_context = {
+        "session_date": session_date.isoformat(),
         "sp_pct": sp["pct_change"],
         "nd_pct": nd["pct_change"],
         "dj_pct": dj["pct_change"],
@@ -878,15 +999,15 @@ def generate_html():
         "top_sector": top_sectors[0][0],
         "bottom_sector": bottom_sectors[-1][0],
     }
-    takeaway = (
-        generate_takeaway_claude(takeaway_context)
+    daily_takeaway = (
+        generate_daily_takeaway_claude(takeaway_context)
         if ai_enabled
-        else build_takeaway_fallback(takeaway_context)
+        else build_daily_takeaway_fallback(takeaway_context)
     )
-    takeaway = sanitize_text_map(takeaway)
+    daily_takeaway = sanitize_text_map(daily_takeaway)
 
-    spy = fetch_weekly_data("SPY", start_date=previous_week_end, end_date=week_end)
-    rsp = fetch_weekly_data("RSP", start_date=previous_week_end, end_date=week_end)
+    spy = fetch_daily_data("SPY", session_date, previous_session_date)
+    rsp = fetch_daily_data("RSP", session_date, previous_session_date)
     advances = sum(1 for value in sector_perf.values() if value > 0)
     declines = sum(1 for value in sector_perf.values() if value < 0)
     breadth_share = round((advances / len(sector_perf)) * 100, 1) if sector_perf else 0.0
@@ -918,24 +1039,24 @@ def generate_html():
         )
     )
 
-    lookahead_cards = "".join(
+    next_session_outlook_cards = "".join(
         (
-            f'<article class="decision-card"><span>Macro</span>{render_bullet_list(lookahead["macro"])}</article>',
-            f'<article class="decision-card"><span>Fed & Rates</span>{render_bullet_list(lookahead["fed_policy"])}</article>',
-            f'<article class="decision-card"><span>Earnings & Catalysts</span>{render_bullet_list(lookahead["earnings_and_catalysts"])}</article>',
-            f'<article class="decision-card"><span>Risk Dashboard</span>{render_bullet_list(lookahead["risk_factors"])}</article>',
+            f'<article class="decision-card"><span>Macro</span>{render_bullet_list(next_session_outlook["macro"])}</article>',
+            f'<article class="decision-card"><span>Fed & Rates</span>{render_bullet_list(next_session_outlook["fed_policy"])}</article>',
+            f'<article class="decision-card"><span>Earnings & Catalysts</span>{render_bullet_list(next_session_outlook["earnings_and_catalysts"])}</article>',
+            f'<article class="decision-card"><span>Risk Dashboard</span>{render_bullet_list(next_session_outlook["risk_factors"])}</article>',
         )
     )
 
-    takeaway_html = (
+    daily_takeaway_html = (
         '<ul class="takeaway-list">'
-        f'<li><span>What moved</span>{takeaway["what_moved"]}</li>'
-        f'<li><span>Why</span>{takeaway["why"]}</li>'
-        f'<li><span>What to watch</span>{takeaway["what_to_watch"]}</li>'
+        f'<li><span>What moved</span>{daily_takeaway["what_moved"]}</li>'
+        f'<li><span>Possible drivers</span>{daily_takeaway["why"]}</li>'
+        f'<li><span>What to watch next</span>{daily_takeaway["what_to_watch"]}</li>'
         "</ul>"
     )
 
-    title = f"Weekly Market Summary – {week_start_str}–{today_str}, {year_str}"
+    title = f"Daily Market Summary – {full_date}"
     html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1072,7 +1193,7 @@ td {{ color:var(--muted); font-size:11px; }}
   <div class="header-main">
     <div class="report-id">
       <div class="report-mark">MS</div>
-      <div class="report-title"><strong>Weekly Market Digest</strong><span>{week_start_str}–{today_str}, {year_str} · Published {full_date}</span></div>
+      <div class="report-title"><strong>Daily Market Close</strong><span>{session_date_short}, {year_str} · Versus {previous_session_short} close</span></div>
     </div>
     <div class="header-meta"><span class="tone-badge {tone_class}">{market_tone}</span><span class="date-chip">Post-Market Close</span></div>
   </div>
@@ -1094,15 +1215,15 @@ td {{ color:var(--muted); font-size:11px; }}
   </section>
 
   <section class="section" id="megacaps">
-    <div class="section-heading"><div><div class="section-label">02 · Mega-Cap & AI</div><h2>Price action at a glance</h2></div><p>Daily-close sparklines now sit beside price, high, low, and WTD statistics.</p></div>
+    <div class="section-heading"><div><div class="section-label">02 · Mega-Cap & AI</div><h2>Session price action</h2></div><p>Each row shows the completed session close, high, low, and 1D move.</p></div>
     <div class="panel company-list">{megacap_html}</div>
   </section>
 
-  {tradingview_widget_html()}
+{tradingview_widget_html()}
 
   <section class="section" id="global">
-    <div class="section-heading"><div><div class="section-label">03 · Global Markets</div><h2>Cross-market read-through</h2></div><p>Daily-close sparklines make regional momentum visible without opening another chart.</p></div>
-    <div class="panel table-wrap"><table><thead><tr><th>Index</th><th>Close</th><th>WTD</th><th>5D Trend</th><th>Status</th></tr></thead><tbody>{global_rows}</tbody></table></div>
+    <div class="section-heading"><div><div class="section-label">03 · Global Markets</div><h2>Cross-market read-through</h2></div><p>Latest daily closes provide context around the completed U.S. session.</p></div>
+    <div class="panel table-wrap"><table><thead><tr><th>Index</th><th>Close</th><th>1D</th><th>Session Trend</th><th>Status</th></tr></thead><tbody>{global_rows}</tbody></table></div>
   </section>
 
   <section class="section" id="crypto">
@@ -1112,12 +1233,12 @@ td {{ color:var(--muted); font-size:11px; }}
 
   <section class="section" id="takeaway">
     <div class="section-heading"><div><div class="section-label">05 · Decision Summary</div><h2>Investor takeaway</h2></div><p>Three decisions, not another paragraph.</p></div>
-    {takeaway_html}
+    {daily_takeaway_html}
   </section>
 
   <section class="section" id="outlook">
-    <div class="section-heading"><div><div class="section-label">06 · Looking Ahead</div><h2>What could move markets next</h2></div><p>Each category is reduced to two scannable bullets.</p></div>
-    <div class="decision-grid">{lookahead_cards}</div>
+    <div class="section-heading"><div><div class="section-label">06 · Next Session Outlook</div><h2>What to watch next</h2></div><p>Each category is reduced to two scannable, evidence-aware bullets.</p></div>
+    <div class="decision-grid">{next_session_outlook_cards}</div>
   </section>
 
   <section class="section" id="macro">
@@ -1131,28 +1252,25 @@ td {{ color:var(--muted); font-size:11px; }}
   </section>
 </main>
 
-<footer class="footer"><span>Automated Weekly Market Summary · Data via yfinance</span><span>Narrative mode: {'Claude' if ai_enabled else 'Deterministic fallback'} · {full_date}</span></footer>
+<footer class="footer"><span>Automated Daily Market Summary · Completed U.S. session · Data via yfinance</span><span>Narrative mode: {'Claude' if ai_enabled else 'Deterministic fallback'} · {full_date}</span></footer>
 </div>
 </body>
 </html>
 '''
 
     snapshot = {
-        "generated_at": current_market_now().isoformat(),
+        "report_type": "daily_market_close",
+        "session_date": session_date.isoformat(),
+        "previous_session_date": previous_session_date.isoformat(),
+        "generated_at": normalize_market_now(now).isoformat(),
         "report_mode": "ai" if ai_enabled else "deterministic_fallback",
-        "report_window": {
-            "start_date": report_start.isoformat(),
-            "end_date": report_end.isoformat(),
-            "comparison_start": previous_week_end.isoformat(),
-            "comparison_end": week_end.isoformat(),
-        },
         "market_data": datasets,
-        "hourly_charts": hourly_charts,
-        "sector_performance": sector_perf,
+        "session_charts": session_charts,
+        "daily_sector_performance": sector_perf,
         "all_sectors_ranked": all_sectors_ranked,
         "top_sectors": top_sectors,
         "bottom_sectors": bottom_sectors,
-        "market_breadth": {
+        "daily_market_breadth": {
             "advances": advances,
             "declines": declines,
             "positive_sector_share": breadth_share,
@@ -1164,16 +1282,18 @@ td {{ color:var(--muted); font-size:11px; }}
             "megacap_descriptions": mc_descriptions,
             "global_status": global_status,
             "crypto_descriptions": crypto_descriptions,
-            "takeaway": takeaway,
-            "lookahead": lookahead,
+            "daily_takeaway": daily_takeaway,
+            "next_session_outlook": next_session_outlook,
         },
     }
 
-    with open("index.html", "w", encoding="utf-8") as output_file:
-        output_file.write(html_content)
-    with open("report_snapshot.json", "w", encoding="utf-8") as snapshot_file:
-        json.dump(snapshot, snapshot_file, indent=2)
-    print(f"Successfully generated index.html for {full_date}")
+    report_output = Path(report_path)
+    snapshot_output = Path(snapshot_path)
+    report_output.parent.mkdir(parents=True, exist_ok=True)
+    report_output.write_text(html_content, encoding="utf-8")
+    snapshot_output.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
+    print(f"Successfully generated {snapshot_output} and {report_output} for {full_date}")
+    return True
 
 
 if __name__ == "__main__":

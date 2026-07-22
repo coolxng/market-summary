@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Market Summary – July 21, 2026</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* DESIGN TOKENS · Editorial-Finance Premium Minimalist */
+:root {
+  --bg:#000000; --surface:#080808; --surface-2:#101010;
+  --border:rgba(255,255,255,.10); --border-hover:rgba(255,255,255,.18); --text:rgba(255,255,255,.94); --muted:rgba(255,255,255,.58);
+  --green:#30d158; --red:#ff453a; --accent:#0a84ff; --purple:#bf5af2;
+  --shadow:none;
+}
+* { box-sizing:border-box; }
+html { background:var(--bg); scroll-behavior:smooth; }
+body { margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.5; overflow-x:hidden; }
+a { color:inherit; text-decoration:none; }
+.positive { color:var(--green)!important; } .negative { color:var(--red)!important; }
+.report-shell { position:relative; }
+.report-header { position:sticky; top:0; z-index:20; background:#000; border-bottom:1px solid var(--border); }
+.header-main { max-width:1320px; margin:auto; padding:18px 34px 14px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+.report-id { display:flex; align-items:center; gap:14px; min-width:0; }
+.report-mark { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:var(--accent); color:#fff; font:700 13px 'Space Grotesk'; }
+.report-title { min-width:0; }
+.report-title strong { display:block; font:600 17px 'Space Grotesk'; letter-spacing:-.02em; }
+.report-title span { display:block; color:var(--muted); font-size:11px; margin-top:2px; }
+.header-meta { display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+.tone-badge,.date-chip { padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:var(--surface-2); }
+.ticker-window { overflow:hidden; border-top:1px solid var(--border); background:#000; }
+.ticker-track { display:flex; width:max-content; animation:ticker 55s linear infinite; }
+.ticker-track:hover { animation-play-state:paused; }
+@keyframes ticker { to { transform:translateX(-50%); } }
+.ticker-item { display:grid; grid-template-columns:auto auto; column-gap:10px; padding:10px 24px; border-right:1px solid var(--border); white-space:nowrap; }
+.ticker-name { color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }
+.ticker-value { font:600 12px 'Space Grotesk'; }
+.ticker-change { grid-column:2; font-size:9px; font-weight:700; }
+.container { max-width:1320px; margin:auto; padding:26px 34px 80px; }
+.metric-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:26px; }
+.metric-tile,.panel,.asset-card,.decision-card,.tradingview-card { background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); }
+.metric-tile:hover,.panel:hover,.asset-card:hover,.decision-card:hover,.tradingview-card:hover,.takeaway-list li:hover { background:var(--surface-2); border-color:var(--border-hover); }
+.metric-tile { border-radius:12px; padding:14px 15px 10px; min-width:0; }
+.metric-head { display:flex; justify-content:space-between; gap:8px; align-items:center; }
+.metric-name { color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.11em; font-weight:700; }
+.metric-change { font-size:10px; font-weight:700; }
+.metric-value { font:700 25px 'Space Grotesk'; letter-spacing:-.04em; margin-top:8px; }
+.metric-chart { height:52px; margin-top:5px; }
+.metric-sparkline,.row-sparkline,.table-sparkline { width:100%; height:100%; display:block; overflow:visible; }
+.sparkline-line { fill:none; stroke:currentColor; stroke-width:2.25; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round; }
+.sparkline-muted { stroke:var(--muted); stroke-width:1; stroke-dasharray:3 4; }
+.section { margin-top:44px; padding-top:28px; border-top:1px solid var(--border); }
+.section-heading { display:flex; justify-content:space-between; align-items:end; gap:24px; margin-bottom:17px; }
+.section-heading h2 { margin:2px 0 0; font:600 clamp(22px,3vw,32px) 'Space Grotesk'; letter-spacing:-.035em; }
+.section-heading p { margin:0; color:var(--muted); max-width:560px; font-size:12px; text-align:right; }
+.section-label { color:var(--accent); font-size:9px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }
+.panel { border-radius:12px; padding:18px; }
+.breadth-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }
+.breadth-stat { border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--surface-2); }
+.breadth-stat span { color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }
+.breadth-stat strong { display:block; font:700 20px 'Space Grotesk'; margin-top:3px; }
+.sector-chart { display:flex; flex-direction:column; gap:9px; }
+.sector-row { display:grid; grid-template-columns:28px minmax(150px,220px) minmax(120px,1fr) 70px; gap:10px; align-items:center; }
+.sector-rank { color:var(--muted); font:600 10px 'Space Grotesk'; }
+.sector-name { font-size:11px; font-weight:600; }
+.sector-track { height:9px; border-radius:999px; background:rgba(255,255,255,.05); overflow:hidden; }
+.sector-bar { height:100%; border-radius:999px; background:currentColor; opacity:.9; }
+.sector-value { font:700 11px 'Space Grotesk'; text-align:right; }
+.caption-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.caption-grid p { margin:0; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; color:var(--muted); font-size:11px; }
+.company-list { overflow:hidden; padding:0; }
+.company-row { display:grid; grid-template-columns:150px minmax(220px,1fr) 150px 260px; gap:16px; align-items:center; padding:15px 18px; border-bottom:1px solid var(--border); }
+.company-row:last-child { border-bottom:0; }
+.company-id { display:flex; align-items:center; gap:10px; }
+.company-logo { width:32px; height:32px; border-radius:50%; padding:4px; background:rgba(255,255,255,.08); }
+.company-id strong { display:block; font:700 12px 'Space Grotesk'; }
+.company-id span { display:block; color:var(--muted); font-size:9px; margin-top:2px; }
+.company-note { color:var(--muted); font-size:11px; }
+.company-spark { height:48px; }
+.company-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+.company-stats span { font:600 10px 'Space Grotesk'; white-space:nowrap; }
+.company-stats small { display:block; color:var(--muted); font:700 8px Inter; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }
+.data-error { color:var(--red); font-size:9px; }
+.table-wrap { overflow:auto; padding:0; }
+table { width:100%; border-collapse:collapse; min-width:880px; }
+th { color:var(--muted); background:var(--surface-2); text-align:left; font-size:9px; letter-spacing:.1em; text-transform:uppercase; }
+th,td { padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }
+tr:last-child td { border-bottom:0; }
+td { color:var(--muted); font-size:11px; }
+.global-name { color:var(--text); font-weight:700; }
+.number { color:var(--text); font:600 11px 'Space Grotesk'; white-space:nowrap; }
+.spark-cell { width:140px; height:45px; }
+.asset-grid,.decision-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+.asset-card,.decision-card { border-radius:12px; padding:15px; }
+.asset-card span,.decision-card>span { color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.11em; font-weight:700; }
+.asset-card strong { display:block; font:700 22px 'Space Grotesk'; margin-top:7px; }
+.asset-card em { display:block; font-style:normal; font-size:10px; font-weight:700; margin-top:3px; }
+.asset-card p { color:var(--muted); font-size:10px; margin:10px 0 0; }
+.takeaway-list,.decision-list { list-style:none; padding:0; margin:0; }
+.takeaway-list { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.takeaway-list li { border:1px solid var(--border); background:var(--surface); border-radius:14px; padding:15px; color:var(--text); font-size:11px; }
+.takeaway-list span { display:block; color:var(--accent); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; margin-bottom:7px; }
+.decision-list { margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+.decision-list li { color:var(--muted); font-size:10px; padding-left:13px; position:relative; }
+.decision-list li:before { content:'•'; position:absolute; left:0; color:var(--accent); }
+.compact-heading { align-items:center; }
+.tradingview-card { border-radius:12px; overflow:hidden; height:520px; }
+.tradingview-widget-container,.tradingview-widget-container__widget,.tradingview-card iframe { width:100%!important; height:100%!important; }
+.footer { max-width:1320px; margin:auto; padding:30px 34px 46px; color:var(--muted); font-size:10px; display:flex; justify-content:space-between; gap:18px; border-top:1px solid var(--border); }
+@media(max-width:1100px) {
+  .metric-grid { grid-template-columns:repeat(2,1fr); }
+  .company-row { grid-template-columns:135px 1fr 130px; }
+  .company-stats { grid-column:2 / 4; }
+  .asset-grid,.decision-grid { grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:720px) {
+  .header-main,.container,.footer { padding-left:16px; padding-right:16px; }
+  .header-main,.section-heading { align-items:flex-start; }
+  .header-main,.section-heading,.footer { flex-direction:column; }
+  .header-meta { justify-content:flex-start; }
+  .section-heading p { text-align:left; }
+  .metric-grid,.breadth-strip,.caption-grid,.asset-grid,.decision-grid,.takeaway-list { grid-template-columns:1fr; }
+  .sector-row { grid-template-columns:24px 130px 1fr 62px; gap:7px; }
+  .company-row { grid-template-columns:1fr 110px; }
+  .company-note,.company-stats { grid-column:1 / 3; }
+}
+@media(prefers-reduced-motion:reduce) { .ticker-track { animation:none; } }
+</style>
+</head>
+<body>
+<div class="report-shell">
+<header class="report-header">
+  <div class="header-main">
+    <div class="report-id">
+      <div class="report-mark">MS</div>
+      <div class="report-title"><strong>Daily Market Close</strong><span>Jul 21, 2026 · Versus Jul 20 close</span></div>
+    </div>
+    <div class="header-meta"><span class="tone-badge positive">Risk-On</span><span class="date-chip">Post-Market Close</span></div>
+  </div>
+  <div class="ticker-window" aria-label="Scrolling market ticker"><div class="ticker-track"><div class="ticker-item"><span class="ticker-name">S&amp;P 500</span><span class="ticker-value">7,509.20</span><span class="ticker-change positive">+0.89% 1D</span></div><div class="ticker-item"><span class="ticker-name">Nasdaq</span><span class="ticker-value">25,837.21</span><span class="ticker-change positive">+1.29% 1D</span></div><div class="ticker-item"><span class="ticker-name">DJIA</span><span class="ticker-value">52,224.64</span><span class="ticker-change positive">+0.74% 1D</span></div><div class="ticker-item"><span class="ticker-name">VIX</span><span class="ticker-value">17.05</span><span class="ticker-change negative">-8.58% 1D</span></div><div class="ticker-item"><span class="ticker-name">10Y</span><span class="ticker-value">4.63%</span><span class="ticker-change positive">+0.65% 1D</span></div><div class="ticker-item"><span class="ticker-name">DXY</span><span class="ticker-value">101.18</span><span class="ticker-change positive">+0.19% 1D</span></div><div class="ticker-item"><span class="ticker-name">BTC</span><span class="ticker-value">$65,230</span><span class="ticker-change positive">+0.83% 1D</span></div><div class="ticker-item"><span class="ticker-name">ETH</span><span class="ticker-value">$1,904</span><span class="ticker-change positive">+1.72% 1D</span></div><div class="ticker-item"><span class="ticker-name">S&amp;P 500</span><span class="ticker-value">7,509.20</span><span class="ticker-change positive">+0.89% 1D</span></div><div class="ticker-item"><span class="ticker-name">Nasdaq</span><span class="ticker-value">25,837.21</span><span class="ticker-change positive">+1.29% 1D</span></div><div class="ticker-item"><span class="ticker-name">DJIA</span><span class="ticker-value">52,224.64</span><span class="ticker-change positive">+0.74% 1D</span></div><div class="ticker-item"><span class="ticker-name">VIX</span><span class="ticker-value">17.05</span><span class="ticker-change negative">-8.58% 1D</span></div><div class="ticker-item"><span class="ticker-name">10Y</span><span class="ticker-value">4.63%</span><span class="ticker-change positive">+0.65% 1D</span></div><div class="ticker-item"><span class="ticker-name">DXY</span><span class="ticker-value">101.18</span><span class="ticker-change positive">+0.19% 1D</span></div><div class="ticker-item"><span class="ticker-name">BTC</span><span class="ticker-value">$65,230</span><span class="ticker-change positive">+0.83% 1D</span></div><div class="ticker-item"><span class="ticker-name">ETH</span><span class="ticker-value">$1,904</span><span class="ticker-change positive">+1.72% 1D</span></div></div></div>
+</header>
+
+<main class="container">
+  <section aria-label="Core market metrics"><div class="metric-grid"><article class="metric-tile"><div class="metric-head"><span class="metric-name">S&amp;P 500</span><span class="metric-change positive">▲ +0.89%</span></div><div class="metric-value">7,509.20</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 7,483.14 to 7,507.32" preserveAspectRatio="none"><polyline points="4.00,35.19 6.23,37.93 8.47,47.00 10.70,43.04 12.94,41.53 15.17,39.49 17.40,38.33 19.64,40.52 21.87,36.13 24.10,33.12 26.34,33.00 28.57,25.02 30.81,25.28 33.04,30.45 35.27,27.53 37.51,24.95 39.74,27.27 41.97,26.05 44.21,33.20 46.44,23.32 48.68,21.50 50.91,19.28 53.14,17.36 55.38,14.61 57.61,15.94 59.84,18.19 62.08,17.92 64.31,15.36 66.55,17.24 68.78,19.57 71.01,12.67 73.25,12.95 75.48,12.06 77.71,9.61 79.95,8.68 82.18,8.18 84.42,7.01 86.65,7.45 88.88,8.13 91.12,9.29 93.35,5.00 95.58,7.88 97.82,8.40 100.05,7.17 102.29,7.77 104.52,10.69 106.75,9.90 108.99,10.21 111.22,10.56 113.45,7.11 115.69,7.69 117.92,6.08 120.16,7.52 122.39,8.12 124.62,9.78 126.86,9.48 129.09,11.99 131.32,12.20 133.56,10.79 135.79,12.01 138.03,14.09 140.26,12.44 142.49,8.65 144.73,9.18 146.96,11.57 149.19,10.49 151.43,11.24 153.66,12.92 155.90,11.71 158.13,10.90 160.36,11.12 162.60,11.81 164.83,12.76 167.06,9.94 169.30,8.90 171.53,8.52 173.77,10.33 176.00,12.13" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">Nasdaq</span><span class="metric-change positive">▲ +1.29%</span></div><div class="metric-value">25,837.21</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 25,717.89 to 25,829.61" preserveAspectRatio="none"><polyline points="4.00,40.42 6.23,34.54 8.47,41.51 10.70,45.31 12.94,44.50 15.17,40.68 17.40,44.31 19.64,47.00 21.87,39.31 24.10,35.15 26.34,36.80 28.57,25.83 30.81,24.94 33.04,26.95 35.27,24.88 37.51,22.17 39.74,23.14 41.97,23.24 44.21,31.54 46.44,18.15 48.68,15.28 50.91,15.66 53.14,12.22 55.38,11.54 57.61,11.24 59.84,14.34 62.08,16.19 64.31,11.88 66.55,14.06 68.78,17.68 71.01,10.84 73.25,11.32 75.48,12.46 77.71,11.74 79.95,11.01 82.18,12.87 84.42,12.17 86.65,10.52 88.88,12.79 91.12,11.53 93.35,7.17 95.58,8.60 97.82,7.39 100.05,6.24 102.29,7.75 104.52,8.98 106.75,7.99 108.99,9.13 111.22,8.47 113.45,6.36 115.69,7.62 117.92,5.00 120.16,6.75 122.39,7.22 124.62,6.79 126.86,6.90 129.09,8.48 131.32,9.31 133.56,8.62 135.79,10.92 138.03,12.16 140.26,10.59 142.49,6.64 144.73,9.09 146.96,11.46 149.19,12.35 151.43,14.00 153.66,14.69 155.90,14.95 158.13,13.25 160.36,14.35 162.60,16.34 164.83,14.89 167.06,12.14 169.30,11.17 171.53,10.41 173.77,11.26 176.00,14.96" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">DJIA</span><span class="metric-change positive">▲ +0.74%</span></div><div class="metric-value">52,224.64</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 52,067.85 to 52,221.38" preserveAspectRatio="none"><polyline points="4.00,31.94 6.23,38.30 8.47,47.00 10.70,40.07 12.94,39.55 15.17,36.81 17.40,26.64 19.64,26.05 21.87,22.98 24.10,23.72 26.34,24.04 28.57,21.61 30.81,21.21 33.04,29.65 35.27,28.59 37.51,24.61 39.74,30.12 41.97,28.41 44.21,28.70 46.44,26.13 48.68,26.00 50.91,21.21 53.14,23.91 55.38,20.72 57.61,21.35 59.84,21.13 62.08,19.44 64.31,18.50 66.55,18.67 68.78,19.37 71.01,17.16 73.25,15.98 75.48,14.99 77.71,13.31 79.95,11.74 82.18,8.50 84.42,6.68 86.65,8.14 88.88,7.03 91.12,8.41 93.35,5.00 95.58,6.43 97.82,8.83 100.05,8.46 102.29,9.22 104.52,12.47 106.75,11.68 108.99,12.77 111.22,14.75 113.45,12.79 115.69,12.91 117.92,12.92 120.16,14.36 122.39,15.25 124.62,17.10 126.86,17.34 129.09,19.72 131.32,19.80 133.56,18.79 135.79,17.49 138.03,19.81 140.26,19.15 142.49,18.54 144.73,19.15 146.96,19.76 149.19,18.88 151.43,18.65 153.66,19.21 155.90,18.03 158.13,18.50 160.36,18.47 162.60,16.51 164.83,19.58 167.06,18.28 169.30,18.39 171.53,18.88 173.77,20.27 176.00,17.89" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">VIX</span><span class="metric-change negative">▼ −8.58%</span></div><div class="metric-value">17.05</div><div class="metric-chart"><svg class="metric-sparkline negative" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 17.65 to 17.04" preserveAspectRatio="none"><polyline points="4.00,17.60 6.21,15.31 8.41,5.00 10.62,8.44 12.82,9.58 15.03,13.40 17.23,13.40 19.44,14.16 21.64,17.98 23.85,22.95 26.05,21.80 28.26,27.15 30.46,28.67 32.67,23.71 34.87,26.00 37.08,29.82 39.28,27.53 41.49,28.67 43.69,24.09 45.90,30.96 48.10,33.64 50.31,34.78 52.51,35.55 54.72,37.84 56.92,35.93 59.13,34.40 61.33,34.40 63.54,35.55 65.74,34.40 67.95,32.49 70.15,35.93 72.36,36.69 74.56,37.07 76.77,38.60 78.97,40.51 81.18,39.75 83.38,38.98 85.59,38.60 87.79,38.22 90.00,37.45 92.21,40.51 94.41,38.60 96.62,37.84 98.82,38.60 101.03,39.36 103.23,38.22 105.44,38.22 107.64,38.60 109.85,39.36 112.05,41.65 114.26,40.51 116.46,42.04 118.67,40.89 120.87,41.65 123.08,40.89 125.28,40.89 127.49,37.84 129.69,36.69 131.90,38.98 134.10,38.60 136.31,38.22 138.51,39.36 140.72,41.65 142.92,40.89 145.13,40.89 147.33,42.42 149.54,42.80 151.74,41.65 153.95,42.04 156.15,42.80 158.36,42.42 160.56,42.42 162.77,42.04 164.97,43.95 167.18,45.47 169.38,47.00 171.59,46.24 173.79,45.85 176.00,40.89" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">10Y Yield</span><span class="metric-change positive">▲ +0.65%</span></div><div class="metric-value">4.63%</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 4.62 to 4.63" preserveAspectRatio="none"><polyline points="4.00,47.00 6.65,26.00 9.29,5.00 11.94,26.00 14.58,26.00 17.23,26.00 19.88,26.00 22.52,26.00 25.17,47.00 27.82,47.00 30.46,47.00 33.11,26.00 35.75,26.00 38.40,26.00 41.05,47.00 43.69,47.00 46.34,47.00 48.98,47.00 51.63,47.00 54.28,47.00 56.92,47.00 59.57,47.00 62.22,47.00 64.86,47.00 67.51,47.00 70.15,47.00 72.80,26.00 75.45,26.00 78.09,26.00 80.74,26.00 83.38,26.00 86.03,26.00 88.68,26.00 91.32,26.00 93.97,26.00 96.62,26.00 99.26,26.00 101.91,26.00 104.55,26.00 107.20,26.00 109.85,26.00 112.49,26.00 115.14,26.00 117.78,26.00 120.43,26.00 123.08,26.00 125.72,26.00 128.37,26.00 131.02,26.00 133.66,26.00 136.31,26.00 138.95,26.00 141.60,26.00 144.25,26.00 146.89,26.00 149.54,26.00 152.18,26.00 154.83,26.00 157.48,26.00 160.12,26.00 162.77,26.00 165.42,26.00 168.06,26.00 170.71,26.00 173.35,26.00 176.00,26.00" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">DXY</span><span class="metric-change positive">▲ +0.19%</span></div><div class="metric-value">101.18</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 100.98 to 101.18" preserveAspectRatio="none"><polyline points="4.00,47.00 176.00,5.00" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">Bitcoin</span><span class="metric-change positive">▲ +0.83%</span></div><div class="metric-value">$65,230</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 66,460.97 to 66,400.03" preserveAspectRatio="none"><polyline points="4.00,30.58 6.21,35.72 8.41,39.79 10.62,22.56 12.82,17.41 15.03,14.65 17.23,10.31 19.44,12.21 21.64,5.00 23.85,10.15 26.05,21.31 28.26,16.72 30.46,10.91 32.67,14.01 34.87,10.29 37.08,10.97 39.28,11.28 41.49,10.87 43.69,20.67 45.90,13.59 48.10,16.55 50.31,16.49 52.51,18.88 54.72,23.14 56.92,25.81 59.13,18.96 61.33,23.85 63.54,20.21 65.74,19.80 67.95,19.99 70.15,15.63 72.36,23.80 74.56,23.52 76.77,26.40 78.97,26.28 81.18,27.99 83.38,26.12 85.59,22.81 87.79,26.78 90.00,28.20 92.21,27.25 94.41,27.66 96.62,29.07 98.82,29.92 101.03,32.61 103.23,33.45 105.44,31.63 107.64,33.12 109.85,34.22 112.05,32.39 114.26,30.63 116.46,41.60 118.67,46.47 120.87,47.00 123.08,46.07 125.28,40.22 127.49,42.29 129.69,44.52 131.90,44.72 134.10,45.36 136.31,46.71 138.51,43.89 140.72,43.01 142.92,39.99 145.13,42.03 147.33,40.69 149.54,38.15 151.74,37.55 153.95,41.37 156.15,37.81 158.36,37.15 160.56,35.91 162.77,34.58 164.97,31.02 167.18,31.96 169.38,30.86 171.59,33.01 173.79,33.15 176.00,34.02" class="sparkline-line"/></svg></div></article><article class="metric-tile"><div class="metric-head"><span class="metric-name">Ethereum</span><span class="metric-change positive">▲ +1.72%</span></div><div class="metric-value">$1,904</div><div class="metric-chart"><svg class="metric-sparkline positive" viewBox="0 0 180 52" role="img" aria-label="Sparkline from 1,933.69 to 1,921.99" preserveAspectRatio="none"><polyline points="4.00,16.74 6.21,21.51 8.41,28.54 10.62,16.36 12.82,10.46 15.03,7.15 17.23,5.40 19.44,12.89 21.64,5.00 23.85,13.18 26.05,24.45 28.26,21.38 30.46,13.64 32.67,17.31 34.87,14.06 37.08,14.82 39.28,19.77 41.49,23.21 43.69,33.40 45.90,25.58 48.10,28.78 50.31,25.85 52.51,26.75 54.72,32.30 56.92,32.61 59.13,26.04 61.33,30.69 63.54,27.28 65.74,23.95 67.95,22.09 70.15,16.41 72.36,24.27 74.56,24.83 76.77,29.51 78.97,30.64 81.18,35.19 83.38,32.88 85.59,30.57 87.79,35.33 90.00,35.08 92.21,30.57 94.41,32.06 96.62,31.00 98.82,29.29 101.03,32.65 103.23,37.18 105.44,32.14 107.64,34.51 109.85,35.42 112.05,32.54 114.26,30.60 116.46,41.54 118.67,47.00 120.87,46.67 123.08,44.11 125.28,39.15 127.49,41.72 129.69,44.13 131.90,44.57 134.10,43.46 136.31,44.83 138.51,41.76 140.72,40.83 142.92,42.31 145.13,44.52 147.33,43.66 149.54,39.55 151.74,38.00 153.95,44.13 156.15,40.08 158.36,37.74 160.56,35.86 162.77,36.43 164.97,34.80 167.18,35.39 169.38,35.46 171.59,38.09 173.79,36.92 176.00,38.11" class="sparkline-line"/></svg></div></article></div></section>
+
+  <section class="section" id="sectors">
+    <div class="section-heading"><div><div class="section-label">01 · Breadth & Sectors</div><h2>All 11 sectors, ranked</h2></div><p>7 sectors advanced and 4 declined. Full ranking replaces prose-first sector coverage.</p></div>
+    <div class="breadth-strip">
+      <div class="breadth-stat"><span>Cap-Weighted S&P</span><strong>+0.89%</strong></div>
+      <div class="breadth-stat"><span>Equal-Weight S&P</span><strong>+0.16%</strong></div>
+      <div class="breadth-stat"><span>SPY Check</span><strong>+0.83%</strong></div>
+      <div class="breadth-stat"><span>Positive Sectors</span><strong>63.6%</strong></div>
+    </div>
+    <div class="panel"><div class="sector-chart" role="img" aria-label="All eleven sectors ranked by daily return"><div class="sector-row"><div class="sector-rank">01</div><div class="sector-name">Technology (XLK)</div><div class="sector-track"><div class="sector-bar positive" style="width:100.00%"></div></div><div class="sector-value positive">+2.89%</div></div><div class="sector-row"><div class="sector-rank">02</div><div class="sector-name">Energy (XLE)</div><div class="sector-track"><div class="sector-bar positive" style="width:33.56%"></div></div><div class="sector-value positive">+0.97%</div></div><div class="sector-row"><div class="sector-rank">03</div><div class="sector-name">Healthcare (XLV)</div><div class="sector-track"><div class="sector-bar positive" style="width:21.80%"></div></div><div class="sector-value positive">+0.63%</div></div><div class="sector-row"><div class="sector-rank">04</div><div class="sector-name">Industrials (XLI)</div><div class="sector-track"><div class="sector-bar positive" style="width:10.38%"></div></div><div class="sector-value positive">+0.30%</div></div><div class="sector-row"><div class="sector-rank">05</div><div class="sector-name">Cons. Discretionary (XLY)</div><div class="sector-track"><div class="sector-bar positive" style="width:7.96%"></div></div><div class="sector-value positive">+0.23%</div></div><div class="sector-row"><div class="sector-rank">06</div><div class="sector-name">Materials (XLB)</div><div class="sector-track"><div class="sector-bar positive" style="width:4.84%"></div></div><div class="sector-value positive">+0.14%</div></div><div class="sector-row"><div class="sector-rank">07</div><div class="sector-name">Financials (XLF)</div><div class="sector-track"><div class="sector-bar positive" style="width:4.15%"></div></div><div class="sector-value positive">+0.12%</div></div><div class="sector-row"><div class="sector-rank">08</div><div class="sector-name">Utilities (XLU)</div><div class="sector-track"><div class="sector-bar negative" style="width:2.50%"></div></div><div class="sector-value negative">-0.04%</div></div><div class="sector-row"><div class="sector-rank">09</div><div class="sector-name">Real Estate (XLRE)</div><div class="sector-track"><div class="sector-bar negative" style="width:2.50%"></div></div><div class="sector-value negative">-0.07%</div></div><div class="sector-row"><div class="sector-rank">10</div><div class="sector-name">Comm. Services (XLC)</div><div class="sector-track"><div class="sector-bar negative" style="width:23.88%"></div></div><div class="sector-value negative">-0.69%</div></div><div class="sector-row"><div class="sector-rank">11</div><div class="sector-name">Cons. Staples (XLP)</div><div class="sector-track"><div class="sector-bar negative" style="width:32.53%"></div></div><div class="sector-value negative">-0.94%</div></div></div><div class="caption-grid"><p>Technology (XLK) led the session ranking at +2.89%.</p><p>Energy (XLE) followed at +0.97% for the session.</p><p>Utilities (XLU) remained in the lower tier at -0.04%.</p><p>Cons. Staples (XLP) ranked last at -0.94% for the session.</p></div></div>
+  </section>
+
+  <section class="section" id="megacaps">
+    <div class="section-heading"><div><div class="section-label">02 · Mega-Cap & AI</div><h2>Session price action</h2></div><p>Each row shows the completed session close, high, low, and 1D move.</p></div>
+    <div class="panel company-list"><article class="company-row" data-ticker="AAPL"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/apple.svg" alt="AAPL logo" class="company-logo" onerror="this.style.display='none'"><div><strong>AAPL</strong><span>Apple</span></div></div><div class="company-note">Closed at $327.74 after a +0.35% session move. </div><div class="company-spark"><svg class="row-sparkline positive" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 326.59 to 327.74" preserveAspectRatio="none"><polyline points="4.00,43.00 146.00,5.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$327.74</span><span><small>Day High</small>$329.60</span><span><small>Day Low</small>$322.22</span><span class="positive"><small>1D</small>+0.35%</span></div></article><article class="company-row" data-ticker="MSFT"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/microsoft.svg" alt="MSFT logo" class="company-logo" onerror="this.style.display='none'"><div><strong>MSFT</strong><span>Microsoft</span></div></div><div class="company-note">Closed at $397.75 after a -1.13% session move. </div><div class="company-spark"><svg class="row-sparkline negative" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 402.29 to 397.75" preserveAspectRatio="none"><polyline points="4.00,5.00 146.00,43.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$397.75</span><span><small>Day High</small>$401.47</span><span><small>Day Low</small>$396.32</span><span class="negative"><small>1D</small>-1.13%</span></div></article><article class="company-row" data-ticker="NVDA"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/nvidia.svg" alt="NVDA logo" class="company-logo" onerror="this.style.display='none'"><div><strong>NVDA</strong><span>Nvidia</span></div></div><div class="company-note">Closed at $207.29 after a +1.97% session move. </div><div class="company-spark"><svg class="row-sparkline positive" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 203.28 to 207.29" preserveAspectRatio="none"><polyline points="4.00,43.00 146.00,5.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$207.29</span><span><small>Day High</small>$208.65</span><span><small>Day Low</small>$204.01</span><span class="positive"><small>1D</small>+1.97%</span></div></article><article class="company-row" data-ticker="AMZN"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/amazon.svg" alt="AMZN logo" class="company-logo" onerror="this.style.display='none'"><div><strong>AMZN</strong><span>Amazon</span></div></div><div class="company-note">Closed at $247.55 after a -0.98% session move. </div><div class="company-spark"><svg class="row-sparkline negative" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 249.99 to 247.55" preserveAspectRatio="none"><polyline points="4.00,5.00 146.00,43.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$247.55</span><span><small>Day High</small>$249.34</span><span><small>Day Low</small>$246.42</span><span class="negative"><small>1D</small>-0.98%</span></div></article><article class="company-row" data-ticker="META"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/meta-platforms.svg" alt="META logo" class="company-logo" onerror="this.style.display='none'"><div><strong>META</strong><span>Meta Platforms</span></div></div><div class="company-note">Closed at $643.81 after a -0.32% session move. </div><div class="company-spark"><svg class="row-sparkline negative" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 645.85 to 643.81" preserveAspectRatio="none"><polyline points="4.00,5.00 146.00,43.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$643.81</span><span><small>Day High</small>$655.88</span><span><small>Day Low</small>$643.20</span><span class="negative"><small>1D</small>-0.32%</span></div></article><article class="company-row" data-ticker="SNDK"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/sandisk.svg" alt="SNDK logo" class="company-logo" onerror="this.style.display='none'"><div><strong>SNDK</strong><span>SanDisk</span></div></div><div class="company-note">Closed at $1,589.40 after a +14.27% session move. </div><div class="company-spark"><svg class="row-sparkline positive" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 1,390.95 to 1,589.40" preserveAspectRatio="none"><polyline points="4.00,43.00 146.00,5.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$1,589.40</span><span><small>Day High</small>$1,595.64</span><span><small>Day Low</small>$1,489.65</span><span class="positive"><small>1D</small>+14.27%</span></div></article><article class="company-row" data-ticker="AMD"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/advanced-micro-devices.svg" alt="AMD logo" class="company-logo" onerror="this.style.display='none'"><div><strong>AMD</strong><span>Advanced Micro Devices</span></div></div><div class="company-note">Closed at $544.43 after a +8.11% session move. </div><div class="company-spark"><svg class="row-sparkline positive" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 503.57 to 544.43" preserveAspectRatio="none"><polyline points="4.00,43.00 146.00,5.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$544.43</span><span><small>Day High</small>$548.14</span><span><small>Day Low</small>$522.60</span><span class="positive"><small>1D</small>+8.11%</span></div></article><article class="company-row" data-ticker="INTC"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/intel.svg" alt="INTC logo" class="company-logo" onerror="this.style.display='none'"><div><strong>INTC</strong><span>Intel</span></div></div><div class="company-note">Closed at $105.45 after a +8.64% session move. </div><div class="company-spark"><svg class="row-sparkline positive" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 97.06 to 105.45" preserveAspectRatio="none"><polyline points="4.00,43.00 146.00,5.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$105.45</span><span><small>Day High</small>$106.34</span><span><small>Day Low</small>$101.22</span><span class="positive"><small>1D</small>+8.64%</span></div></article><article class="company-row" data-ticker="MU"><div class="company-id"><img src="https://s3-symbol-logo.tradingview.com/micron-technology.svg" alt="MU logo" class="company-logo" onerror="this.style.display='none'"><div><strong>MU</strong><span>Micron Technology</span></div></div><div class="company-note">Closed at $970.82 after a +12.17% session move. </div><div class="company-spark"><svg class="row-sparkline positive" viewBox="0 0 150 48" role="img" aria-label="Sparkline from 865.46 to 970.82" preserveAspectRatio="none"><polyline points="4.00,43.00 146.00,5.00" class="sparkline-line"/></svg></div><div class="company-stats"><span><small>Close</small>$970.82</span><span><small>Day High</small>$982.88</span><span><small>Day Low</small>$916.57</span><span class="positive"><small>1D</small>+12.17%</span></div></article></div>
+  </section>
+
+
+<section class="section tradingview-section" aria-labelledby="tradingview-heading">
+  <div class="section-heading compact-heading">
+    <div><div class="section-label">Explore Further</div><h2 id="tradingview-heading">Interactive Mega-Cap Charts</h2></div>
+    <p>Supplementary TradingView view for deeper timeframes and interaction.</p>
+  </div>
+  <div class="tradingview-card">
+    <div class="tradingview-widget-container">
+      <div class="tradingview-widget-container__widget"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
+      {
+        "lineWidth": 2,
+        "lineType": 0,
+        "chartType": "area",
+        "backgroundColor": "#0F0F0F",
+        "widgetFontColor": "#DBDBDB",
+        "gridLineColor": "rgba(242,242,242,0.06)",
+        "upColor": "#22ab94",
+        "downColor": "#f7525f",
+        "colorTheme": "dark",
+        "isTransparent": false,
+        "locale": "en",
+        "changeMode": "price-and-percent",
+        "symbols": [
+          ["NASDAQ:AAPL|1D"], ["NASDAQ:MSFT|1D"], ["NASDAQ:NVDA|1D"],
+          ["NASDAQ:AMZN|1D"], ["NASDAQ:META|1D"], ["NASDAQ:SNDK|1D"],
+          ["NASDAQ:AMD|1D"], ["NASDAQ:INTC|1D"], ["NASDAQ:MU|1D"]
+        ],
+        "dateRanges": ["1d|1", "1m|30", "3m|60", "12m|1D", "all|1M"],
+        "autosize": true,
+        "height": "520"
+      }
+      </script>
+    </div>
+  </div>
+</section>
+
+
+  <section class="section" id="global">
+    <div class="section-heading"><div><div class="section-label">03 · Global Markets</div><h2>Cross-market read-through</h2></div><p>Latest daily closes provide context around the completed U.S. session.</p></div>
+    <div class="panel table-wrap"><table><thead><tr><th>Index</th><th>Close</th><th>1D</th><th>Session Trend</th><th>Status</th></tr></thead><tbody><tr><td class="global-name">Nikkei 225</td><td class="number">66,232.19</td><td class="number positive">+3.26%</td><td class="spark-cell"><svg class="table-sparkline positive" viewBox="0 0 120 34" role="img" aria-label="Sparkline from 64,141.12 to 66,232.19" preserveAspectRatio="none"><polyline points="4.00,29.00 116.00,5.00" class="sparkline-line"/></svg></td><td>Japanese equities reflected regional growth and currency positioning.</td></tr><tr><td class="global-name">Euro Stoxx 50</td><td class="number">6,285.63</td><td class="number positive">+0.94%</td><td class="spark-cell"><svg class="table-sparkline positive" viewBox="0 0 120 34" role="img" aria-label="Sparkline from 6,227.40 to 6,285.63" preserveAspectRatio="none"><polyline points="4.00,29.00 116.00,5.00" class="sparkline-line"/></svg></td><td>European blue chips tracked policy and earnings expectations.</td></tr><tr><td class="global-name">FTSE 100</td><td class="number">10,585.90</td><td class="number positive">+0.58%</td><td class="spark-cell"><svg class="table-sparkline positive" viewBox="0 0 120 34" role="img" aria-label="Sparkline from 10,524.80 to 10,585.90" preserveAspectRatio="none"><polyline points="4.00,29.00 116.00,5.00" class="sparkline-line"/></svg></td><td>UK large caps remained sensitive to commodities and sterling.</td></tr><tr><td class="global-name">Hang Seng</td><td class="number">25,132.29</td><td class="number negative">-0.04%</td><td class="spark-cell"><svg class="table-sparkline negative" viewBox="0 0 120 34" role="img" aria-label="Sparkline from 25,143.05 to 25,132.29" preserveAspectRatio="none"><polyline points="4.00,5.00 116.00,29.00" class="sparkline-line"/></svg></td><td>Hong Kong equities traded on China policy and technology sentiment.</td></tr></tbody></table></div>
+  </section>
+
+  <section class="section" id="crypto">
+    <div class="section-heading"><div><div class="section-label">04 · Digital Assets</div><h2>Crypto risk dashboard</h2></div><p>Compact price and narrative cards for the broader liquidity read.</p></div>
+    <div class="asset-grid"><article class="asset-card"><span>Bitcoin</span><strong>$65,230</strong><em class="positive">+0.83%</em><p>Closed at $65,230 and remained the main crypto risk benchmark.</p></article><article class="asset-card"><span>Ethereum</span><strong>$1,904</strong><em class="positive">+1.72%</em><p>Closed at $1,904 with relative performance signaling layer-1 risk appetite.</p></article><article class="asset-card"><span>Solana</span><strong>$77.79</strong><em class="positive">+1.87%</em><p>Closed at $77.79 as higher-beta crypto exposure moved with liquidity conditions.</p></article><article class="asset-card"><span>XRP</span><strong>$1.1100</strong><em class="positive">+0.91%</em><p>Closed at $1.1100 with payments and regulatory headlines still relevant.</p></article></div>
+  </section>
+
+  <section class="section" id="takeaway">
+    <div class="section-heading"><div><div class="section-label">05 · Decision Summary</div><h2>Investor takeaway</h2></div><p>Three decisions, not another paragraph.</p></div>
+    <ul class="takeaway-list"><li><span>What moved</span>S&amp;P 500 +0.89% for the session; Technology (XLK) led while Cons. Staples (XLP) lagged.</li><li><span>Possible drivers</span>Rates at 4.63% and VIX at 17.05 were observed alongside the session&#x27;s leadership pattern; causality is not established.</li><li><span>What to watch next</span>Watch whether yields and DXY at 101.18 stay contained enough for breadth to improve.</li></ul>
+  </section>
+
+  <section class="section" id="outlook">
+    <div class="section-heading"><div><div class="section-label">06 · Next Session Outlook</div><h2>What to watch next</h2></div><p>Each category is reduced to two scannable, evidence-aware bullets.</p></div>
+    <div class="decision-grid"><article class="decision-card"><span>Macro</span><ul class="decision-list"><li>Watch inflation, labor, and consumer data against a 4.63% 10-year yield.</li><li>Hot data would pressure duration-sensitive groups; softer data could support Technology (XLK).</li></ul></article><article class="decision-card"><span>Fed & Rates</span><ul class="decision-list"><li>Track whether Fed speakers validate or resist the current easing in financial conditions.</li><li>Rates and the DXY at 101.18 remain the main valuation inputs for growth stocks.</li></ul></article><article class="decision-card"><span>Earnings & Catalysts</span><ul class="decision-list"><li>Guidance must confirm that leadership in Technology (XLK) is supported by demand and margins.</li><li>A weak read-through would expose continued underperformance in Utilities (XLU).</li></ul></article><article class="decision-card"><span>Risk Dashboard</span><ul class="decision-list"><li>VIX at 17.05 defines the market&#x27;s current downside cushion.</li><li>Watch for a reversal in mega-cap momentum, a yield spike, or abrupt commodity volatility.</li></ul></article></div>
+  </section>
+
+  <section class="section" id="macro">
+    <div class="section-heading"><div><div class="section-label">07 · Macro Reference</div><h2>Rates, dollar, and commodities</h2></div><p>Secondary values retained below the primary digest.</p></div>
+    <div class="breadth-strip">
+      <div class="breadth-stat"><span>13W T-Bill</span><strong>3.73%</strong></div>
+      <div class="breadth-stat"><span>Gold</span><strong>$4,071.10</strong></div>
+      <div class="breadth-stat"><span>Crude Oil</span><strong>$84.91</strong></div>
+      <div class="breadth-stat"><span>Russell 2000</span><strong>2,987.40</strong></div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer"><span>Automated Daily Market Summary · Completed U.S. session · Data via yfinance</span><span>Narrative mode: Deterministic fallback · July 21, 2026</span></footer>
+</div>
+</body>
+</html>
