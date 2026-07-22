@@ -1266,6 +1266,7 @@ td {{ color:var(--muted); font-size:11px; }}
         "report_mode": "ai" if ai_enabled else "deterministic_fallback",
         "market_data": datasets,
         "session_charts": session_charts,
+        "mega_cap_data": megacap_data,
         "daily_sector_performance": sector_perf,
         "all_sectors_ranked": all_sectors_ranked,
         "top_sectors": top_sectors,
