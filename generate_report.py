@@ -852,13 +852,18 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
         "INTC": "Intel",
         "MU": "Micron Technology",
     }
-    megacap_data = {
-        ticker: {
+    megacap_data = {}
+    for ticker, company in megacaps.items():
+        result = fetch_daily_data(ticker, session_date, previous_session_date)
+        megacap_data[ticker] = {
             "name": company,
-            "result": fetch_daily_data(ticker, session_date, previous_session_date),
+            "result": result,
+            "session_chart": fetch_daily_chart_data(
+                ticker,
+                session_date,
+                fallback_data=result,
+            ),
         }
-        for ticker, company in megacaps.items()
-    }
     mc_lines = "\n".join(
         f"- {ticker} ({entry['name']}): ${entry['result']['end_price']:,.2f}, "
         f"{entry['result']['pct_change']:+.2f}% 1D"
