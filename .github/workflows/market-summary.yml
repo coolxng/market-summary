@@ -2,9 +2,12 @@ name: Generate Daily Market Summary
 
 on:
   schedule:
-    # Runs weekdays at 21:30 UTC: 5:30 p.m. EDT or 4:30 p.m. EST, after the U.S. close.
+    # Primary run: weekdays at 21:30 UTC, after the U.S. close.
+    # Backup run: Tuesday-Saturday at 04:00 UTC, in case GitHub delays or drops the primary schedule.
+    # The generator exits without rewriting artifacts when the latest completed session is already checked in.
     # GitHub cron cannot exclude U.S. market holidays; the generator skips when no new session data exists.
     - cron: '30 21 * * 1-5'
+    - cron: '0 4 * * 2-6'
 
   # Allows manual trigger from the Actions tab
   workflow_dispatch:
