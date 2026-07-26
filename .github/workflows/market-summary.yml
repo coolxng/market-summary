@@ -6,8 +6,8 @@ on:
     # Backup run: Tuesday-Saturday at 04:00 UTC, in case GitHub delays or drops the primary schedule.
     # The generator exits without rewriting artifacts when the latest completed session is already checked in.
     # GitHub cron cannot exclude U.S. market holidays; the generator skips when no new session data exists.
+    - cron: '0 21 * * 1-5'
     - cron: '30 21 * * 1-5'
-    - cron: '0 4 * * 2-6'
 
   # Allows manual trigger from the Actions tab
   workflow_dispatch:
