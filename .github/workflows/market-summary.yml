@@ -1,15 +1,7 @@
 name: Generate Daily Market Summary
 
 on:
-  schedule:
-    # Primary run: weekdays at 21:30 UTC, after the U.S. close.
-    # Backup run: Tuesday-Saturday at 04:00 UTC, in case GitHub delays or drops the primary schedule.
-    # The generator exits without rewriting artifacts when the latest completed session is already checked in.
-    # GitHub cron cannot exclude U.S. market holidays; the generator skips when no new session data exists.
-    - cron: '0 21 * * 1-5'
-    - cron: '30 21 * * 1-5'
-
-  # Allows manual trigger from the Actions tab
+  # Railway owns the production schedule. Keep this as a manual recovery path.
   workflow_dispatch:
 
 permissions:

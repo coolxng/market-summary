@@ -143,7 +143,7 @@ If no API key is configured, the generator falls back to deterministic commentar
 | Build tooling | Vinext / Vite |
 | Cloud tooling | Cloudflare Wrangler |
 | Hosting | GitHub Pages |
-| Automation | GitHub Actions |
+| Automation | Railway Cron |
 
 ## Local Setup
 
@@ -245,21 +245,29 @@ python -m unittest -v
 
 ## Automation
 
-GitHub Actions handles the daily report lifecycle.
+Railway runs `railway_job.py` at `22:00 UTC` every weekday, safely after the U.S. market close in both daylight-saving and standard time. The job:
 
-The market-summary workflow runs on weekdays after the U.S. market close and:
+1. Downloads the latest report artifacts from the configured GitHub branch.
+2. Runs `generate_report.py` and the Python tests.
+3. Validates the generated snapshot.
+4. Creates one atomic GitHub commit containing changed report artifacts.
 
-1. Sets up Python and Node.js.
-2. Installs `yfinance`.
-3. Runs `generate_report.py`.
-4. Runs the test suite.
-5. Validates the generated market snapshot.
-6. Builds the frontend.
-7. Commits updated report artifacts when a new trading session exists.
+The generator skips publishing when no completed trading session is available. A push from Railway triggers the existing GitHub Pages deployment workflow; GitHub Actions no longer owns the production cron schedule. The report-generation workflow remains available as a manual recovery action.
 
-A separate deployment workflow builds the static Next.js site and publishes it to GitHub Pages.
+### Railway setup
 
-Market holidays are handled by the generator rather than the GitHub Actions cron schedule.
+1. In Railway, create a project from this GitHub repository.
+2. Add a service from the repository. Railway reads `railway.toml`, installs `requirements.txt`, and configures the service as a cron job.
+3. Create a fine-grained GitHub personal access token scoped only to this repository with **Contents: Read and write** permission.
+4. Add the token to the Railway service as the secret variable `GITHUB_TOKEN`.
+5. If publishing somewhere other than the defaults, set `GITHUB_REPOSITORY` (`owner/repository`) and `GITHUB_BRANCH`. They default to `coolxng/market-summary` and `main`.
+6. Deploy the service, then use Railway's **Run now** control once to verify the job logs and the resulting GitHub commit.
+
+The cron expression is UTC. To change the run time, edit `deploy.cronSchedule` in `railway.toml`. Do not add the token to this repository or expose it as a public Railway variable.
+
+A separate GitHub Actions workflow continues to build the static Next.js site and publish it to GitHub Pages whenever Railway commits a new report.
+
+Market holidays are handled by the generator rather than by the scheduler.
 
 ## Project Structure
 

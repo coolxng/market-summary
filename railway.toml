@@ -1,0 +1,7 @@
+[build]
+builder = "RAILPACK"
+
+[deploy]
+startCommand = "python railway_job.py"
+cronSchedule = "0 22 * * 1-5"
+restartPolicyType = "NEVER"
