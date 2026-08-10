@@ -2,7 +2,7 @@
   "report_type": "daily_market_close",
   "session_date": "2026-08-10",
   "previous_session_date": "2026-08-07",
-  "generated_at": "2026-08-10T17:29:53.666162-04:00",
+  "generated_at": "2026-08-10T17:32:24.633547-04:00",
   "report_mode": "ai",
   "market_data": {
     "^GSPC": {
@@ -222,11 +222,11 @@
       ],
       "closes": [
         64844.89,
-        64055.01
+        64058.71
       ],
-      "end_price": 64055.01,
-      "pct_change": -1.22,
-      "abs_change": -789.88,
+      "end_price": 64058.71,
+      "pct_change": -1.21,
+      "abs_change": -786.18,
       "prev_close": 64844.89,
       "session_open": 64848.91,
       "day_high": 65278.34,
@@ -243,11 +243,11 @@
       ],
       "closes": [
         1908.68,
-        1875.1
+        1875.03
       ],
-      "end_price": 1875.1,
+      "end_price": 1875.03,
       "pct_change": -1.76,
-      "abs_change": -33.58,
+      "abs_change": -33.65,
       "prev_close": 1908.68,
       "session_open": 1908.93,
       "day_high": 1928.54,
@@ -264,11 +264,11 @@
       ],
       "closes": [
         76.21,
-        76.36
+        76.35
       ],
-      "end_price": 76.36,
-      "pct_change": 0.2,
-      "abs_change": 0.15,
+      "end_price": 76.35,
+      "pct_change": 0.18,
+      "abs_change": 0.14,
       "prev_close": 76.21,
       "session_open": 76.22,
       "day_high": 77.01,
@@ -3514,15 +3514,15 @@
       "MU": "Closed at $861.00 after a -1.89% session move."
     },
     "global_status": {
-      "nikkei": "The Nikkei closed down 0.12% for the day.",
-      "stoxx": "The Euro Stoxx 50 closed up 0.18% for the day.",
-      "ftse": "The FTSE 100 closed down 0.35% for the day.",
-      "hsi": "The Hang Seng closed up 0.54% for the day."
+      "nikkei": "The Nikkei closed down 0.12% on the day.",
+      "stoxx": "The Euro Stoxx 50 closed up 0.18% on the day.",
+      "ftse": "The FTSE 100 closed down 0.35% on the day.",
+      "hsi": "The Hang Seng closed up 0.54% on the day."
     },
     "crypto_descriptions": {
-      "btc": "Closed at $64,055 and remained the main crypto risk benchmark.",
+      "btc": "Closed at $64,059 and remained the main crypto risk benchmark.",
       "eth": "Closed at $1,875 with relative performance signaling layer-1 risk appetite.",
-      "sol": "Closed at $76.36 as higher-beta crypto exposure moved with liquidity conditions.",
+      "sol": "Closed at $76.35 as higher-beta crypto exposure moved with liquidity conditions.",
       "xrp": "Closed at $1.0200 with payments and regulatory headlines still relevant."
     },
     "daily_takeaway": {
