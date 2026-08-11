@@ -2,7 +2,7 @@
   "report_type": "daily_market_close",
   "session_date": "2026-08-11",
   "previous_session_date": "2026-08-10",
-  "generated_at": "2026-08-11T17:33:16.791824-04:00",
+  "generated_at": "2026-08-11T17:33:45.302364-04:00",
   "report_mode": "ai",
   "market_data": {
     "^GSPC": {
@@ -222,11 +222,11 @@
       ],
       "closes": [
         63910.59,
-        63591.52
+        63590.01
       ],
-      "end_price": 63591.52,
+      "end_price": 63590.01,
       "pct_change": -0.5,
-      "abs_change": -319.07,
+      "abs_change": -320.58,
       "prev_close": 63910.59,
       "session_open": 63912.5,
       "day_high": 64416.66,
@@ -243,11 +243,11 @@
       ],
       "closes": [
         1871.28,
-        1879.57
+        1879.53
       ],
-      "end_price": 1879.57,
+      "end_price": 1879.53,
       "pct_change": 0.44,
-      "abs_change": 8.29,
+      "abs_change": 8.25,
       "prev_close": 1871.28,
       "session_open": 1871.33,
       "day_high": 1894.8,
@@ -264,11 +264,11 @@
       ],
       "closes": [
         75.95,
-        76.02
+        76.04
       ],
-      "end_price": 76.02,
-      "pct_change": 0.09,
-      "abs_change": 0.07,
+      "end_price": 76.04,
+      "pct_change": 0.12,
+      "abs_change": 0.09,
       "prev_close": 75.95,
       "session_open": 75.95,
       "day_high": 76.19,
@@ -3514,15 +3514,15 @@
       "MU": "Closed at $868.52 after a +0.87% session move."
     },
     "global_status": {
-      "nikkei": "Japanese equities reflected regional growth and currency positioning.",
-      "stoxx": "European blue chips tracked policy and earnings expectations.",
-      "ftse": "UK large caps remained sensitive to commodities and sterling.",
-      "hsi": "Hong Kong equities traded on China policy and technology sentiment."
+      "nikkei": "The Nikkei closed up 2.08% on the day.",
+      "stoxx": "The Euro Stoxx 50 closed up 0.24% on the day.",
+      "ftse": "The FTSE 100 closed down 0.17% on the day.",
+      "hsi": "The Hang Seng closed up 1.05% on the day."
     },
     "crypto_descriptions": {
-      "btc": "Closed at $63,592 and remained the main crypto risk benchmark.",
+      "btc": "Closed at $63,590 and remained the main crypto risk benchmark.",
       "eth": "Closed at $1,880 with relative performance signaling layer-1 risk appetite.",
-      "sol": "Closed at $76.02 as higher-beta crypto exposure moved with liquidity conditions.",
+      "sol": "Closed at $76.04 as higher-beta crypto exposure moved with liquidity conditions.",
       "xrp": "Closed at $1.0200 with payments and regulatory headlines still relevant."
     },
     "daily_takeaway": {
