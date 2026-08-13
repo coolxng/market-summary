@@ -2,7 +2,7 @@
   "report_type": "daily_market_close",
   "session_date": "2026-08-13",
   "previous_session_date": "2026-08-12",
-  "generated_at": "2026-08-13T17:33:11.168657-04:00",
+  "generated_at": "2026-08-13T17:33:36.471337-04:00",
   "report_mode": "ai",
   "market_data": {
     "^GSPC": {
@@ -222,11 +222,11 @@
       ],
       "closes": [
         63402.43,
-        63389.89
+        63400.0
       ],
-      "end_price": 63389.89,
-      "pct_change": -0.02,
-      "abs_change": -12.54,
+      "end_price": 63400.0,
+      "pct_change": -0.0,
+      "abs_change": -2.43,
       "prev_close": 63402.43,
       "session_open": 63410.39,
       "day_high": 63890.48,
@@ -243,11 +243,11 @@
       ],
       "closes": [
         1878.14,
-        1885.96
+        1886.58
       ],
-      "end_price": 1885.96,
-      "pct_change": 0.42,
-      "abs_change": 7.82,
+      "end_price": 1886.58,
+      "pct_change": 0.45,
+      "abs_change": 8.44,
       "prev_close": 1878.14,
       "session_open": 1878.08,
       "day_high": 1896.97,
@@ -264,11 +264,11 @@
       ],
       "closes": [
         75.53,
-        76.11
+        76.09
       ],
-      "end_price": 76.11,
-      "pct_change": 0.77,
-      "abs_change": 0.58,
+      "end_price": 76.09,
+      "pct_change": 0.74,
+      "abs_change": 0.56,
       "prev_close": 75.53,
       "session_open": 75.53,
       "day_high": 76.48,
@@ -1707,7 +1707,7 @@
         "abs_change": 3.01,
         "prev_close": 302.25,
         "session_open": 304.26,
-        "day_high": 305.99,
+        "day_high": 306.0,
         "day_low": 302.05,
         "session_date": "2026-08-13",
         "previous_session_date": "2026-08-12",
@@ -3514,15 +3514,15 @@
       "MU": "Closed at $949.83 after a +4.23% session move."
     },
     "global_status": {
-      "nikkei": "The Nikkei closed up 0.83% on the day.",
-      "stoxx": "The Euro Stoxx 50 closed up 0.18% on the day.",
-      "ftse": "The FTSE 100 closed down 0.56% on the day.",
-      "hsi": "The Hang Seng closed down 0.83% on the day."
+      "nikkei": "Japanese equities reflected regional growth and currency positioning.",
+      "stoxx": "European blue chips tracked policy and earnings expectations.",
+      "ftse": "UK large caps remained sensitive to commodities and sterling.",
+      "hsi": "Hong Kong equities traded on China policy and technology sentiment."
     },
     "crypto_descriptions": {
-      "btc": "Closed at $63,390 and remained the main crypto risk benchmark.",
-      "eth": "Closed at $1,886 with relative performance signaling layer-1 risk appetite.",
-      "sol": "Closed at $76.11 as higher-beta crypto exposure moved with liquidity conditions.",
+      "btc": "Closed at $63,400 and remained the main crypto risk benchmark.",
+      "eth": "Closed at $1,887 with relative performance signaling layer-1 risk appetite.",
+      "sol": "Closed at $76.09 as higher-beta crypto exposure moved with liquidity conditions.",
       "xrp": "Closed at $1.0100 with payments and regulatory headlines still relevant."
     },
     "daily_takeaway": {
