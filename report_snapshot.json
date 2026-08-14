@@ -2,7 +2,7 @@
   "report_type": "daily_market_close",
   "session_date": "2026-08-14",
   "previous_session_date": "2026-08-13",
-  "generated_at": "2026-08-14T17:13:48.240616-04:00",
+  "generated_at": "2026-08-14T17:31:43.522734-04:00",
   "report_mode": "ai",
   "market_data": {
     "^GSPC": {
@@ -222,11 +222,11 @@
       ],
       "closes": [
         63402.17,
-        62850.44
+        62818.85
       ],
-      "end_price": 62850.44,
-      "pct_change": -0.87,
-      "abs_change": -551.73,
+      "end_price": 62818.85,
+      "pct_change": -0.92,
+      "abs_change": -583.32,
       "prev_close": 63402.17,
       "session_open": 63418.16,
       "day_high": 63542.38,
@@ -243,11 +243,11 @@
       ],
       "closes": [
         1883.99,
-        1876.98
+        1878.09
       ],
-      "end_price": 1876.98,
-      "pct_change": -0.37,
-      "abs_change": -7.01,
+      "end_price": 1878.09,
+      "pct_change": -0.31,
+      "abs_change": -5.9,
       "prev_close": 1883.99,
       "session_open": 1884.42,
       "day_high": 1889.0,
@@ -264,11 +264,11 @@
       ],
       "closes": [
         76.18,
-        75.04
+        75.14
       ],
-      "end_price": 75.04,
-      "pct_change": -1.5,
-      "abs_change": -1.14,
+      "end_price": 75.14,
+      "pct_change": -1.37,
+      "abs_change": -1.04,
       "prev_close": 76.18,
       "session_open": 76.18,
       "day_high": 76.23,
@@ -2649,7 +2649,7 @@
         "pct_change": 7.39,
         "abs_change": 113.0,
         "prev_close": 1528.11,
-        "session_open": 1646.93,
+        "session_open": 1646.0,
         "day_high": 1667.06,
         "day_low": 1565.0,
         "session_date": "2026-08-14",
@@ -3518,9 +3518,9 @@
       "hsi": "Hong Kong equities traded on China policy and technology sentiment."
     },
     "crypto_descriptions": {
-      "btc": "Closed at $62,850 and remained the main crypto risk benchmark.",
-      "eth": "Closed at $1,877 with relative performance signaling layer-1 risk appetite.",
-      "sol": "Closed at $75.04 as higher-beta crypto exposure moved with liquidity conditions.",
+      "btc": "Closed at $62,819 and remained the main crypto risk benchmark.",
+      "eth": "Closed at $1,878 with relative performance signaling layer-1 risk appetite.",
+      "sol": "Closed at $75.14 as higher-beta crypto exposure moved with liquidity conditions.",
       "xrp": "Closed at $1.0000 with payments and regulatory headlines still relevant."
     },
     "daily_takeaway": {
