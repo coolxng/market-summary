@@ -2,7 +2,7 @@
   "report_type": "daily_market_close",
   "session_date": "2026-08-17",
   "previous_session_date": "2026-08-14",
-  "generated_at": "2026-08-17T17:14:09.890590-04:00",
+  "generated_at": "2026-08-17T17:32:14.155101-04:00",
   "report_mode": "ai",
   "market_data": {
     "^GSPC": {
@@ -159,11 +159,11 @@
       ],
       "closes": [
         99.67,
-        99.55
+        99.57
       ],
-      "end_price": 99.55,
-      "pct_change": -0.12,
-      "abs_change": -0.12,
+      "end_price": 99.57,
+      "pct_change": -0.1,
+      "abs_change": -0.1,
       "prev_close": 99.67,
       "session_open": 99.66,
       "day_high": 99.67,
@@ -222,11 +222,11 @@
       ],
       "closes": [
         62818.65,
-        64346.7
+        64289.93
       ],
-      "end_price": 64346.7,
-      "pct_change": 2.43,
-      "abs_change": 1528.05,
+      "end_price": 64289.93,
+      "pct_change": 2.34,
+      "abs_change": 1471.28,
       "prev_close": 62818.65,
       "session_open": 62829.64,
       "day_high": 64492.94,
@@ -243,11 +243,11 @@
       ],
       "closes": [
         1873.94,
-        1906.05
+        1905.49
       ],
-      "end_price": 1906.05,
-      "pct_change": 1.71,
-      "abs_change": 32.11,
+      "end_price": 1905.49,
+      "pct_change": 1.68,
+      "abs_change": 31.55,
       "prev_close": 1873.94,
       "session_open": 1874.1,
       "day_high": 1913.16,
@@ -264,11 +264,11 @@
       ],
       "closes": [
         74.54,
-        75.87
+        75.88
       ],
-      "end_price": 75.87,
-      "pct_change": 1.78,
-      "abs_change": 1.33,
+      "end_price": 75.88,
+      "pct_change": 1.8,
+      "abs_change": 1.34,
       "prev_close": 74.54,
       "session_open": 74.54,
       "day_high": 76.12,
@@ -2651,7 +2651,7 @@
         "pct_change": 8.88,
         "abs_change": 145.74,
         "prev_close": 1641.11,
-        "session_open": 1700.74,
+        "session_open": 1700.0,
         "day_high": 1827.99,
         "day_low": 1698.0,
         "session_date": "2026-08-17",
@@ -3514,21 +3514,21 @@
       "MU": "Closed at $1,011.75 after a +4.13% session move."
     },
     "global_status": {
-      "nikkei": "Japanese equities reflected regional growth and currency positioning.",
-      "stoxx": "European blue chips tracked policy and earnings expectations.",
-      "ftse": "UK large caps remained sensitive to commodities and sterling.",
-      "hsi": "Hong Kong equities traded on China policy and technology sentiment."
+      "nikkei": "The Nikkei closed up 0.59% on the day.",
+      "stoxx": "The Euro Stoxx 50 closed down 0.14% on the day.",
+      "ftse": "The FTSE 100 closed down 0.28% on the day.",
+      "hsi": "The Hang Seng closed down 1.10% on the day."
     },
     "crypto_descriptions": {
-      "btc": "Closed at $64,347 and remained the main crypto risk benchmark.",
-      "eth": "Closed at $1,906 with relative performance signaling layer-1 risk appetite.",
-      "sol": "Closed at $75.87 as higher-beta crypto exposure moved with liquidity conditions.",
+      "btc": "Closed at $64,290 and remained the main crypto risk benchmark.",
+      "eth": "Closed at $1,905 with relative performance signaling layer-1 risk appetite.",
+      "sol": "Closed at $75.88 as higher-beta crypto exposure moved with liquidity conditions.",
       "xrp": "Closed at $1.0000 with payments and regulatory headlines still relevant."
     },
     "daily_takeaway": {
       "what_moved": "S&amp;P 500 -0.52% for the session; Energy (XLE) led while Comm. Services (XLC) lagged.",
       "why": "Rates at 4.72% and VIX at 15.19 were observed alongside the session&#x27;s leadership pattern; causality is not established.",
-      "what_to_watch": "Watch whether yields and DXY at 99.55 stay contained enough for breadth to improve."
+      "what_to_watch": "Watch whether yields and DXY at 99.57 stay contained enough for breadth to improve."
     },
     "next_session_outlook": {
       "macro": [
@@ -3537,7 +3537,7 @@
       ],
       "fed_policy": [
         "Track whether Fed speakers validate or resist the current easing in financial conditions.",
-        "Rates and the DXY at 99.55 remain the main valuation inputs for growth stocks."
+        "Rates and the DXY at 99.57 remain the main valuation inputs for growth stocks."
       ],
       "earnings_and_catalysts": [
         "Guidance must confirm that leadership in Energy (XLE) is supported by demand and margins.",
