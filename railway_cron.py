@@ -266,6 +266,10 @@ def send_failure_notification(error):
 
 
 def main():
+    if os.environ.get("MARKET_SUMMARY_PAUSED", "").strip().lower() in {"1", "true", "yes", "on"}:
+        print("Market Summary is paused via MARKET_SUMMARY_PAUSED; exiting without API usage.")
+        return
+
     try:
         require_environment()
         run([sys.executable, "generate_report.py"])
