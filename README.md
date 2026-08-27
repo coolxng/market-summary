@@ -140,8 +140,6 @@ If no API key is configured, the generator falls back to deterministic commentar
 | Frontend | Next.js 16 |
 | UI | React 19 |
 | Language | TypeScript |
-| Build tooling | Vinext / Vite |
-| Cloud tooling | Cloudflare Wrangler |
 | Hosting | GitHub Pages |
 | Scheduling | Railway Cron |
 | CI / deployment | GitHub Actions |
@@ -214,9 +212,11 @@ The snapshot contains the structured market data consumed by the main frontend.
 npm run dev
 ```
 
+This starts the standard Next.js development server.
+
 ## Build
 
-Standard build:
+Standard Next.js build:
 
 ```bash
 npm run build
@@ -271,19 +271,22 @@ market-summary/
 │       ├── market-summary.yml
 │       └── deploy-pages.yml
 ├── app/
+│   ├── globals.css
+│   ├── layout.tsx
 │   └── page.tsx
 ├── public/
 │   ├── favicon.svg
-│   └── legacy-report.html
+│   ├── legacy-report.html
+│   └── og.png
 ├── Dockerfile.railway
 ├── generate_report.py
+├── next.config.ts
+├── package.json
 ├── railway.toml
 ├── railway_cron.py
 ├── report_snapshot.json
+├── requirements.txt
 ├── test_generate_report.py
-├── package.json
-├── next.config.ts
-├── vite.config.ts
 └── tsconfig.json
 ```
 
