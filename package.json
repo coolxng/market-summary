@@ -4,12 +4,12 @@
   "private": true,
   "engines": { "node": ">=22.13.0" },
   "scripts": {
-    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext dev",
-    "build": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext build",
+    "dev": "next dev",
+    "build": "next build",
     "build:pages": "GITHUB_PAGES=true next build",
-    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "start": "next start",
     "test": "python3 -m unittest test_generate_report.py && npm run build",
-    "lint": "eslint . --ignore-pattern dist --ignore-pattern .next"
+    "lint": "eslint . --ignore-pattern .next --ignore-pattern out"
   },
   "dependencies": {
     "next": "16.2.6",
@@ -17,19 +17,12 @@
     "react-dom": "19.2.6"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "1.37.1",
     "@types/node": "22.19.19",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "6.0.2",
-    "@vitejs/plugin-rsc": "0.5.26",
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
-    "react-server-dom-webpack": "19.2.6",
-    "typescript": "5.9.3",
-    "vinext": "0.0.50",
-    "vite": "8.0.13",
-    "wrangler": "4.92.0"
+    "typescript": "5.9.3"
   },
   "type": "module"
 }
