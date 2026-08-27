@@ -38,3 +38,5 @@ jobs:
           test -f out/.nojekyll
           grep -q '/market-summary/_next/' out/index.html
           grep -q 'THE DAILY TAPE' out/index.html
+
+# Temporary verification workflow; remove after a successful run.
