@@ -143,7 +143,8 @@ If no API key is configured, the generator falls back to deterministic commentar
 | Build tooling | Vinext / Vite |
 | Cloud tooling | Cloudflare Wrangler |
 | Hosting | GitHub Pages |
-| Automation | GitHub Actions |
+| Scheduling | Railway Cron |
+| CI / deployment | GitHub Actions |
 
 ## Local Setup
 
@@ -245,21 +246,21 @@ python -m unittest -v
 
 ## Automation
 
-GitHub Actions handles the daily report lifecycle.
+Railway owns the production report schedule.
 
-The market-summary workflow runs on weekdays after the U.S. market close and:
+On each weekday cron run, `railway_cron.py`:
 
-1. Sets up Python and Node.js.
-2. Installs `yfinance`.
-3. Runs `generate_report.py`.
-4. Runs the test suite.
-5. Validates the generated market snapshot.
-6. Builds the frontend.
-7. Commits updated report artifacts when a new trading session exists.
+1. Checks `MARKET_SUMMARY_PAUSED` before doing any report work.
+2. Runs `generate_report.py` when the service is not paused.
+3. Runs the test suite and validates the generated artifacts.
+4. Commits updated report artifacts to `main` when a new completed trading session exists.
+5. Sends the configured Discord notification.
 
-A separate deployment workflow builds the static Next.js site and publishes it to GitHub Pages.
+The GitHub Actions **Generate Daily Market Summary** workflow is manual-only and remains available as a fallback from the Actions tab. It has no cron schedule.
 
-Market holidays are handled by the generator rather than the GitHub Actions cron schedule.
+A separate GitHub Pages workflow runs on pushes to `main`, builds the static Next.js site, and publishes it to GitHub Pages.
+
+Market holidays are handled by the generator rather than by the scheduler.
 
 ## Project Structure
 
@@ -272,8 +273,12 @@ market-summary/
 ├── app/
 │   └── page.tsx
 ├── public/
+│   ├── favicon.svg
 │   └── legacy-report.html
+├── Dockerfile.railway
 ├── generate_report.py
+├── railway.toml
+├── railway_cron.py
 ├── report_snapshot.json
 ├── test_generate_report.py
 ├── package.json
