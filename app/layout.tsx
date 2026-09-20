@@ -1,14 +1,22 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Market Summary — The Daily Tape",
   description: "A decisive, data-first read on the latest completed U.S. trading session across equities, rates, sectors, crypto, and global markets.",
+  alternates: { canonical: "./" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
   icons: { icon: "favicon.svg", shortcut: "favicon.svg" },
   openGraph: {
+    url: "./",
+    siteName: "The Daily Tape",
     title: "The Daily Tape",
     description: "The session closed. Here is what mattered.",
     type: "website",
@@ -22,6 +30,25 @@ export const metadata: Metadata = {
   },
 };
 
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "The Daily Tape",
+  url: siteUrl,
+  description:
+    "Automated market-close intelligence for the latest completed U.S. trading session across equities, sectors, rates, commodities, global markets, and crypto.",
+};
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body>{children}</body></html>;
+  return (
+    <html lang="en">
+      <body>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        {children}
+      </body>
+    </html>
+  );
 }
