@@ -253,5 +253,190 @@ class GenerateReportTests(unittest.TestCase):
             self.assertEqual(report_path.read_text(encoding="utf-8"), "unchanged")
 
 
+
+class EditorialTests(unittest.TestCase):
+    def setUp(self):
+        self.session = datetime.date(2026, 7, 14)
+        self.previous = datetime.date(2026, 7, 13)
+        symbols = ('^GSPC', '^IXIC', '^RUT', '^VIX', '^TNX', '^IRX', 'DX-Y.NYB',
+                   'GC=F', 'CL=F', 'BTC-USD', 'ETH-USD', 'SOL-USD', 'XRP-USD',
+                   '^N225', '^STOXX50E', '^FTSE', '^HSI')
+        self.market = {s: valid_dataset(s, self.session, self.previous) for s in symbols}
+        self.market['^GSPC']['pct_change'] = 1
+        self.market['^IXIC']['pct_change'] = 1.5
+        self.market['^VIX']['pct_change'] = -3
+        self.market['^TNX'].update(end_price=4.2, prev_close=4.1)
+        self.sectors = {s: valid_dataset(s,self.session,self.previous) for s in ('Tech','Energy','Utilities','Health')}
+        self.stocks = {s:{'result':valid_dataset(s,self.session,self.previous)} for s in ('NVDA','AAPL')}
+        self.spy = valid_dataset('SPY',self.session,self.previous)
+        self.rsp = valid_dataset('RSP',self.session,self.previous)
+        self.spy['pct_change']=1;self.rsp['pct_change']=.4
+        self.charts={'^GSPC':{'source':'intraday_5m','session_date':self.session.isoformat(),
+                             'closes':[100,102,101],'error':None}}
+
+    def context(self):
+        return generate_report.build_editorial_context(self.market,self.sectors,self.stocks,
+                                                       self.charts,self.spy,self.rsp,self.session)
+
+    def response(self, text, stop_reason='end_turn', content=None):
+        response=mock.MagicMock()
+        body={'stop_reason':stop_reason,'content':content if content is not None else [{'type':'text','text':text}]}
+        response.__enter__.return_value.read.return_value=json.dumps(body).encode()
+        return response
+
+    def test_derived_metrics_units_and_proxy_limits(self):
+        context,cards=self.context();metrics=context['derived_metrics']
+        self.assertAlmostEqual(metrics['ten_year_change_bp'],10)
+        self.assertEqual(metrics['nasdaq_gap_pp'],.5)
+        self.assertAlmostEqual(metrics['equal_weight_minus_cap_weight_pp'],-.6)
+        self.assertEqual(metrics['sector_breadth']['positive_share_pct'],100)
+        self.assertEqual(metrics['risk_confirmation']['signal'],'risk_on_confirmed')
+        self.assertEqual(metrics['intraday']['^GSPC']['close_location_pct'],50)
+        self.assertIn('not index contribution',metrics['megacap_sample']['limitation'])
+        self.assertIn('not a measured attribution',cards['weighting']['interpretation'])
+
+    def test_missing_stale_and_nonfinite_observations_are_not_zero(self):
+        self.rsp['error']='missing'
+        self.market['GC=F']['session_date']='2026-07-10'
+        self.market['BTC-USD']['pct_change']=float('nan')
+        self.stocks['NVDA']['result']['error']='missing'
+        self.sectors['Tech']['previous_session_date']='2026-07-09'
+        context,cards=self.context()
+        self.assertIsNone(context['market']['RSP'])
+        self.assertIsNone(context['market']['GC=F'])
+        self.assertIsNone(context['market']['BTC-USD'])
+        self.assertNotIn('weighting',cards)
+        self.assertNotIn('dollar_gold',cards)
+        self.assertNotIn('stock_NVDA',cards)
+        self.assertEqual(context['derived_metrics']['sector_breadth']['valid'],3)
+        json.dumps(context,allow_nan=False)
+
+    def test_proxy_instrument_is_named_without_claiming_futures_price(self):
+        self.market['GC=F']['ticker_used']='GLD'
+        _,cards=self.context()
+        self.assertIn('GLD',cards['dollar_gold']['observed'])
+        self.assertNotIn('GC=F',cards['dollar_gold']['observed'])
+
+    def test_daily_fallback_is_not_intraday_evidence(self):
+        self.charts['^GSPC']['source']='daily_ohlc_fallback'
+        context,cards=self.context()
+        self.assertEqual(context['derived_metrics']['intraday'],{})
+        self.assertNotIn('intraday',cards)
+
+    def test_tied_sector_and_stock_returns_do_not_invent_winners(self):
+        _, cards = self.context()
+        self.assertIn('matched', cards['sectors']['observed'])
+        self.assertIn('matched', cards['megacaps']['observed'])
+        self.assertNotIn('diverge', cards['megacaps']['headline'])
+
+    def test_incomplete_sector_coverage_cannot_confirm_risk_on(self):
+        self.sectors['Tech']['error'] = 'unavailable'
+        context, _ = self.context()
+        self.assertEqual(context['derived_metrics']['risk_confirmation']['signal'], 'mixed')
+
+    def test_flat_range_and_no_positive_stock_returns(self):
+        self.charts['^GSPC']['closes']=[100,100,100]
+        for stock in self.stocks.values():stock['result']['pct_change']=-1
+        context,_=self.context()
+        self.assertIsNone(context['derived_metrics']['intraday']['^GSPC']['close_location_pct'])
+        self.assertIsNone(context['derived_metrics']['megacap_sample']['leader_share_of_positive_returns_pct'])
+
+    def test_closed_schema_and_successful_single_request(self):
+        context,cards=self.context();plan=generate_report.default_editorial_plan(cards)
+        plan['headline']=['intraday'];plan['macro_read']=['dollar_gold']
+        with mock.patch.object(generate_report,'ANTHROPIC_API_KEY','test-private-key'), mock.patch.object(
+                generate_report.urllib.request,'urlopen',return_value=self.response(json.dumps(plan))) as send:
+            brief,provenance=generate_report.generate_editorial(context,cards)
+        send.assert_called_once()
+        payload=json.loads(send.call_args.args[0].data)
+        self.assertEqual(payload['max_tokens'],1000)
+        self.assertEqual(payload['output_config']['format']['type'],'json_schema')
+        self.assertNotIn('test-private-key',json.dumps(payload))
+        self.assertEqual(brief['headline'],cards['intraday']['headline'])
+        self.assertEqual(provenance['mode'],'ai')
+        self.assertEqual(provenance['status'],'validated')
+        self.assertNotIn('test-private-key',json.dumps([brief,provenance]))
+
+    def test_no_key_uses_grounded_fallback_without_network(self):
+        context,cards=self.context()
+        with mock.patch.object(generate_report,'ANTHROPIC_API_KEY',''), mock.patch.object(generate_report.urllib.request,'urlopen') as send:
+            brief,provenance=generate_report.generate_editorial(context,cards)
+        send.assert_not_called()
+        self.assertEqual(provenance['mode'],'deterministic_fallback')
+        self.assertEqual(provenance['status'],'missing_key')
+        self.assertTrue(brief['watchlist'])
+
+    def test_parser_rejects_malformed_wrong_types_unknown_and_extra_fields(self):
+        _,cards=self.context();valid=generate_report.default_editorial_plan(cards)
+        invalid=['not JSON','```json\n'+json.dumps(valid)+'\n```','[]']
+        for field,value in [('headline','index'),('headline',[123]),('headline',['invented catalyst']),
+                            ('headline',[]),('headline',['index','risk']),
+                            ('macro_read',['index']),('watchlist',['risk','risk']),
+                            ('watchlist',['risk']*4)]:
+            bad=dict(valid);bad[field]=value;invalid.append(json.dumps(bad))
+        bad=dict(valid);bad['free_text']='Earnings surprise';invalid.append(json.dumps(bad))
+        bad=dict(valid);bad.pop('regime');invalid.append(json.dumps(bad))
+        invalid.append(json.dumps(valid)[:-1]+',"headline":["index"]}')
+        for raw in invalid:
+            with self.subTest(raw=raw):
+                with self.assertRaises((ValueError,TypeError)):
+                    generate_report.parse_editorial_plan(raw,cards)
+
+    def test_failure_truncation_refusal_and_malformed_output_fall_back(self):
+        context,cards=self.context();valid=json.dumps(generate_report.default_editorial_plan(cards))
+        responses=[self.response(valid,stop_reason='max_tokens'),self.response(valid,stop_reason='refusal'),
+                   self.response('bad JSON'),self.response(valid,content=[{'type':'tool_use'}]),
+                   self.response(valid,content=[])]
+        for response in responses:
+            with self.subTest(response=response),mock.patch.object(generate_report,'ANTHROPIC_API_KEY','private'),mock.patch.object(
+                generate_report.urllib.request,'urlopen',return_value=response):
+                brief,provenance=generate_report.generate_editorial(context,cards)
+                self.assertEqual(provenance['mode'],'deterministic_fallback')
+                self.assertTrue(brief['opening_summary'])
+
+    def test_api_exception_does_not_log_secret_or_response(self):
+        import io
+        context,cards=self.context();logs=io.StringIO()
+        with mock.patch.object(generate_report,'ANTHROPIC_API_KEY','private'),mock.patch.object(
+                generate_report.urllib.request,'urlopen',side_effect=TimeoutError('secret-value')),mock.patch('sys.stdout',logs):
+            _,provenance=generate_report.generate_editorial(context,cards)
+        self.assertEqual(provenance['mode'],'deterministic_fallback')
+        self.assertNotIn('secret-value',logs.getvalue())
+
+    def test_generation_uses_one_request_preserves_raw_data_and_records_real_status(self):
+        session=self.session;previous=self.previous
+        def fetch(symbol,*args):return valid_dataset(symbol,session,previous)
+        def chart(symbol,day,fallback_data=None):
+            return {'source':'daily_ohlc_fallback','session_date':session.isoformat(),
+                    'closes':[fallback_data['session_open'],fallback_data['end_price']],
+                    'times':['9:30 AM','4:00 PM'],'error':None}
+        for succeeds in (True,False):
+            with self.subTest(succeeds=succeeds),tempfile.TemporaryDirectory() as tmp:
+                def reply(request,**kwargs):
+                    payload=json.loads(request.data)
+                    supplied=json.loads(payload['messages'][0]['content'])
+                    plan=generate_report.default_editorial_plan(supplied['catalog'])
+                    return self.response(json.dumps(plan) if succeeds else 'not-json')
+                with mock.patch.object(generate_report,'resolve_completed_sessions',return_value=(session,previous)),mock.patch.object(
+                        generate_report,'fetch_daily_data',side_effect=fetch),mock.patch.object(generate_report,'fetch_daily_chart_data',side_effect=chart),mock.patch.object(
+                        generate_report,'ANTHROPIC_API_KEY','test-private-key'),mock.patch.object(generate_report.urllib.request,'urlopen',side_effect=reply) as send:
+                    generate_report.generate_html(snapshot_path=Path(tmp)/'snapshot.json',report_path=Path(tmp)/'report.html')
+                send.assert_called_once()
+                snapshot=json.loads((Path(tmp)/'snapshot.json').read_text())
+                self.assertEqual(snapshot['market_data']['^GSPC'],fetch('^GSPC'))
+                self.assertEqual(snapshot['report_mode'],'ai' if succeeds else 'deterministic_fallback')
+                self.assertIn(snapshot['narrative']['editorial']['headline'],(Path(tmp)/'report.html').read_text())
+                self.assertNotIn('test-private-key',(Path(tmp)/'snapshot.json').read_text())
+                self.assertNotIn('test-private-key',(Path(tmp)/'report.html').read_text())
+
+    def test_empty_optional_groups_are_valid_but_no_fabricated_ids(self):
+        _,cards=self.context();cards={k:v for k,v in cards.items() if v['group']!='megacap'}
+        plan=generate_report.default_editorial_plan(cards)
+        self.assertEqual(plan['megacap_leadership'],[])
+        self.assertEqual(generate_report.parse_editorial_plan(json.dumps(plan),cards),plan)
+        plan['megacap_leadership']=['unavailable']
+        with self.assertRaises(ValueError):generate_report.parse_editorial_plan(json.dumps(plan),cards)
+
+
 if __name__ == "__main__":
     unittest.main()

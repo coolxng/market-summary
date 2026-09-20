@@ -1,6 +1,7 @@
 import datetime
 import html
 import json
+import math
 import os
 import re
 import urllib.request
@@ -349,159 +350,251 @@ def fetch_daily_chart_data(ticker_symbol, session_date, fallback_data=None):
 
 
 # ─────────────────────────────────────────────
-# CLAUDE API HELPERS
+# GROUNDED EDITORIAL BRIEF
 # ─────────────────────────────────────────────
-def claude(prompt, max_tokens=400, fallback=""):
-    if not ANTHROPIC_API_KEY:
-        print("  ANTHROPIC_API_KEY not set — using fallback.")
-        return fallback
-    try:
-        payload = json.dumps(
-            {
-                "model": ANTHROPIC_MODEL,
-                "max_tokens": max_tokens,
-                "messages": [{"role": "user", "content": prompt}],
-            }
-        ).encode("utf-8")
-        request = urllib.request.Request(
-            ANTHROPIC_API_URL,
-            data=payload,
-            headers={
-                "Content-Type": "application/json",
-                "x-api-key": ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-            },
-            method="POST",
-        )
-        with urllib.request.urlopen(request, timeout=25) as response:
-            body = json.loads(response.read().decode("utf-8"))
-            text = body["content"][0]["text"].strip()
-            print(f"  Claude OK ({len(text)} chars)")
-            return text
-    except Exception as exc:
-        print(f"  Claude API error: {exc} — using fallback.")
-        return fallback
-
-
-def claude_json(prompt, required_keys, max_tokens=600, fallback=None):
-    raw = claude(prompt, max_tokens=max_tokens, fallback="")
-    if not raw:
-        return fallback or {}
-    try:
-        start_idx = raw.find("{")
-        end_idx = raw.rfind("}")
-        if start_idx == -1 or end_idx == -1:
-            raise ValueError("No JSON object found in response")
-        result = json.loads(raw[start_idx : end_idx + 1])
-        if not required_keys.issubset(result.keys()):
-            raise ValueError(f"Missing keys: {required_keys - result.keys()}")
-        return result
-    except Exception as exc:
-        print(f"  Claude JSON parse error: {exc} — using fallback.")
-        return fallback or {}
-
-
 def should_use_ai():
     return bool(ANTHROPIC_API_KEY)
 
 
-# ─────────────────────────────────────────────
-# NARRATIVE GENERATORS
-# ─────────────────────────────────────────────
-def build_next_session_outlook_fallback(market_context):
-    top1 = market_context["top_sectors"].split(", ")[0]
-    bottom1 = market_context["bottom_sectors"].split(", ")[0]
-    vix = market_context["vix_close"]
-    tnx = market_context["tnx_close"]
-    dxy = market_context["dxy_close"]
-    return {
-        "macro": [
-            f"Watch inflation, labor, and consumer data against a {tnx:.2f}% 10-year yield.",
-            f"Hot data would pressure duration-sensitive groups; softer data could support {top1}.",
-        ],
-        "fed_policy": [
-            "Track whether Fed speakers validate or resist the current easing in financial conditions.",
-            f"Rates and the DXY at {dxy:.2f} remain the main valuation inputs for growth stocks.",
-        ],
-        "earnings_and_catalysts": [
-            f"Guidance must confirm that leadership in {top1} is supported by demand and margins.",
-            f"A weak read-through would expose continued underperformance in {bottom1}.",
-        ],
-        "risk_factors": [
-            f"VIX at {vix:.2f} defines the market's current downside cushion.",
-            "Watch for a reversal in mega-cap momentum, a yield spike, or abrupt commodity volatility.",
-        ],
-    }
+def finite_number(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
 
-def generate_next_session_outlook_claude(market_context):
-    prompt = (
-        "You are a senior equity strategist writing a compact next-session outlook after a completed U.S. market close. "
-        "Return four arrays of exactly two short bullets each. Each bullet must be one sentence, "
-        "actionable, specific, and grounded in the supplied data. Treat possible drivers as inferences, not proven causes. "
-        "Avoid paragraphs and generic language.\n\n"
-        f"Completed session: {market_context['session_date']}\n"
-        f"S&P 500: {market_context['sp_pct']:+.2f}% 1D\n"
-        f"VIX: {market_context['vix_close']:.2f}\n"
-        f"10-year yield: {market_context['tnx_close']:.2f}% ({market_context['tnx_pct']:+.2f}% 1D)\n"
-        f"DXY: {market_context['dxy_close']:.2f} ({market_context['dxy_pct']:+.2f}% 1D)\n"
-        f"Gold: {market_context['gold_pct']:+.2f}% 1D\n"
-        f"Crude: {market_context['oil_pct']:+.2f}% 1D\n"
-        f"BTC: {market_context['btc_pct']:+.2f}% 1D\n"
-        f"Top sectors: {market_context['top_sectors']}\n"
-        f"Bottom sectors: {market_context['bottom_sectors']}\n\n"
-        "Respond ONLY as JSON with array-valued keys: macro, fed_policy, "
-        "earnings_and_catalysts, risk_factors."
-    )
-    fallback = build_next_session_outlook_fallback(market_context)
-    return claude_json(
-        prompt,
-        required_keys={"macro", "fed_policy", "earnings_and_catalysts", "risk_factors"},
-        max_tokens=500,
-        fallback=fallback,
-    )
+def build_editorial_context(datasets, sectors, megacaps, charts, spy, rsp, session_date):
+    """Only verified same-session observations enter the editorial evidence pool.
+
+    Sector breadth is an ETF proxy, not constituent advance/decline breadth.
+    Return spreads are percentage points; Treasury level changes become basis points.
+    No news/calendar feed is present, so no event or causal claims are eligible.
+    """
+    session = session_date.isoformat()
+    previous = datasets['^GSPC'].get('previous_session_date')
+
+    def compact(row):
+        if (row.get('error') or row.get('session_date') != session
+                or row.get('previous_session_date') != previous
+                or not all(finite_number(row.get(k)) for k in ('end_price', 'pct_change', 'prev_close'))
+                or row['end_price'] <= 0 or row['prev_close'] <= 0):
+            return None
+        return {k: row[k] for k in ('end_price', 'pct_change', 'prev_close', 'session_date',
+                                    'previous_session_date', 'ticker_used') if k in row}
+
+    market = {k: compact(v) for k, v in datasets.items()}
+    sector_rows = {k: compact(v) for k, v in sectors.items()}
+    stocks = {k: compact(v['result']) for k, v in megacaps.items()}
+    market.update({'SPY': compact(spy), 'RSP': compact(rsp)})
+    cards = {}
+    metrics = {}
+
+    def add(key, group, headline, observed, interpretation, watch):
+        cards[key] = dict(group=group, headline=headline, observed=observed,
+                          interpretation=interpretation, watch=watch)
+
+    def pct(symbol):
+        row = market.get(symbol)
+        return row['pct_change'] if row else None
+
+    sp, nd, rut, vix = (pct(k) for k in ('^GSPC', '^IXIC', '^RUT', '^VIX'))
+    if sp is not None:
+        add('index', 'market', 'Equities close higher' if sp > 0 else 'Equities close lower' if sp < 0 else 'Equities finish flat',
+            f'S&P 500 {sp:+.2f}% at the close.',
+            'The headline index alone does not establish the strength of participation.',
+            'Check whether equal-weight performance and sector participation confirm the next index move.')
+    for key, value, label in [('nasdaq_gap', nd, 'Nasdaq'), ('small_cap_gap', rut, 'Russell 2000')]:
+        if sp is not None and value is not None:
+            gap = round(value - sp, 4); metrics[key + '_pp'] = gap
+            add(key, 'market', f'{label} {"outpaces" if gap > 0 else "trails" if gap < 0 else "matches"} the broad index',
+                f'{label} {value:+.2f}% versus S&P 500 {sp:+.2f}%, a {gap:+.2f} percentage-point spread.',
+                'The indices show uneven participation.' if abs(gap) >= .25 else 'Index returns were closely aligned; the sector split offers a finer participation check.',
+                f'Check whether {label} relative strength persists or converges with the S&P 500.')
+    valid_sectors = sorted(((k, v['pct_change']) for k, v in sector_rows.items() if v), key=lambda x: x[1], reverse=True)
+    share = None
+    if valid_sectors:
+        count = len(valid_sectors); positive = sum(v > 0 for _, v in valid_sectors)
+        share = positive / count * 100
+        metrics['sector_breadth'] = {'positive': positive, 'valid': count, 'expected': len(sectors),
+                                    'positive_share_pct': round(share, 2), 'proxy': 'sector ETF participation'}
+        top, bottom = valid_sectors[0], valid_sectors[-1]
+        metrics['sector_dispersion_pp'] = round(top[1] - bottom[1], 4)
+        metrics['sector_relative_to_sp_pp'] = {k: round(v-sp, 4) for k,v in valid_sectors} if sp is not None else {}
+        add('breadth', 'regime', 'Participation broadens the read' if share >= 60 else 'Participation warrants caution',
+            f'{positive} of {count} available sector ETFs advanced ({share:.1f}%); coverage {count}/{len(sectors)}.',
+            'Sector ETF participation was broad.' if share >= 60 else 'Sector ETF participation was mixed.' if share >= 40 else 'Most available sector ETFs did not advance.',
+            f'Participation above {positive}/{count} advancing sector ETFs would broaden the next-session reading; lower participation would weaken it.' if positive < count else f'Test whether all {count} available sector ETFs continue to advance or participation narrows.')
+        add('sectors', 'sector', f'{top[0]} ranks among sector leaders' if top[1] != bottom[1] else 'Sector returns finish level',
+            (f'{top[0]} {top[1]:+.2f}% ranked highest; {bottom[0]} {bottom[1]:+.2f}% ranked lowest, separated by {top[1]-bottom[1]:.2f} percentage points.' if top[1] != bottom[1] else f'All {count} available sector ETF returns matched at {top[1]:+.2f}%.'),
+            'The return spread identifies relative leadership, not fund flows or a verified catalyst.',
+            f'Check whether {top[0]} retains relative strength and whether {bottom[0]} closes the gap.')
+        for i,(name,value) in enumerate(valid_sectors):
+            add(f'sector_{i}', 'sector', f'{name} in focus',
+                f'{name} {value:+.2f}%'+(f', {value-sp:+.2f} percentage points versus the S&P 500.' if sp is not None else '.'),
+                'Relative return identifies positioning exposure; it does not establish why the sector moved.',
+                f'Check whether {name} sustains its relative performance next session.')
+    if pct('RSP') is not None and pct('SPY') is not None:
+        gap = pct('RSP') - pct('SPY'); metrics['equal_weight_minus_cap_weight_pp'] = round(gap,4)
+        add('weighting','regime','Equal weight leads' if gap > 0 else 'Cap weight leads' if gap < 0 else 'Weighting offers no separation',
+            f'RSP {pct("RSP"):+.2f}% versus SPY {pct("SPY"):+.2f}%; equal weight minus cap weight {gap:+.2f} percentage points.',
+            'Equal-weight outperformance supports a broader participation reading.' if gap > 0 else 'Cap-weight outperformance is consistent with concentrated leadership, not a measured attribution of index contributions.' if gap < 0 else 'Equal and cap weighting delivered matching returns.',
+            f'Use the {gap:+.2f} percentage-point RSP-minus-SPY spread as the reference: a rise favors broader participation; a decline favors cap-weight leadership.')
+    if sp is not None and vix is not None:
+        tone = 'risk_on_confirmed' if sp > 0 and vix < 0 and share is not None and len(valid_sectors) == len(sectors) and share >= 60 else 'risk_off_confirmed' if sp < 0 and vix > 0 and share is not None and len(valid_sectors) == len(sectors) and share <= 40 else 'mixed'
+        metrics['risk_confirmation'] = {'signal':tone,'rule':'Full sector coverage + S&P direction + opposite VIX direction + sector positive share >=60% or <=40%; otherwise mixed'}
+        add('risk','regime','Risk signals align' if tone != 'mixed' else 'Risk signals remain mixed',
+            f'S&P 500 {sp:+.2f}%; VIX {vix:+.2f}%'+(f'; positive sector share {share:.1f}%.' if share is not None else '; sector participation unavailable.'),
+            {'risk_on_confirmed':'Equities, volatility and sector participation support a risk-on reading.', 'risk_off_confirmed':'Equities, volatility and sector participation support a defensive reading.', 'mixed':'The equity, volatility and participation checks do not give a unanimous directional signal.'}[tone],
+            'Look for agreement between equity direction, volatility and sector participation before treating the move as broadly confirmed.')
+    if market.get('^TNX'):
+        row=market['^TNX'];bps=(row['end_price']-row['prev_close'])*100;metrics['ten_year_change_bp']=round(bps,4)
+        add('rates','macro','Yields frame the valuation read',
+            f'The ten-year yield closed at {row["end_price"]:.2f}%, a {bps:+.2f} basis-point change.',
+            'Higher yields can raise the valuation hurdle for duration-sensitive equities; co-movement is not proof of causality.' if bps > 0 else 'Lower yields can ease the valuation hurdle for duration-sensitive equities; co-movement is not proof of causality.' if bps < 0 else 'An unchanged yield offers little directional confirmation.',
+            f'Use {row["end_price"]:.2f}% as the ten-year closing reference; test whether a move above it coincides with weaker technology relative returns.')
+    for key,a,b,label in [('dollar_gold','DX-Y.NYB','GC=F','Dollar and gold'),('oil_equities','CL=F','^GSPC','Oil and equities'),('crypto_equities','BTC-USD','^IXIC','Bitcoin and Nasdaq')]:
+        if pct(a) is not None and pct(b) is not None:
+            same = pct(a)*pct(b)>0
+            metrics[key]={'same_direction':same,'first_pct':pct(a),'second_pct':pct(b),'window':'same requested dates; different market closing times'}
+            add(key,'macro',label+' in context',
+                f'{market[a]["ticker_used"]} {pct(a):+.2f}% and {market[b]["ticker_used"]} {pct(b):+.2f}% over their reported sessions.',
+                'The moves point in the same direction, but a single session does not establish correlation or a shared cause.' if same else 'The moves do not give a common directional signal; differing session clocks limit cross-asset conclusions.',
+                f'Test whether {market[a]["ticker_used"]} ({pct(a):+.2f}%) and {market[b]["ticker_used"]} ({pct(b):+.2f}%) retain their directional relationship in the next comparable window.')
+    valid_stocks={k:v for k,v in stocks.items() if v}
+    if valid_stocks:
+        ordered=sorted(valid_stocks, key=lambda k:valid_stocks[k]['pct_change'],reverse=True)
+        best,worst=ordered[0],ordered[-1]
+        positives=[max(v['pct_change'],0) for v in valid_stocks.values()]
+        metrics['megacap_sample']={'valid':len(ordered),'expected':len(stocks),'positive':sum(v>0 for v in positives),
+            'dispersion_pp':round(valid_stocks[best]['pct_change']-valid_stocks[worst]['pct_change'],4),
+            'leader_share_of_positive_returns_pct':round(max(positives)/sum(positives)*100,2) if sum(positives)>0 else None,
+            'limitation':'unweighted selected-stock sample; not index contribution or portfolio weight'}
+        add('megacaps','megacap','Selected technology leaders diverge' if valid_stocks[best]['pct_change'] != valid_stocks[worst]['pct_change'] else 'Selected technology returns match',
+            (f'{best} {valid_stocks[best]["pct_change"]:+.2f}% ranked highest in the available technology sample; {worst} {valid_stocks[worst]["pct_change"]:+.2f}% ranked lowest.' if valid_stocks[best]['pct_change'] != valid_stocks[worst]['pct_change'] else f'The {len(ordered)} available technology-stock returns matched at {valid_stocks[best]["pct_change"]:+.2f}%.'),
+            'Dispersion in this selected sample distinguishes stock-specific exposure from the headline technology narrative; no catalyst is verified.',
+            f'Compare next-session participation with today’s {sum(v > 0 for v in positives)}/{len(ordered)} advancing technology names; fewer advancers would narrow leadership.')
+    for symbol,row in valid_stocks.items():
+        move=row['pct_change']
+        add('stock_'+symbol,'megacap',symbol+' relative performance',
+            f'{symbol} {move:+.2f}%'+(f', {move-nd:+.2f} percentage points versus Nasdaq.' if nd is not None else '.'),
+            'Relative price strength is observable; earnings, AI demand and order-flow explanations are not established by these data.',
+            f'Check whether {symbol} maintains relative strength alongside the broader technology sample.')
+    for key,symbol in [('nikkei','^N225'),('stoxx','^STOXX50E'),('ftse','^FTSE'),('hsi','^HSI'),('btc','BTC-USD'),('eth','ETH-USD'),('sol','SOL-USD'),('xrp','XRP-USD')]:
+        if market.get(symbol):
+            add(key,'global' if key in ('nikkei','stoxx','ftse','hsi') else 'crypto',symbol+' session read',
+                f'{symbol} {pct(symbol):+.2f}% for the reported session.',
+                'Local closing times differ from the U.S. equity close; this is context, not synchronized confirmation.',
+                f'Check whether {symbol} maintains its direction in the next comparable observation window.')
+    intraday={}
+    for symbol,chart in charts.items():
+        values=chart.get('closes',[])
+        if (chart.get('error') or chart.get('source')!='intraday_5m' or chart.get('session_date')!=session
+                or len(values)<3 or not all(finite_number(x) and x>0 for x in values)):
+            continue
+        high,low=max(values),min(values)
+        intraday[symbol]={'first_to_last_pct':round((values[-1]/values[0]-1)*100,4),
+                         'close_location_pct':round((values[-1]-low)/(high-low)*100,2) if high>low else None,
+                         'source':'sampled intraday closes, not exchange OHLC extremes'}
+    metrics['intraday']=intraday
+    if '^GSPC' in intraday:
+        move=intraday['^GSPC']['first_to_last_pct'];location=intraday['^GSPC']['close_location_pct']
+        add('intraday','market','The session path qualifies the close',
+            f'S&P 500 moved {move:+.2f}% from the first to last available intraday sample.'+(f' The last sample was at {location:.1f}% of the sampled closing-price range.' if location is not None else ' The sampled range was flat.'),
+            'The path distinguishes intraday follow-through from the previous-close return; sampled bars do not establish an event catalyst.',
+            'Check whether the next session extends the closing direction or reverses it.')
+    context={'session_date':session,'market':market,'sectors':sector_rows,'megacaps':stocks,'derived_metrics':metrics,
+             'limitations':['No verified news, earnings or economic calendar; do not infer events.',
+                            'Missing/stale/error rows are null; no imputed zero returns.',
+                            'Sector ETFs and the selected technology sample are proxies, not whole-market breadth.',
+                            'Futures fallback instruments remain explicitly labeled; global and crypto clocks differ.']}
+    return context,cards
 
 
-def build_daily_takeaway_fallback(context):
-    return {
-        "what_moved": (
-            f"S&P 500 {context['sp_pct']:+.2f}% for the session; "
-            f"{context['top_sector']} led while {context['bottom_sector']} lagged."
-        ),
-        "why": (
-            f"Rates at {context['tnx']:.2f}% and VIX at {context['vix']:.2f} "
-            "were observed alongside the session's leadership pattern; causality is not established."
-        ),
-        "what_to_watch": (
-            f"Watch whether yields and DXY at {context['dxy']:.2f} stay contained "
-            "enough for breadth to improve."
-        ),
-    }
+EDITORIAL_GROUPS = {'headline':{'market','regime','sector'},'opening_summary':{'market','regime','sector','megacap'},'regime':{'regime'},
+                    'sector_leadership':{'sector'},'megacap_leadership':{'megacap'},
+                    'macro_read':{'macro'},'investor_takeaway':{'regime','market'},'watchlist':None}
 
 
-def generate_daily_takeaway_claude(context):
-    prompt = (
-        "You are a senior equity strategist summarizing one completed U.S. trading session. "
-        "Return exactly three short decision bullets as JSON. Each value must be one sentence and no more than 28 words. "
-        "Separate observed moves from inferred explanations and never state an unsupported cause as fact.\n\n"
-        f"Completed session: {context['session_date']}\n"
-        f"S&P 500: {context['sp_pct']:+.2f}% 1D\n"
-        f"Nasdaq: {context['nd_pct']:+.2f}% 1D\n"
-        f"DJIA: {context['dj_pct']:+.2f}% 1D\n"
-        f"VIX: {context['vix']:.2f}\n"
-        f"10-year yield: {context['tnx']:.2f}%\n"
-        f"DXY: {context['dxy']:.2f}\n"
-        f"Top sector: {context['top_sector']}\n"
-        f"Bottom sector: {context['bottom_sector']}\n\n"
-        "Respond ONLY with JSON keys what_moved, why, what_to_watch."
-    )
-    fallback = build_daily_takeaway_fallback(context)
-    return claude_json(
-        prompt,
-        required_keys={"what_moved", "why", "what_to_watch"},
-        max_tokens=240,
-        fallback=fallback,
-    )
+def editorial_choices(cards):
+    return {key:[cid for cid,card in cards.items() if groups is None or card['group'] in groups]
+            for key,groups in EDITORIAL_GROUPS.items()}
+
+
+def default_editorial_plan(cards):
+    choices=editorial_choices(cards)
+    priority=['risk','weighting','breadth','index','nasdaq_gap','small_cap_gap','intraday',
+              'sectors','megacaps','rates','dollar_gold','oil_equities','crypto_equities']
+    preferred = {'headline':['weighting','risk','index'], 'opening_summary':['index','sectors'],
+                 'regime':['risk','breadth'], 'sector_leadership':['sectors'],
+                 'megacap_leadership':['megacaps'], 'macro_read':['rates'],
+                 'investor_takeaway':['weighting','breadth'], 'watchlist':['breadth','rates','megacaps']}
+    result = {}
+    for key, ids in choices.items():
+        order = preferred[key] + priority
+        ranked = sorted(ids, key=lambda cid: order.index(cid) if cid in order else len(order))
+        result[key] = ranked[:3 if key == 'watchlist' else 2 if key == 'opening_summary' else 1]
+    return result
+
+
+def editorial_schema(cards):
+    properties={key:{'type':'array','items':{'type':'string','enum':ids or ['unavailable']}}
+                for key,ids in editorial_choices(cards).items()}
+    return {'type':'object','properties':properties,'required':list(properties),'additionalProperties':False}
+
+
+def parse_editorial_plan(raw,cards):
+    def unique_keys(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:raise ValueError('duplicate key')
+            result[key]=value
+        return result
+    plan=json.loads(raw,object_pairs_hook=unique_keys)
+    if not isinstance(plan,dict) or set(plan)!=set(EDITORIAL_GROUPS):raise ValueError('invalid sections')
+    for key,allowed in editorial_choices(cards).items():
+        ids=plan[key];limit=3 if key=='watchlist' else 2 if key=='opening_summary' else 1
+        if (not isinstance(ids,list) or len(ids)>limit or (bool(allowed) and not ids)
+                or any(not isinstance(cid,str) or cid not in allowed for cid in ids)
+                or len(set(ids))!=len(ids)):
+            raise ValueError('invalid evidence selection')
+    return plan
+
+
+def generate_editorial(context,cards):
+    """One bounded request. Model selects evidence, never supplies publishable facts.
+
+    The closed vocabulary is intentional: prompt-only numeric/catalyst restrictions
+    cannot guarantee grounded prose. All published text is assembled from validated
+    observations and explicitly labeled, conditional interpretations below.
+    """
+    plan=default_editorial_plan(cards);status='missing_key'
+    if should_use_ai():
+        try:
+            payload={'model':ANTHROPIC_MODEL,'max_tokens':1000,
+                'system':'You are the editor of a concise institutional market-close note. Select the most material evidence-backed angles from the supplied catalog. Prioritize what happened, confirmation or conflict, and testable next-session conditions. Use the full cross-asset context. Avoid repeating the same angle across sections where alternatives are useful. Never add facts, causes, events, predictions, or prose. Return only the specified JSON of catalog IDs. Select one ID per section, one or two for opening_summary, and three distinct watchlist IDs spanning participation, rates/cross-assets and leadership when available. Empty arrays only where no eligible evidence exists.',
+                'messages':[{'role':'user','content':json.dumps({'context':context,'catalog':cards,'eligible':editorial_choices(cards)},allow_nan=False,separators=(',',':'))}],
+                'output_config':{'format':{'type':'json_schema','schema':editorial_schema(cards)}}}
+            request=urllib.request.Request(ANTHROPIC_API_URL,data=json.dumps(payload).encode(),headers={
+                'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},method='POST')
+            with urllib.request.urlopen(request,timeout=35) as response:
+                body=json.loads(response.read(100_001).decode())
+            if body.get('stop_reason')!='end_turn':raise ValueError('incomplete response')
+            content=body.get('content')
+            if not isinstance(content,list) or not content or any(block.get('type')!='text' for block in content):
+                raise ValueError('unexpected response blocks')
+            plan=parse_editorial_plan(''.join(block['text'] for block in content),cards)
+            status='validated'
+        except Exception:
+            # Never echo response bodies, exception text or credentials into logs/artifacts.
+            print('Claude editorial request unavailable or invalid; using grounded fallback.')
+            status='request_or_validation_failed'
+    def render(key,field):
+        return ' '.join(cards[cid][field] for cid in plan[key])
+    editorial={'headline':render('headline','headline'),
+               'opening_summary':render('opening_summary','observed'),
+               'watchlist':[cards[cid]['watch'] for cid in plan['watchlist']]}
+    for key in ('regime','sector_leadership','megacap_leadership','macro_read','investor_takeaway'):
+        editorial[key]={'observed':render(key,'observed') or 'Verified evidence unavailable.',
+                        'interpretation':render(key,'interpretation') or 'No interpretation without verified evidence.'}
+    return editorial,{'mode':'ai' if status=='validated' else 'deterministic_fallback',
+                      'status':status,'contract_version':1,'model':ANTHROPIC_MODEL if status=='validated' else None,'selection':plan}
 
 
 # ─────────────────────────────────────────────
@@ -729,7 +822,6 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
         return False
 
     print(f"Fetching market data for completed session {session_date.isoformat()}...")
-    ai_enabled = should_use_ai()
 
     ticker_symbols = (
         "^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "^IRX", "DX-Y.NYB",
@@ -803,35 +895,6 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
     top_sectors = sorted_sectors[:4]
     bottom_sectors = sorted_sectors[-4:]
 
-    all_sectors_str = ", ".join(
-        f"{name} {value:+.2f}%" for name, value in sorted_sectors
-    )
-    sector_prompt = (
-        "Write four one-sentence captions for a completed-session sector ranking: two about leaders and two about laggards. "
-        "Be specific, cite daily percentages, label explanations as inference, and return only JSON keys top_bullet1, top_bullet2, "
-        "bot_bullet1, bot_bullet2.\n"
-        f"All sectors: {all_sectors_str}\n"
-        f"Top 4: {top_sectors}\nBottom 4: {bottom_sectors}\n"
-        f"S&P 500: {sp['pct_change']:+.2f}% 1D; VIX: {vix['end_price']:.2f}."
-    )
-    sector_fallback = {
-        "top_bullet1": f"{top_sectors[0][0]} led the session ranking at {top_sectors[0][1]:+.2f}%.",
-        "top_bullet2": f"{top_sectors[1][0]} followed at {top_sectors[1][1]:+.2f}% for the session.",
-        "bot_bullet1": f"{bottom_sectors[0][0]} remained in the lower tier at {bottom_sectors[0][1]:+.2f}%.",
-        "bot_bullet2": f"{bottom_sectors[-1][0]} ranked last at {bottom_sectors[-1][1]:+.2f}% for the session.",
-    }
-    sector_bullets = (
-        claude_json(
-            sector_prompt,
-            required_keys={"top_bullet1", "top_bullet2", "bot_bullet1", "bot_bullet2"},
-            max_tokens=300,
-            fallback=sector_fallback,
-        )
-        if ai_enabled
-        else sector_fallback
-    )
-    sector_bullets = sanitize_text_map(sector_bullets)
-
     session_charts = {
         symbol: fetch_daily_chart_data(symbol, session_date, fallback_data=datasets[symbol])
         for _, symbol in SUMMARY_TILE_TICKERS
@@ -864,158 +927,53 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
                 fallback_data=result,
             ),
         }
-    mc_lines = "\n".join(
-        f"- {ticker} ({entry['name']}): ${entry['result']['end_price']:,.2f}, "
-        f"{entry['result']['pct_change']:+.2f}% 1D"
-        for ticker, entry in megacap_data.items()
-    )
-    mc_prompt = (
-        "Write one concise analytical sentence per ticker about the completed session. Do not start with the ticker or company name. "
-        "Distinguish observed price action from inferred significance. Return only a JSON object mapping each ticker to its sentence.\n"
-        f"S&P 500: {sp['pct_change']:+.2f}% 1D; VIX: {vix['end_price']:.2f}; "
-        f"10-year: {tnx['end_price']:.2f}%.\n{mc_lines}"
-    )
-    mc_fallback = {
-        ticker: f"Closed at ${entry['result']['end_price']:,.2f} after a {entry['result']['pct_change']:+.2f}% session move."
-        for ticker, entry in megacap_data.items()
-    }
-    mc_descriptions = (
-        claude_json(
-            mc_prompt,
-            required_keys=set(megacap_data.keys()),
-            max_tokens=900,
-            fallback=mc_fallback,
-        )
-        if ai_enabled
-        else mc_fallback
-    )
-    mc_descriptions = sanitize_text_map(mc_descriptions)
-    logo_slugs = {
-        "AAPL": "apple",
-        "MSFT": "microsoft",
-        "NVDA": "nvidia",
-        "AMZN": "amazon",
-        "META": "meta-platforms",
-        "SNDK": "sandisk",
-        "AMD": "advanced-micro-devices",
-        "INTC": "intel",
-        "MU": "micron-technology",
-    }
-    megacap_html = "".join(
-        render_megacap_row(
-            ticker,
-            entry["name"],
-            entry["result"],
-            mc_descriptions[ticker],
-            logo_slugs.get(ticker, ""),
-        )
-        for ticker, entry in megacap_data.items()
-    )
-
-    global_prompt = (
-        "Write one short observed-status sentence for each index's latest daily close. "
-        "Do not claim a cause without supplied evidence. Return only JSON keys nikkei, stoxx, ftse, hsi.\n"
-        f"Nikkei: {n225['pct_change']:+.2f}% 1D\n"
-        f"Euro Stoxx 50: {stoxx['pct_change']:+.2f}% 1D\n"
-        f"FTSE 100: {ftse['pct_change']:+.2f}% 1D\n"
-        f"Hang Seng: {hsi['pct_change']:+.2f}% 1D"
-    )
-    global_fallback = {
-        "nikkei": "Japanese equities reflected regional growth and currency positioning.",
-        "stoxx": "European blue chips tracked policy and earnings expectations.",
-        "ftse": "UK large caps remained sensitive to commodities and sterling.",
-        "hsi": "Hong Kong equities traded on China policy and technology sentiment.",
-    }
-    global_status = (
-        claude_json(
-            global_prompt,
-            required_keys={"nikkei", "stoxx", "ftse", "hsi"},
-            max_tokens=300,
-            fallback=global_fallback,
-        )
-        if ai_enabled
-        else global_fallback
-    )
-    global_status = sanitize_text_map(global_status)
-    global_rows = "".join(
-        (
-            render_global_row("Nikkei 225", n225, global_status["nikkei"]),
-            render_global_row("Euro Stoxx 50", stoxx, global_status["stoxx"]),
-            render_global_row("FTSE 100", ftse, global_status["ftse"]),
-            render_global_row("Hang Seng", hsi, global_status["hsi"]),
-        )
-    )
-
-    crypto_prompt = (
-        "Write one short daily-close analytical sentence for BTC, ETH, SOL, and XRP. "
-        "Distinguish observations from inference. Return only JSON keys btc, eth, sol, xrp.\n"
-        f"BTC {btc['pct_change']:+.2f}% 1D; ETH {eth['pct_change']:+.2f}%; "
-        f"SOL {sol['pct_change']:+.2f}%; XRP {xrp['pct_change']:+.2f}%."
-    )
-    crypto_fallback = {
-        "btc": f"Closed at ${btc['end_price']:,.0f} and remained the main crypto risk benchmark.",
-        "eth": f"Closed at ${eth['end_price']:,.0f} with relative performance signaling layer-1 risk appetite.",
-        "sol": f"Closed at ${sol['end_price']:.2f} as higher-beta crypto exposure moved with liquidity conditions.",
-        "xrp": f"Closed at ${xrp['end_price']:.4f} with payments and regulatory headlines still relevant.",
-    }
-    crypto_descriptions = (
-        claude_json(
-            crypto_prompt,
-            required_keys={"btc", "eth", "sol", "xrp"},
-            max_tokens=400,
-            fallback=crypto_fallback,
-        )
-        if ai_enabled
-        else crypto_fallback
-    )
-    crypto_descriptions = sanitize_text_map(crypto_descriptions)
-
-    lookahead_context = {
-        "session_date": session_date.isoformat(),
-        "sp_pct": sp["pct_change"],
-        "vix_close": vix["end_price"],
-        "tnx_close": tnx["end_price"],
-        "tnx_pct": tnx["pct_change"],
-        "dxy_close": dxy["end_price"],
-        "dxy_pct": dxy["pct_change"],
-        "top_sectors": ", ".join(name for name, _ in top_sectors[:2]),
-        "bottom_sectors": ", ".join(name for name, _ in bottom_sectors[:2]),
-        "btc_pct": btc["pct_change"],
-        "oil_pct": oil["pct_change"],
-        "gold_pct": gold["pct_change"],
-    }
-    next_session_outlook = (
-        generate_next_session_outlook_claude(lookahead_context)
-        if ai_enabled
-        else build_next_session_outlook_fallback(lookahead_context)
-    )
-    for key in ("macro", "fed_policy", "earnings_and_catalysts", "risk_factors"):
-        if not isinstance(next_session_outlook.get(key), list):
-            next_session_outlook[key] = [str(next_session_outlook.get(key, ""))]
-
-    takeaway_context = {
-        "session_date": session_date.isoformat(),
-        "sp_pct": sp["pct_change"],
-        "nd_pct": nd["pct_change"],
-        "dj_pct": dj["pct_change"],
-        "vix": vix["end_price"],
-        "tnx": tnx["end_price"],
-        "dxy": dxy["end_price"],
-        "top_sector": top_sectors[0][0],
-        "bottom_sector": bottom_sectors[-1][0],
-    }
-    daily_takeaway = (
-        generate_daily_takeaway_claude(takeaway_context)
-        if ai_enabled
-        else build_daily_takeaway_fallback(takeaway_context)
-    )
-    daily_takeaway = sanitize_text_map(daily_takeaway)
-
     spy = fetch_daily_data("SPY", session_date, previous_session_date)
     rsp = fetch_daily_data("RSP", session_date, previous_session_date)
     advances = sum(1 for value in sector_perf.values() if value > 0)
     declines = sum(1 for value in sector_perf.values() if value < 0)
     breadth_share = round((advances / len(sector_perf)) * 100, 1) if sector_perf else 0.0
+    context, cards = build_editorial_context(
+        datasets, sector_results, megacap_data,
+        {**session_charts, **{ticker: entry['session_chart'] for ticker, entry in megacap_data.items()}},
+        spy, rsp, session_date,
+    )
+    editorial, narrative_provenance = generate_editorial(context, cards)
+    ai_enabled = narrative_provenance["mode"] == "ai"
+
+    def observation(card_id):
+        return cards.get(card_id, {}).get("observed", "Verified session data unavailable.")
+
+    # Compatibility fields remain plain text; escape only at the HTML boundary.
+    sector_bullets = {
+        "top_bullet1": observation("sectors"),
+        "top_bullet2": observation("breadth"),
+        "bot_bullet1": editorial["sector_leadership"]["interpretation"],
+        "bot_bullet2": cards.get("sectors", {}).get("watch", "Verified sector data unavailable."),
+    }
+    mc_descriptions = {ticker: observation("stock_" + ticker) for ticker in megacap_data}
+    global_status = {key: observation(key) for key in ("nikkei", "stoxx", "ftse", "hsi")}
+    crypto_descriptions = {key: observation(key) for key in ("btc", "eth", "sol", "xrp")}
+    daily_takeaway = {
+        "what_moved": editorial["investor_takeaway"]["observed"],
+        "why": editorial["investor_takeaway"]["interpretation"],
+        "what_to_watch": " ".join(editorial["watchlist"]),
+    }
+    next_session_outlook = {
+        "macro": [cards[cid]["watch"] for cid in ("dollar_gold", "oil_equities") if cid in cards],
+        "fed_policy": [cards[cid]["watch"] for cid in ("rates", "risk") if cid in cards],
+        "earnings_and_catalysts": [cards[cid]["watch"] for cid in ("megacaps", "nasdaq_gap") if cid in cards],
+        "risk_factors": editorial["watchlist"][:2],
+    }
+    logo_slugs = {"AAPL": "apple", "MSFT": "microsoft", "NVDA": "nvidia", "AMZN": "amazon",
+                  "META": "meta-platforms", "SNDK": "sandisk", "AMD": "advanced-micro-devices",
+                  "INTC": "intel", "MU": "micron-technology"}
+    megacap_html = "".join(render_megacap_row(ticker, entry["name"], entry["result"],
+                         html.escape(mc_descriptions[ticker]), logo_slugs.get(ticker, ""))
+                         for ticker, entry in megacap_data.items())
+    global_rows = "".join(render_global_row(name, data, html.escape(global_status[key]))
+                         for name, data, key in (("Nikkei 225", n225, "nikkei"),
+                         ("Euro Stoxx 50", stoxx, "stoxx"), ("FTSE 100", ftse, "ftse"),
+                         ("Hang Seng", hsi, "hsi")))
 
     ticker_items = "".join(
         (
@@ -1031,7 +989,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
     )
     ticker_tape = f'<div class="ticker-track">{ticker_items}{ticker_items}</div>'
 
-    market_tone = "Risk-On" if sp["pct_change"] >= 0 else "Risk-Off"
+    market_tone = {"risk_on_confirmed": "Risk-On", "risk_off_confirmed": "Risk-Off"}.get(context["derived_metrics"].get("risk_confirmation", {}).get("signal"), "Mixed")
     tone_class = "positive" if sp["pct_change"] >= 0 else "negative"
     sector_chart = render_sector_chart(all_sectors_ranked)
 
@@ -1236,6 +1194,12 @@ td {{ color:var(--muted); font-size:11px; }}
     <div class="asset-grid">{crypto_cards}</div>
   </section>
 
+  <section class="section" aria-label="Editorial brief">
+    <div class="section-heading"><div><h2>{html.escape(editorial['headline'])}</h2></div></div>
+    <p>{html.escape(editorial['opening_summary'])}</p>
+    <p><strong>Interpretation:</strong> {html.escape(editorial['regime']['interpretation'])}</p>
+    <p>{html.escape(editorial['macro_read']['observed'])}</p>
+  </section>
   <section class="section" id="takeaway">
     <div class="section-heading"><div><div class="section-label">05 · Decision Summary</div><h2>Investor takeaway</h2></div><p>Three decisions, not another paragraph.</p></div>
     {daily_takeaway_html}
@@ -1268,7 +1232,9 @@ td {{ color:var(--muted); font-size:11px; }}
         "session_date": session_date.isoformat(),
         "previous_session_date": previous_session_date.isoformat(),
         "generated_at": normalize_market_now(now).isoformat(),
-        "report_mode": "ai" if ai_enabled else "deterministic_fallback",
+        "report_mode": narrative_provenance["mode"],
+        "narrative_provenance": narrative_provenance,
+        "derived_metrics": context["derived_metrics"],
         "market_data": datasets,
         "session_charts": session_charts,
         "mega_cap_data": megacap_data,
@@ -1284,6 +1250,7 @@ td {{ color:var(--muted); font-size:11px; }}
             "rsp_pct_change": rsp["pct_change"] if not rsp.get("error") else None,
         },
         "narrative": {
+            "editorial": editorial,
             "sector_bullets": sector_bullets,
             "megacap_descriptions": mc_descriptions,
             "global_status": global_status,

@@ -33,12 +33,25 @@ type MegaCapSnapshot = {
   session_chart?: SessionChart;
 };
 
+type EditorialReading = { observed: string; interpretation: string };
+type EditorialBrief = {
+  headline: string;
+  opening_summary: string;
+  regime: EditorialReading;
+  sector_leadership: EditorialReading;
+  megacap_leadership: EditorialReading;
+  macro_read: EditorialReading;
+  investor_takeaway: EditorialReading;
+  watchlist: string[];
+};
+
 type DailyReport = {
   report_type: "daily_market_close";
   session_date: string;
   previous_session_date: string;
   generated_at: string;
   report_mode: string;
+  derived_metrics?: { risk_confirmation?: { signal: string } };
   market_data: Record<string, MarketDatum>;
   session_charts: Record<string, SessionChart>;
   mega_cap_data?: Record<string, MegaCapSnapshot>;
@@ -51,6 +64,7 @@ type DailyReport = {
     rsp_pct_change: number | null;
   };
   narrative: {
+    editorial?: EditorialBrief;
     megacap_descriptions: Record<string, string>;
     crypto_descriptions: Record<"btc" | "eth" | "sol" | "xrp", string>;
     daily_takeaway: { what_moved: string; why: string; what_to_watch: string };
@@ -257,6 +271,7 @@ export default function Home() {
       hasSessionRange: Boolean(snapshot),
     };
   }), []);
+  const editorial = dailyReport.narrative.editorial;
   const sp = market["^GSPC"];
   const nasdaq = market["^IXIC"];
   const russell = market["^RUT"];
@@ -273,26 +288,31 @@ export default function Home() {
   const issue = `${String(sessionDate.getFullYear()).slice(-2)}.${String(isoWeek(sessionDate)).padStart(2, "0")}`;
   const generatedAt = new Date(dailyReport.generated_at);
   const generatedLabel = generatedAt.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" });
-  const sectorTotal = breadth.advances + breadth.declines;
+  const sectorTotal = sectorEntries.length;
   const breadthTone = breadth.positive_sector_share >= 60 ? "Broad" : breadth.positive_sector_share >= 45 ? "Mixed" : "Narrow";
-  const riskTone = sp.pct_change >= 0 && vix.pct_change <= 0 ? "Constructive" : sp.pct_change < 0 && vix.pct_change > 0 ? "Defensive" : "Mixed";
-  const equalWeightGap = (breadth.rsp_pct_change ?? 0) - (breadth.spy_pct_change ?? 0);
-  const capWeightMessage = equalWeightGap > 0
-    ? `Equal weight beat cap weight by ${Math.abs(equalWeightGap).toFixed(2)} points, showing that participation reached beyond the largest stocks.`
-    : `Cap weight beat equal weight by ${Math.abs(equalWeightGap).toFixed(2)} points, showing that the largest stocks carried the index.`;
-  const thesisQuote = equalWeightGap > 0 ? "The average stock outran the headline index." : "The headline index outran the average stock.";
+  const riskSignal = dailyReport.derived_metrics?.risk_confirmation?.signal;
+  const riskTone = riskSignal ? riskSignal === "risk_on_confirmed" ? "Constructive" : riskSignal === "risk_off_confirmed" ? "Defensive" : "Mixed"
+    : sp.pct_change > 0 && vix.pct_change < 0 && breadth.positive_sector_share >= 60 ? "Constructive"
+    : sp.pct_change < 0 && vix.pct_change > 0 && breadth.positive_sector_share <= 40 ? "Defensive" : "Mixed";
+  const equalWeightGap = breadth.rsp_pct_change != null && breadth.spy_pct_change != null
+    ? breadth.rsp_pct_change - breadth.spy_pct_change : null;
+  const capWeightMessage = equalWeightGap === null
+    ? "The equal-weight comparison is unavailable for this session."
+    : equalWeightGap === 0 ? "Equal-weight and cap-weight returns matched."
+    : `${equalWeightGap > 0 ? "Equal weight" : "Cap weight"} outperformed by ${Math.abs(equalWeightGap).toFixed(2)} percentage points. This is a participation proxy, not an attribution of index contributions.`;
+  const thesisQuote = editorial?.regime.interpretation ?? capWeightMessage;
   const spChart = dailyReport.session_charts["^GSPC"];
   const chartTimes = spChart?.times ?? ["9:30 AM", "4:00 PM"];
   const chartAxis = [chartTimes[0], chartTimes[Math.floor(chartTimes.length / 2)], chartTimes.at(-1)].filter(Boolean) as string[];
   const decisionSummary = [
-    ["What moved", `S&P 500 ${formatPct(sp.pct_change)} and Nasdaq ${formatPct(nasdaq.pct_change)} for the session; ${sectorLabel(topSector[0])} led while ${sectorLabel(bottomSector[0])} lagged.`],
-    ["Why", `Leadership rotated from ${sectorLabel(bottomSector[0])} (${formatPct(bottomSector[1])}) toward ${sectorLabel(topSector[0])} (${formatPct(topSector[1])}); WTI moved ${formatPct(oil.pct_change)}.`],
-    ["What to watch", decodeText(dailyReport.narrative.daily_takeaway.what_to_watch)],
+    ["Observed", decodeText(dailyReport.narrative.daily_takeaway.what_moved)],
+    ["Interpretation", decodeText(dailyReport.narrative.daily_takeaway.why)],
+    ["Next-session checks", decodeText(dailyReport.narrative.daily_takeaway.what_to_watch)],
   ];
   const outlookItems: Array<[string, string, string[]]> = [
-    ["01", "Macro data", dailyReport.narrative.next_session_outlook.macro],
-    ["02", "Fed & rates", dailyReport.narrative.next_session_outlook.fed_policy],
-    ["03", "Earnings & AI", dailyReport.narrative.next_session_outlook.earnings_and_catalysts],
+    ["01", "Cross-asset checks", dailyReport.narrative.next_session_outlook.macro],
+    ["02", "Rates & confirmation", dailyReport.narrative.next_session_outlook.fed_policy],
+    ["03", "Technology leadership", dailyReport.narrative.next_session_outlook.earnings_and_catalysts],
     ["04", "Risk dashboard", dailyReport.narrative.next_session_outlook.risk_factors],
   ];
 
@@ -312,8 +332,8 @@ export default function Home() {
           <div className="hero-grid">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>
-              <h1>{sectorLabel(topSector[0])} held up.<br /><em>{sectorLabel(bottomSector[0])} gave way.</em></h1>
-              <p className="dek">The S&amp;P 500 ended {formatPct(sp.pct_change)} and the Nasdaq {formatPct(nasdaq.pct_change)}. {sectorLabel(topSector[0])} led at {formatPct(topSector[1])}, {sectorLabel(bottomSector[0])} lagged at {formatPct(bottomSector[1])}, and volatility finished {vix.pct_change >= 0 ? "higher" : "lower"}.</p>
+              <h1>{editorial?.headline ?? `${sectorLabel(topSector[0])} led the sector ranking.`}</h1>
+              <p className="dek">{editorial?.opening_summary ?? dailyReport.narrative.daily_takeaway.what_moved}</p>
               <div className="hero-tags">
                 <span className={`tag ${sp.pct_change >= 0 ? "up" : "down"}`}>S&amp;P {formatPct(sp.pct_change)}</span>
                 <span className="tag neutral">Breadth {breadth.advances}/{sectorTotal}</span>
@@ -351,19 +371,20 @@ export default function Home() {
         </section>
 
         <section className="thesis section-block">
-          <div className="thesis-label"><span>THE HOUSE VIEW</span><span>3 MIN READ</span></div>
+          <div className="thesis-label"><span>INTERPRETATION</span><span>3 MIN READ</span></div>
           <blockquote>“{thesisQuote}”</blockquote>
-          <p>{capWeightMessage} {sectorLabel(topSector[0])}, {sectorLabel(sectorEntries[1][0])}, and {sectorLabel(sectorEntries[2][0])} led, while the VIX moved {formatPct(vix.pct_change)} to {formatNumber(vix.end_price)}.</p>
+          <p>{editorial?.regime.observed ?? capWeightMessage} Interpretation reflects price relationships; no event catalyst is inferred.</p>
         </section>
 
         <section className="section-block" id="sectors">
           <div className="section-heading"><div><p className="section-kicker">02 / LEADERSHIP</p><h2>Where the tape actually moved</h2></div><p>All 11 sector ETFs ranked by session return, with breadth and weighting checks above.</p></div>
           <div className="comparison-strip" aria-label="Market breadth comparison">
-            <div><span>CAP-WEIGHTED S&amp;P</span><strong className={(breadth.spy_pct_change ?? 0) >= 0 ? "positive" : "negative"}>{formatPct(breadth.spy_pct_change ?? 0)}</strong></div>
-            <div><span>EQUAL-WEIGHT S&amp;P</span><strong className={(breadth.rsp_pct_change ?? 0) >= 0 ? "positive" : "negative"}>{formatPct(breadth.rsp_pct_change ?? 0)}</strong></div>
-            <div><span>SPY CHECK</span><strong className={(breadth.spy_pct_change ?? 0) >= 0 ? "positive" : "negative"}>{formatPct(breadth.spy_pct_change ?? 0)}</strong></div>
+            <div><span>CAP-WEIGHTED S&amp;P</span><strong className={(breadth.spy_pct_change ?? 0) >= 0 ? "positive" : "negative"}>{breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)}</strong></div>
+            <div><span>EQUAL-WEIGHT S&amp;P</span><strong className={(breadth.rsp_pct_change ?? 0) >= 0 ? "positive" : "negative"}>{breadth.rsp_pct_change == null ? "Unavailable" : formatPct(breadth.rsp_pct_change)}</strong></div>
+            <div><span>SPY CHECK</span><strong className={(breadth.spy_pct_change ?? 0) >= 0 ? "positive" : "negative"}>{breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)}</strong></div>
             <div><span>POSITIVE SECTORS</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div>
           </div>
+          {editorial && <p>{editorial.sector_leadership.observed} <strong>Interpretation:</strong> {editorial.sector_leadership.interpretation}</p>}
           <div className="sector-board">
             {sectorEntries.map(([name, value], index) => (
               <div className="sector-row" key={name}>
@@ -377,6 +398,7 @@ export default function Home() {
 
         <section className="section-block" id="mega-cap">
           <div className="section-heading"><div><p className="section-kicker">03 / MEGA-CAP &amp; AI</p><h2>The leadership engine</h2></div><p>Close, session range, daily return, and the latest verified price path for the market’s most-watched technology names.</p></div>
+          {editorial && <p>{editorial.megacap_leadership.observed} <strong>Interpretation:</strong> {editorial.megacap_leadership.interpretation}</p>}
           <div className="mega-grid">
             {megaCaps.map(({ ticker, name, item, chartValues, chartAxis, chartSource, hasSessionRange }) => {
               const positive = item.pct_change >= 0;
@@ -386,6 +408,7 @@ export default function Home() {
                     <div className="company-id"><img src={`https://s3-symbol-logo.tradingview.com/${megaCapLogoSlugs[ticker]}--big.svg`} alt="" /><div><strong>{ticker}</strong><span>{name}</span></div></div>
                     <strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong>
                   </div>
+                  <p>{decodeText(dailyReport.narrative.megacap_descriptions[ticker] ?? "")}</p>
                   <div className="mega-price">${formatNumber(item.end_price)}</div>
                   <div className="mega-range">
                     <span>{hasSessionRange ? "DAY LOW" : "PREV CLOSE"} <b>${formatNumber(hasSessionRange ? item.day_low : item.prev_close)}</b></span>
@@ -406,8 +429,8 @@ export default function Home() {
           <div className="macro-copy">
             <p className="section-kicker">04 / MACRO PULSE</p>
             <h2>Yields {tenYear.abs_change <= 0 ? "eased" : "rose"}.<br />Oil {oil.pct_change >= 0 ? "gained" : "fell"}.</h2>
-            <p>The 10-year yield moved {formatBps(tenYear.abs_change)} to {formatNumber(tenYear.end_price)}%, while WTI moved {formatPct(oil.pct_change)} to ${formatNumber(oil.end_price)}. The dollar changed {formatPct(dxy.pct_change)}, keeping the cross-asset message mixed.</p>
-            <div className="breadth-meter"><div className="meter-head"><span>POSITIVE SECTOR SHARE</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div><div className="meter-track"><span style={{ width: `${breadth.positive_sector_share}%` }} /></div><small>Cap-weighted S&amp;P {formatPct(breadth.spy_pct_change ?? 0)} vs. equal weight {formatPct(breadth.rsp_pct_change ?? 0)}</small></div>
+            <p>{editorial ? <>{editorial.macro_read.observed} <strong>Interpretation:</strong> {editorial.macro_read.interpretation}</> : `The ten-year yield moved ${formatBps(tenYear.abs_change)} to ${formatNumber(tenYear.end_price)}%. DXY changed ${formatPct(dxy.pct_change)}.`}</p>
+            <div className="breadth-meter"><div className="meter-head"><span>POSITIVE SECTOR SHARE</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div><div className="meter-track"><span style={{ width: `${breadth.positive_sector_share}%` }} /></div><small>Cap-weighted S&amp;P {breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)} vs. equal weight {breadth.rsp_pct_change == null ? "Unavailable" : formatPct(breadth.rsp_pct_change)}</small></div>
           </div>
           <div className="chart-panel">
             <div className="chart-header"><span>S&amp;P 500 / REGULAR SESSION</span><strong>{formatNumber(sp.end_price)}</strong></div>
@@ -446,6 +469,7 @@ export default function Home() {
 
         <section className="section-block ahead" id="ahead">
           <div className="section-heading"><div><p className="section-kicker">08 / FORWARD LOOK</p><h2>What can break the setup</h2></div><p>Four variables to monitor next—framed as scenarios, not scheduled-event claims.</p></div>
+          {editorial && <ul>{editorial.watchlist.map((item) => <li key={item}>{item}</li>)}</ul>}
           <div className="ahead-grid">{outlookItems.map(([number, title, bullets]) => <details key={number}><summary><span>{number}</span><strong>{title}</strong><i>+</i></summary><ul>{bullets.slice(0, 2).map((bullet) => <li key={bullet}>{decodeText(bullet)}</li>)}</ul></details>)}</div>
         </section>
 
