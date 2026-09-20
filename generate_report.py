@@ -534,9 +534,33 @@ def default_editorial_plan(cards):
 
 
 def editorial_schema(cards):
-    properties={key:{'type':'array','items':{'type':'string','enum':ids or ['unavailable']}}
-                for key,ids in editorial_choices(cards).items()}
-    return {'type':'object','properties':properties,'required':list(properties),'additionalProperties':False}
+    selection_properties = {
+        key: {'type': 'array', 'items': {'type': 'string', 'enum': ids or ['unavailable']}}
+        for key, ids in editorial_choices(cards).items()
+    }
+    interpretation_properties = {
+        key: {'type': 'string'} for key in AI_INTERPRETATION_SECTIONS
+    }
+    return {
+        'type': 'object',
+        'properties': {
+            'selection': {
+                'type': 'object',
+                'properties': selection_properties,
+                'required': list(selection_properties),
+                'additionalProperties': False,
+            },
+            'headline_text': {'type': 'string'},
+            'interpretations': {
+                'type': 'object',
+                'properties': interpretation_properties,
+                'required': list(interpretation_properties),
+                'additionalProperties': False,
+            },
+        },
+        'required': ['selection', 'headline_text', 'interpretations'],
+        'additionalProperties': False,
+    }
 
 
 def parse_editorial_plan(raw,cards):
@@ -557,44 +581,177 @@ def parse_editorial_plan(raw,cards):
     return plan
 
 
-def generate_editorial(context,cards):
-    """One bounded request. Model selects evidence, never supplies publishable facts.
+AI_INTERPRETATION_SECTIONS = (
+    'regime',
+    'sector_leadership',
+    'megacap_leadership',
+    'macro_read',
+    'investor_takeaway',
+)
 
-    The closed vocabulary is intentional: prompt-only numeric/catalyst restrictions
-    cannot guarantee grounded prose. All published text is assembled from validated
-    observations and explicitly labeled, conditional interpretations below.
+
+def validate_editorial_prose(value, field, max_chars):
+    if not isinstance(value, str):
+        raise ValueError(f'{field} must be text')
+    text = re.sub(r'\s+', ' ', value).strip()
+    if not text or len(text) > max_chars or '\n' in value or '\r' in value:
+        raise ValueError(f'invalid {field} length')
+    # AI-written text is qualitative only. All numbers and factual observations
+    # continue to come from the server-side evidence cards.
+    if re.search(r'[\d%$]', text):
+        raise ValueError(f'{field} cannot introduce numeric facts')
+    lower = f' {text.lower()} '
+    forbidden = (
+        ' because ', ' due to ', ' driven by ', ' caused by ', ' on news ',
+        ' after the ', ' following the ', ' announced ', ' reported ',
+        ' will ', ' likely ', ' should ', ' forecast ', ' predict ',
+        ' tomorrow ', ' next week ',
+    )
+    if any(phrase in lower for phrase in forbidden):
+        raise ValueError(f'{field} cannot introduce causes, events, or predictions')
+    return text
+
+
+def parse_editorial_response(raw, cards):
+    def unique_keys(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError('duplicate key')
+            result[key] = value
+        return result
+
+    response = json.loads(raw, object_pairs_hook=unique_keys)
+    expected = {'selection', 'headline_text', 'interpretations'}
+    if not isinstance(response, dict) or set(response) != expected:
+        raise ValueError('invalid editorial response')
+
+    selection = response['selection']
+    if not isinstance(selection, dict):
+        raise ValueError('selection must be an object')
+    plan = parse_editorial_plan(json.dumps(selection, separators=(',', ':')), cards)
+
+    headline = response['headline_text']
+    if not isinstance(headline, str):
+        raise ValueError('headline_text must be text')
+    if plan['headline']:
+        headline = validate_editorial_prose(headline, 'headline_text', 140)
+    elif headline.strip():
+        raise ValueError('headline text requires selected evidence')
+
+    interpretations = response['interpretations']
+    if not isinstance(interpretations, dict) or set(interpretations) != set(AI_INTERPRETATION_SECTIONS):
+        raise ValueError('invalid interpretations object')
+    clean_interpretations = {}
+    for key in AI_INTERPRETATION_SECTIONS:
+        value = interpretations[key]
+        if not isinstance(value, str):
+            raise ValueError(f'{key} interpretation must be text')
+        if plan[key]:
+            clean_interpretations[key] = validate_editorial_prose(value, key, 320)
+        elif value.strip():
+            raise ValueError(f'{key} interpretation requires selected evidence')
+        else:
+            clean_interpretations[key] = ''
+
+    return plan, {
+        'headline_text': headline.strip(),
+        'interpretations': clean_interpretations,
+    }
+
+
+def generate_editorial(context,cards):
+    """Use one bounded Claude request for selection plus qualitative writing.
+
+    Claude may choose evidence and rewrite the headline/interpretation language, but
+    all observed facts, numbers, watch conditions, and published market data are
+    assembled from validated server-side evidence cards.
     """
-    plan=default_editorial_plan(cards);status='missing_key'
+    plan = default_editorial_plan(cards)
+    ai_prose = None
+    status = 'missing_key'
     if should_use_ai():
         try:
-            payload={'model':ANTHROPIC_MODEL,'max_tokens':1000,
-                'system':'You are the editor of a concise institutional market-close note. Select the most material evidence-backed angles from the supplied catalog. Prioritize what happened, confirmation or conflict, and testable next-session conditions. Use the full cross-asset context. Avoid repeating the same angle across sections where alternatives are useful. Never add facts, causes, events, predictions, or prose. Return only the specified JSON of catalog IDs. Select one ID per section, one or two for opening_summary, and three distinct watchlist IDs spanning participation, rates/cross-assets and leadership when available. Empty arrays only where no eligible evidence exists.',
-                'messages':[{'role':'user','content':json.dumps({'context':context,'catalog':cards,'eligible':editorial_choices(cards)},allow_nan=False,separators=(',',':'))}],
-                'output_config':{'format':{'type':'json_schema','schema':editorial_schema(cards)}}}
-            request=urllib.request.Request(ANTHROPIC_API_URL,data=json.dumps(payload).encode(),headers={
-                'Content-Type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01'},method='POST')
-            with urllib.request.urlopen(request,timeout=35) as response:
-                body=json.loads(response.read(100_001).decode())
-            if body.get('stop_reason')!='end_turn':raise ValueError('incomplete response')
-            content=body.get('content')
-            if not isinstance(content,list) or not content or any(block.get('type')!='text' for block in content):
+            payload = {
+                'model': ANTHROPIC_MODEL,
+                'max_tokens': 1200,
+                'system': (
+                    'You are the editor of a concise institutional market-close note. '
+                    'First select the most material evidence-backed angles from the supplied catalog. '
+                    'Then improve only the headline and interpretation wording for the selected evidence. '
+                    'Observed facts, numbers, opening-summary facts, and watch conditions are rendered by code and are not yours to rewrite. '
+                    'For headline_text, write a crisp 4-12 word market headline with no digits, prices, percentages, dates, unsupported named entities, events, causes, or forecasts. '
+                    'For each interpretation string, write one concise institutional sentence that rephrases only the selected card interpretation. '
+                    'Do not add numbers, prices, percentages, dates, events, catalysts, causal claims, predictions, recommendations, or facts not present in the selected evidence. '
+                    'Do not use because, due to, driven by, caused by, will, likely, should, forecast, or predict. '
+                    'If a section has no eligible selected evidence, return an empty string for its interpretation. '
+                    'Return only the specified JSON. Keep selection rules unchanged: one ID per section, one or two for opening_summary, '
+                    'and three distinct watchlist IDs spanning participation, rates/cross-assets and leadership when available.'
+                ),
+                'messages': [{
+                    'role': 'user',
+                    'content': json.dumps(
+                        {'context': context, 'catalog': cards, 'eligible': editorial_choices(cards)},
+                        allow_nan=False,
+                        separators=(',', ':'),
+                    ),
+                }],
+                'output_config': {'format': {'type': 'json_schema', 'schema': editorial_schema(cards)}},
+            }
+            request = urllib.request.Request(
+                ANTHROPIC_API_URL,
+                data=json.dumps(payload).encode(),
+                headers={
+                    'Content-Type': 'application/json',
+                    'x-api-key': ANTHROPIC_API_KEY,
+                    'anthropic-version': '2023-06-01',
+                },
+                method='POST',
+            )
+            with urllib.request.urlopen(request, timeout=35) as response:
+                body = json.loads(response.read(100_001).decode())
+            if body.get('stop_reason') != 'end_turn':
+                raise ValueError('incomplete response')
+            content = body.get('content')
+            if not isinstance(content, list) or not content or any(block.get('type') != 'text' for block in content):
                 raise ValueError('unexpected response blocks')
-            plan=parse_editorial_plan(''.join(block['text'] for block in content),cards)
-            status='validated'
+            plan, ai_prose = parse_editorial_response(
+                ''.join(block['text'] for block in content),
+                cards,
+            )
+            status = 'validated'
         except Exception:
             # Never echo response bodies, exception text or credentials into logs/artifacts.
             print('Claude editorial request unavailable or invalid; using grounded fallback.')
-            status='request_or_validation_failed'
-    def render(key,field):
+            status = 'request_or_validation_failed'
+
+    def render(key, field):
         return ' '.join(cards[cid][field] for cid in plan[key])
-    editorial={'headline':render('headline','headline'),
-               'opening_summary':render('opening_summary','observed'),
-               'watchlist':[cards[cid]['watch'] for cid in plan['watchlist']]}
-    for key in ('regime','sector_leadership','megacap_leadership','macro_read','investor_takeaway'):
-        editorial[key]={'observed':render(key,'observed') or 'Verified evidence unavailable.',
-                        'interpretation':render(key,'interpretation') or 'No interpretation without verified evidence.'}
-    return editorial,{'mode':'ai' if status=='validated' else 'deterministic_fallback',
-                      'status':status,'contract_version':1,'model':ANTHROPIC_MODEL if status=='validated' else None,'selection':plan}
+
+    deterministic_headline = render('headline', 'headline')
+    editorial = {
+        'headline': ai_prose['headline_text'] if ai_prose else deterministic_headline,
+        'opening_summary': render('opening_summary', 'observed'),
+        'watchlist': [cards[cid]['watch'] for cid in plan['watchlist']],
+    }
+    for key in AI_INTERPRETATION_SECTIONS:
+        observed = render(key, 'observed') or 'Verified evidence unavailable.'
+        deterministic_interpretation = render(key, 'interpretation') or 'No interpretation without verified evidence.'
+        ai_interpretation = ai_prose['interpretations'][key] if ai_prose and plan[key] else ''
+        editorial[key] = {
+            'observed': observed,
+            'interpretation': ai_interpretation or deterministic_interpretation,
+        }
+
+    return editorial, {
+        'mode': 'ai' if status == 'validated' else 'deterministic_fallback',
+        'status': status,
+        'contract_version': 2,
+        'model': ANTHROPIC_MODEL if status == 'validated' else None,
+        'selection': plan,
+        'ai_writing': status == 'validated',
+        'writing_scope': ['headline', 'interpretations'] if status == 'validated' else [],
+    }
 
 
 # ─────────────────────────────────────────────

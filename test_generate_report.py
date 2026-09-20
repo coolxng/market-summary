@@ -284,6 +284,20 @@ class EditorialTests(unittest.TestCase):
         response.__enter__.return_value.read.return_value=json.dumps(body).encode()
         return response
 
+    def editorial_response(self, cards, plan=None):
+        plan = plan or generate_report.default_editorial_plan(cards)
+        return {
+            'selection': plan,
+            'headline_text': 'Breadth and volatility sharpen the market signal',
+            'interpretations': {
+                'regime': 'Participation and volatility point to a more coherent risk backdrop.',
+                'sector_leadership': 'Relative leadership is clear, while the underlying cause remains unverified.',
+                'megacap_leadership': 'Dispersion across the selected leaders keeps the leadership picture selective.',
+                'macro_read': 'Rates add valuation pressure without establishing a direct causal link.',
+                'investor_takeaway': 'Confirmation across participation and volatility matters more than the headline index alone.',
+            },
+        }
+
     def test_derived_metrics_units_and_proxy_limits(self):
         context,cards=self.context();metrics=context['derived_metrics']
         self.assertAlmostEqual(metrics['ten_year_change_bp'],10)
@@ -344,18 +358,43 @@ class EditorialTests(unittest.TestCase):
     def test_closed_schema_and_successful_single_request(self):
         context,cards=self.context();plan=generate_report.default_editorial_plan(cards)
         plan['headline']=['intraday'];plan['macro_read']=['dollar_gold']
+        ai_response=self.editorial_response(cards,plan)
         with mock.patch.object(generate_report,'ANTHROPIC_API_KEY','test-private-key'), mock.patch.object(
-                generate_report.urllib.request,'urlopen',return_value=self.response(json.dumps(plan))) as send:
+                generate_report.urllib.request,'urlopen',return_value=self.response(json.dumps(ai_response))) as send:
             brief,provenance=generate_report.generate_editorial(context,cards)
         send.assert_called_once()
         payload=json.loads(send.call_args.args[0].data)
-        self.assertEqual(payload['max_tokens'],1000)
-        self.assertEqual(payload['output_config']['format']['type'],'json_schema')
+        self.assertEqual(payload['max_tokens'],1200)
+        schema=payload['output_config']['format']
+        self.assertEqual(schema['type'],'json_schema')
+        self.assertIn('selection',schema['schema']['properties'])
+        self.assertIn('headline_text',schema['schema']['properties'])
+        self.assertIn('interpretations',schema['schema']['properties'])
         self.assertNotIn('test-private-key',json.dumps(payload))
-        self.assertEqual(brief['headline'],cards['intraday']['headline'])
+        self.assertEqual(brief['headline'],ai_response['headline_text'])
+        self.assertEqual(brief['regime']['interpretation'],ai_response['interpretations']['regime'])
         self.assertEqual(provenance['mode'],'ai')
         self.assertEqual(provenance['status'],'validated')
+        self.assertTrue(provenance['ai_writing'])
+        self.assertEqual(provenance['contract_version'],2)
         self.assertNotIn('test-private-key',json.dumps([brief,provenance]))
+
+    def test_ai_prose_rejects_numbers_causes_and_predictions(self):
+        _,cards=self.context();valid=self.editorial_response(cards)
+        cases=[
+            ('headline_text','S&P gains 1 percent'),
+            ('regime','Stocks rose because inflation cooled'),
+            ('macro_read','Rates will likely support equities'),
+        ]
+        for field,value in cases:
+            with self.subTest(field=field):
+                bad=json.loads(json.dumps(valid))
+                if field=='headline_text':
+                    bad[field]=value
+                else:
+                    bad['interpretations'][field]=value
+                with self.assertRaises(ValueError):
+                    generate_report.parse_editorial_response(json.dumps(bad),cards)
 
     def test_no_key_uses_grounded_fallback_without_network(self):
         context,cards=self.context()
@@ -416,7 +455,8 @@ class EditorialTests(unittest.TestCase):
                     payload=json.loads(request.data)
                     supplied=json.loads(payload['messages'][0]['content'])
                     plan=generate_report.default_editorial_plan(supplied['catalog'])
-                    return self.response(json.dumps(plan) if succeeds else 'not-json')
+                    ai_response=self.editorial_response(supplied['catalog'],plan)
+                    return self.response(json.dumps(ai_response) if succeeds else 'not-json')
                 with mock.patch.object(generate_report,'resolve_completed_sessions',return_value=(session,previous)),mock.patch.object(
                         generate_report,'fetch_daily_data',side_effect=fetch),mock.patch.object(generate_report,'fetch_daily_chart_data',side_effect=chart),mock.patch.object(
                         generate_report,'ANTHROPIC_API_KEY','test-private-key'),mock.patch.object(generate_report.urllib.request,'urlopen',side_effect=reply) as send:
