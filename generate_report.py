@@ -1176,14 +1176,31 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
         "</ul>"
     )
 
-    title = f"Daily Market Summary – {full_date}"
+    title = f"Stock Market Summary – {full_date} | The Daily Tape"
+    canonical_url = f"https://coolxng.github.io/market-summary/reports/{session_date.isoformat()}/"
+    description = (
+        f"U.S. stock market close summary for {full_date}, including major indexes, "
+        "sector breadth, mega-cap leadership, rates, commodities, global markets, and crypto."
+    )
     html_content = f'''<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{render_html_text(title)}</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<meta name="description" content="{render_html_text(description)}">
+<link rel="canonical" href="{canonical_url}">
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="The Daily Tape">
+<meta property="og:title" content="{render_html_text(title)}">
+<meta property="og:description" content="{render_html_text(description)}">
+<meta property="og:url" content="{canonical_url}">
+<meta property="og:image" content="https://coolxng.github.io/market-summary/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{render_html_text(title)}">
+<meta name="twitter:description" content="{render_html_text(description)}">
+<meta name="twitter:image" content="https://coolxng.github.io/market-summary/og.png">
+<link rel="icon" type="image/svg+xml" href="https://coolxng.github.io/market-summary/favicon.svg">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* {PREMIUM_DESIGN_MARKER} */
@@ -1419,10 +1436,23 @@ td {{ color:var(--muted); font-size:11px; }}
 
     report_output = Path(report_path)
     snapshot_output = Path(snapshot_path)
+    archive_dir = report_output.parent / "reports" / session_date.isoformat()
+    archive_report_output = archive_dir / "index.html"
+    archive_snapshot_output = archive_dir / "report.json"
+
     report_output.parent.mkdir(parents=True, exist_ok=True)
+    snapshot_output.parent.mkdir(parents=True, exist_ok=True)
+    archive_dir.mkdir(parents=True, exist_ok=True)
+
+    snapshot_json = json.dumps(snapshot, indent=2) + "\n"
     report_output.write_text(html_content, encoding="utf-8")
-    snapshot_output.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
-    print(f"Successfully generated {snapshot_output} and {report_output} for {full_date}")
+    snapshot_output.write_text(snapshot_json, encoding="utf-8")
+    archive_report_output.write_text(html_content, encoding="utf-8")
+    archive_snapshot_output.write_text(snapshot_json, encoding="utf-8")
+    print(
+        f"Successfully generated {snapshot_output}, {report_output}, "
+        f"{archive_snapshot_output}, and {archive_report_output} for {full_date}"
+    )
     return True
 
 
