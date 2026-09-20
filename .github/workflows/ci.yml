@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance
+
+      - name: Run Python Tests
+        run: python -m unittest -v
+
+      - name: Install Node Dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build GitHub Pages Export
+        env:
+          GITHUB_PAGES: "true"
+          GITHUB_REPOSITORY: "coolxng/market-summary"
+          NEXT_PUBLIC_SITE_URL: "https://coolxng.github.io/market-summary/"
+        run: npm run build:pages
+
+      - name: Validate Static Export
+        run: |
+          test -f out/index.html
+          test -f out/robots.txt
+          test -f out/sitemap.xml
+          test -f out/reports/index.html
+          test -f out/reports/2026-09-18/index.html
+          grep -q 'https://coolxng.github.io/market-summary/' out/sitemap.xml
+          grep -q 'reports/2026-09-18' out/sitemap.xml
