@@ -486,7 +486,7 @@ export default function Home() {
           <a href="https://finance.yahoo.com/markets/" target="_blank" rel="noreferrer">View source market data ↗</a>
         </aside>
 
-        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span></div><div className="footer-meta"><span>DATA: YAHOO FINANCE</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
+        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href="./reports/">Report archive</a></div><div className="footer-meta"><span>DATA: YAHOO FINANCE</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
       </div>
     </main>
   );
