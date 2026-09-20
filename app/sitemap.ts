@@ -2,6 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { MetadataRoute } from "next";
 
+export const dynamic = "force-static";
+
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/").replace(/\/$/, "");
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
