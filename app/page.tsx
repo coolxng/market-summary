@@ -241,7 +241,10 @@ export default function Home() {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("daily-tape-theme");
-    if (saved === "ink") setTheme("ink");
+    if (saved !== "ink") return;
+
+    const frame = window.requestAnimationFrame(() => setTheme("ink"));
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
