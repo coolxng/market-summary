@@ -53,8 +53,13 @@ jobs:
         run: |
           test -f out/index.html
           test -f out/.nojekyll
+          test -f out/robots.txt
+          test -f out/sitemap.xml
+          test -f out/reports/index.html
+          test -f out/reports/2026-09-18/index.html
           grep -q '/market-summary/_next/' out/index.html
           grep -q 'THE DAILY TAPE' out/index.html
+          grep -q 'reports/2026-09-18' out/sitemap.xml
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v4

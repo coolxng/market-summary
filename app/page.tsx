@@ -241,7 +241,10 @@ export default function Home() {
 
   useEffect(() => {
     const saved = window.localStorage.getItem("daily-tape-theme");
-    if (saved === "ink") setTheme("ink");
+    if (saved !== "ink") return;
+
+    const frame = window.requestAnimationFrame(() => setTheme("ink"));
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   useEffect(() => {
@@ -486,7 +489,7 @@ export default function Home() {
           <a href="https://finance.yahoo.com/markets/" target="_blank" rel="noreferrer">View source market data ↗</a>
         </aside>
 
-        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span></div><div className="footer-meta"><span>DATA: YAHOO FINANCE</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
+        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href="./reports/">Report archive</a></div><div className="footer-meta"><span>DATA: YAHOO FINANCE</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
       </div>
     </main>
   );

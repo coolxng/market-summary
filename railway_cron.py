@@ -16,7 +16,7 @@ BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
-ARTIFACTS = (Path("report_snapshot.json"), Path("public/legacy-report.html"))
+BASE_ARTIFACTS = (Path("report_snapshot.json"), Path("public/legacy-report.html"))
 
 
 def require_environment():
@@ -34,8 +34,17 @@ def run(command):
     subprocess.run(command, check=True)
 
 
+def artifact_paths(snapshot):
+    session_date = str(snapshot["session_date"])
+    return (
+        *BASE_ARTIFACTS,
+        Path("public") / "reports" / session_date / "index.html",
+        Path("public") / "reports" / session_date / "report.json",
+    )
+
+
 def validate_artifacts():
-    snapshot_path, html_path = ARTIFACTS
+    snapshot_path, html_path = BASE_ARTIFACTS
     if not snapshot_path.exists():
         raise RuntimeError(f"Missing generated artifact: {snapshot_path}")
     if not html_path.exists():
@@ -48,6 +57,9 @@ def validate_artifacts():
     assert snapshot["market_data"]["^IXIC"]["end_price"] > 0
     assert snapshot["market_data"]["^TNX"]["end_price"] > 0
     assert snapshot["daily_market_breadth"]["positive_sector_share"] >= 0
+    for path in artifact_paths(snapshot):
+        if not path.exists():
+            raise RuntimeError(f"Missing generated artifact: {path}")
     return snapshot
 
 
@@ -98,13 +110,19 @@ def create_blob(content):
     return result["sha"]
 
 
-def commit_artifacts():
-    local_contents = {path: path.read_bytes() for path in ARTIFACTS}
-    changed = [
-        path
-        for path, content in local_contents.items()
-        if git_blob_sha(content) != remote_blob_sha(path)
-    ]
+def commit_artifacts(snapshot):
+    artifacts = artifact_paths(snapshot)
+    local_contents = {path: path.read_bytes() for path in artifacts}
+    changed = []
+    for path, content in local_contents.items():
+        try:
+            remote_sha = remote_blob_sha(path)
+        except RuntimeError as exc:
+            if "failed (404)" not in str(exc):
+                raise
+            remote_sha = None
+        if git_blob_sha(content) != remote_sha:
+            changed.append(path)
 
     if not changed:
         print("No new completed market session to commit.")
@@ -117,7 +135,7 @@ def commit_artifacts():
     base_tree_sha = parent_commit["tree"]["sha"]
 
     tree_entries = []
-    for path in ARTIFACTS:
+    for path in artifacts:
         blob_sha = create_blob(local_contents[path])
         tree_entries.append(
             {
@@ -283,7 +301,7 @@ def main():
         run([sys.executable, "generate_report.py"])
         run([sys.executable, "-m", "unittest", "-v"])
         snapshot = validate_artifacts()
-        publish_result = commit_artifacts()
+        publish_result = commit_artifacts(snapshot)
         send_success_notification(snapshot, publish_result)
     except Exception as exc:
         send_failure_notification(exc)
