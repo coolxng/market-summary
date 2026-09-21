@@ -14,7 +14,7 @@ function archivedReportDates() {
   return fs
     .readdirSync(reportsDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
-    .filter((entry) => fs.existsSync(path.join(reportsDir, entry.name, "index.html")))
+    .filter((entry) => fs.existsSync(path.join(reportsDir, entry.name, "report.json")))
     .map((entry) => entry.name)
     .sort()
     .reverse();
