@@ -144,6 +144,44 @@ class GenerateReportTests(unittest.TestCase):
         self.assertEqual(result["day_high"], 106.0)
         self.assertEqual(result["day_low"], 103.0)
 
+    def test_fetch_daily_data_uses_stooq_after_yfinance_failure(self):
+        csv_payload = (
+            "Date,Open,High,Low,Close,Volume\n"
+            "2026-07-13,6200,6220,6180,6210,0\n"
+            "2026-07-14,6215,6250,6205,6240,0\n"
+        )
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return csv_payload.encode("utf-8")
+
+        with (
+            mock.patch.object(generate_report.yf, "Ticker", side_effect=RuntimeError("Yahoo unavailable")),
+            mock.patch.object(generate_report.urllib.request, "urlopen", return_value=FakeResponse()) as stooq_request,
+        ):
+            result = generate_report.fetch_daily_data(
+                "^GSPC",
+                datetime.date(2026, 7, 14),
+                datetime.date(2026, 7, 13),
+            )
+
+        self.assertEqual(result["end_price"], 6240.0)
+        self.assertEqual(result["prev_close"], 6210.0)
+        self.assertEqual(result["session_date"], "2026-07-14")
+        self.assertEqual(result["previous_session_date"], "2026-07-13")
+        self.assertEqual(result["data_source"], "stooq")
+        self.assertEqual(result["source_symbol"], "^spx")
+        self.assertIsNone(result["error"])
+        request = stooq_request.call_args.args[0]
+        self.assertIn("stooq.com/q/d/l/", request.full_url)
+        self.assertIn("s=%5Espx", request.full_url)
+
     def test_session_chart_excludes_premarket_and_after_hours(self):
         times = [
             datetime.datetime(2026, 7, 14, 9, 0, tzinfo=generate_report.NY_TZ),
