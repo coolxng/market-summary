@@ -740,25 +740,6 @@ def generate_report(now=None, snapshot_path="report_snapshot.json", archive_root
         expected_previous_session_date=previous_session_date,
     )
 
-    sp = datasets["^GSPC"]
-    nd = datasets["^IXIC"]
-    dj = datasets["^DJI"]
-    rut = datasets["^RUT"]
-    vix = datasets["^VIX"]
-    tnx = datasets["^TNX"]
-    irx = datasets["^IRX"]
-    dxy = datasets["DX-Y.NYB"]
-    gold = datasets["GC=F"]
-    oil = datasets["CL=F"]
-    btc = datasets["BTC-USD"]
-    eth = datasets["ETH-USD"]
-    sol = datasets["SOL-USD"]
-    xrp = datasets["XRP-USD"]
-    n225 = datasets["^N225"]
-    stoxx = datasets["^STOXX50E"]
-    ftse = datasets["^FTSE"]
-    hsi = datasets["^HSI"]
-
     sectors = {
         "Technology (XLK)": "XLK",
         "Financials (XLF)": "XLF",
@@ -827,12 +808,10 @@ def generate_report(now=None, snapshot_path="report_snapshot.json", archive_root
         spy, rsp, session_date,
     )
     editorial, narrative_provenance = generate_editorial(context, cards)
-    ai_enabled = narrative_provenance["mode"] == "ai"
-
     def observation(card_id):
         return cards.get(card_id, {}).get("observed", "Verified session data unavailable.")
 
-    # Compatibility fields remain plain text; escape only at the HTML boundary.
+    # Compatibility fields remain plain text in the JSON snapshot.
     sector_bullets = {
         "top_bullet1": observation("sectors"),
         "top_bullet2": observation("breadth"),
