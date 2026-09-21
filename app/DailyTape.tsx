@@ -182,9 +182,7 @@ function Sparkline({ values, positive }: { values: number[]; positive: boolean }
   );
 }
 
-function IndexCard({ symbol, name, short, currency = false, digits = 2, suffix = "" }: { symbol: string; name: string; short: string; currency?: boolean; digits?: number; suffix?: string }) {
-  const item = market[symbol];
-  const chart = dailyReport.session_charts[symbol];
+function IndexCard({ item, chart, name, short, currency = false, digits = 2, suffix = "" }: { item: MarketDatum; chart?: SessionChart; name: string; short: string; currency?: boolean; digits?: number; suffix?: string }) {
   const positive = item.pct_change >= 0;
   return (
     <article className="index-card">
@@ -209,7 +207,7 @@ function Signal({ label, value, note, tone }: { label: string; value: string; no
   );
 }
 
-function parseMegaCapFallback(ticker: string): MarketDatum {
+function parseMegaCapFallback(ticker: string, dailyReport: DailyReport): MarketDatum {
   const description = decodeText(dailyReport.narrative.megacap_descriptions[ticker] ?? "");
   const priceMatch = description.match(/\$([\d,]+(?:\.\d+)?)/);
   const moveMatch = description.match(/([+-]\d+(?:\.\d+)?)%/);
@@ -233,7 +231,7 @@ function parseMegaCapFallback(ticker: string): MarketDatum {
   };
 }
 
-export default function DailyTape({ report, archived = false, archiveHref = "./reports/" }: { report: DailyReport; archived?: boolean; archiveHref?: string }) {
+export default function DailyTape({ report, archived = false, archiveHref = "./reports/", homeHref = "#top" }: { report: DailyReport; archived?: boolean; archiveHref?: string; homeHref?: string }) {
   const dailyReport = report;
   const market = dailyReport.market_data;
   const [theme, setTheme] = useState<"paper" | "ink">("paper");
@@ -260,7 +258,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   const bottomSector = sectorEntries[sectorEntries.length - 1];
   const megaCaps = useMemo(() => Object.keys(megaCapNames).map((ticker) => {
     const snapshot = dailyReport.mega_cap_data?.[ticker];
-    const item = snapshot?.result ?? parseMegaCapFallback(ticker);
+    const item = snapshot?.result ?? parseMegaCapFallback(ticker, dailyReport);
     const chart = snapshot?.session_chart;
     const chartTimes = chart?.times?.length ? chart.times : ["9:30 AM", "4:00 PM"];
     return {
@@ -321,8 +319,8 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="The Daily Tape home"><span className="brand-mark"><i /><i /><i /></span><span>THE DAILY TAPE</span></a>
-        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href="./reports/">Archive</a></nav>
+        <a className="brand" href={homeHref} aria-label="The Daily Tape home"><span className="brand-mark"><i /><i /><i /></span><span>THE DAILY TAPE</span></a>
+        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={archiveHref}>Archive</a></nav>
         <button className="theme-toggle" onClick={() => setTheme((current) => current === "paper" ? "ink" : "paper")} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
           <span>{theme === "paper" ? "◐" : "◑"}</span>{theme === "paper" ? "Ink" : "Paper"}
         </button>
@@ -361,14 +359,14 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
         <section className="scorecard section-block" id="scorecard">
           <div className="section-heading"><div><p className="section-kicker">01 / SCORECARD</p><h2>The tape, at a glance</h2></div><p>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</p></div>
           <div className="index-grid">
-            <IndexCard symbol="^GSPC" name="S&P 500" short="SPX" />
-            <IndexCard symbol="^IXIC" name="Nasdaq Composite" short="COMP" />
-            <IndexCard symbol="^DJI" name="Dow Jones" short="DJIA" />
-            <IndexCard symbol="^VIX" name="CBOE Volatility" short="VIX" />
-            <IndexCard symbol="^TNX" name="10-Year Treasury" short="10Y" suffix="%" />
-            <IndexCard symbol="DX-Y.NYB" name="U.S. Dollar Index" short="DXY" />
-            <IndexCard symbol="BTC-USD" name="Bitcoin" short="BTC" currency digits={0} />
-            <IndexCard symbol="ETH-USD" name="Ethereum" short="ETH" currency digits={0} />
+            <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" />
+            <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" />
+            <IndexCard item={market["^DJI"]} chart={dailyReport.session_charts["^DJI"]} name="Dow Jones" short="DJIA" />
+            <IndexCard item={market["^VIX"]} chart={dailyReport.session_charts["^VIX"]} name="CBOE Volatility" short="VIX" />
+            <IndexCard item={market["^TNX"]} chart={dailyReport.session_charts["^TNX"]} name="10-Year Treasury" short="10Y" suffix="%" />
+            <IndexCard item={market["DX-Y.NYB"]} chart={dailyReport.session_charts["DX-Y.NYB"]} name="U.S. Dollar Index" short="DXY" />
+            <IndexCard item={market["BTC-USD"]} chart={dailyReport.session_charts["BTC-USD"]} name="Bitcoin" short="BTC" currency digits={0} />
+            <IndexCard item={market["ETH-USD"]} chart={dailyReport.session_charts["ETH-USD"]} name="Ethereum" short="ETH" currency digits={0} />
           </div>
         </section>
 
