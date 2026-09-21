@@ -21,7 +21,7 @@ type MarketDatum = {
 type SessionChart = {
   times: string[];
   closes: number[];
-  source: "intraday_5m" | "daily_ohlc_fallback";
+  source: "intraday_5m" | "daily_ohlc_fallback" | "daily_5d_fallback";
   session_date: string;
   error: string | null;
 };
@@ -698,7 +698,9 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
             <div className="global-row table-head" role="row"><span>MARKET</span><span>REGION</span><span>CLOSE</span><span>1D</span><span>PATH</span></div>
             {globalMarkets.filter(([symbol]) => hasVerifiedClose(market[symbol])).map(([symbol, name, region]) => {
               const item = market[symbol];
-              return <div className="global-row" role="row" key={symbol}><strong>{name}</strong><span>{region}</span><span>{formatNumber(item.end_price)}</span><strong className={item.pct_change >= 0 ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong><div className="global-spark"><Sparkline values={item.closes} positive={item.pct_change >= 0} /></div></div>;
+              const chart = dailyReport.session_charts[symbol];
+              const chartValues = chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
+              return <div className="global-row" role="row" key={symbol}><strong>{name}</strong><span>{region}</span><span>{formatNumber(item.end_price)}</span><strong className={item.pct_change >= 0 ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong><div className="global-spark"><Sparkline values={chartValues} positive={item.pct_change >= 0} /></div></div>;
             })}
           </div>
         </section>
@@ -708,8 +710,10 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
           <div className="digital-grid">
             {cryptoMarkets.map(([symbol, name, ticker, narrativeKey]) => {
               const item = market[symbol];
+              const chart = dailyReport.session_charts[symbol];
+              const chartValues = chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
               const positive = item.pct_change >= 0;
-              return <article className="digital-card" key={symbol}><div className="digital-head"><span>{ticker}</span><strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong></div><div className="digital-price">${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}</div><span className="digital-name">{name}</span><Sparkline values={item.closes} positive={positive} /><p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey])}</p></article>;
+              return <article className="digital-card" key={symbol}><div className="digital-head"><span>{ticker}</span><strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong></div><div className="digital-price">${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}</div><span className="digital-name">{name}</span><div className="digital-chart"><div className="digital-chart-meta"><span>VERIFIED PATH</span><small>{chart?.source === "intraday_5m" ? "5 MIN" : chart?.source === "daily_5d_fallback" ? "5 DAY" : "UNAVAILABLE"}</small></div><Sparkline values={chartValues} positive={positive} /></div><p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey])}</p></article>;
             })}
           </div>
         </section>

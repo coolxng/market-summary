@@ -233,6 +233,28 @@ class GenerateReportTests(unittest.TestCase):
         self.assertEqual(chart["times"], ["9:30 AM", "12:00 PM", "4:00 PM"])
         self.assertEqual(chart["source"], "intraday_5m")
 
+    def test_full_day_chart_preserves_source_market_timezone(self):
+        tokyo = datetime.timezone(datetime.timedelta(hours=9))
+        times = [
+            datetime.datetime(2026, 7, 14, 9, 0, tzinfo=tokyo),
+            datetime.datetime(2026, 7, 14, 10, 30, tzinfo=tokyo),
+            datetime.datetime(2026, 7, 14, 12, 30, tzinfo=tokyo),
+            datetime.datetime(2026, 7, 14, 15, 0, tzinfo=tokyo),
+            datetime.datetime(2026, 7, 15, 9, 0, tzinfo=tokyo),
+        ]
+        history = FakeHistory(times, [{"Close": value} for value in (100, 101, 99, 103, 104)])
+        ticker = types.SimpleNamespace(history=lambda **kwargs: history)
+        with mock.patch.object(generate_report.yf, "Ticker", return_value=ticker):
+            chart = generate_report.fetch_daily_chart_data(
+                "^N225",
+                datetime.date(2026, 7, 14),
+                regular_hours=False,
+                prefer_multi_day_fallback=True,
+            )
+        self.assertEqual(chart["closes"], [100.0, 101.0, 99.0, 103.0])
+        self.assertEqual(chart["times"], ["9:00 AM", "10:30 AM", "12:30 PM", "3:00 PM"])
+        self.assertEqual(chart["source"], "intraday_5m")
+
     def test_nikkei_sanity_bound_accepts_current_index_levels(self):
         self.assertTrue(generate_report.is_sane("^N225", 64141.12))
 
@@ -250,7 +272,14 @@ class GenerateReportTests(unittest.TestCase):
         def fake_fetch(symbol, session_date, previous_session_date=None):
             return valid_dataset(symbol, session_date, previous_session_date or previous)
 
-        def fake_chart(symbol, session_date, fallback_data=None):
+        def fake_chart(
+            symbol,
+            session_date,
+            fallback_data=None,
+            *,
+            regular_hours=True,
+            prefer_multi_day_fallback=False,
+        ):
             return {
                 "times": ["9:30 AM", "12:00 PM", "4:00 PM"],
                 "closes": [fallback_data["session_open"], fallback_data["day_high"], fallback_data["end_price"]],
@@ -288,6 +317,9 @@ class GenerateReportTests(unittest.TestCase):
             self.assertGreater(snapshot["mega_cap_data"]["NVDA"]["result"]["end_price"], 0)
             self.assertEqual(snapshot["mega_cap_data"]["NVDA"]["session_chart"]["source"], "intraday_5m")
             self.assertEqual(len(snapshot["mega_cap_data"]["NVDA"]["session_chart"]["closes"]), 3)
+            for symbol in ("BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "^N225", "^STOXX50E", "^FTSE", "^HSI"):
+                self.assertIn(symbol, snapshot["session_charts"])
+                self.assertEqual(len(snapshot["session_charts"][symbol]["closes"]), 3)
             self.assertNotIn("report_window", snapshot)
             self.assertNotIn("hourly_charts", snapshot)
             self.assertEqual(archived_snapshot, snapshot)

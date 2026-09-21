@@ -64,6 +64,15 @@ SUMMARY_TILE_TICKERS = (
     ("Bitcoin", "BTC-USD"),
     ("Ethereum", "ETH-USD"),
 )
+
+US_REGULAR_CHART_TICKERS = (
+    "^GSPC", "^IXIC", "^DJI", "^VIX", "^TNX", "DX-Y.NYB",
+)
+FULL_DAY_CHART_TICKERS = (
+    "BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD",
+    "^N225", "^STOXX50E", "^FTSE", "^HSI",
+)
+SESSION_CHART_TICKERS = US_REGULAR_CHART_TICKERS + FULL_DAY_CHART_TICKERS
 NY_TZ = ZoneInfo("America/New_York")
 MARKET_CLOSE_SETTLE_TIME = datetime.time(16, 15)
 SESSION_LOOKBACK_DAYS = 15
@@ -349,18 +358,62 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
     }
 
 
-def market_datetime(value):
+def source_datetime(value):
+    """Preserve the source exchange timezone when one is available."""
     if hasattr(value, "to_pydatetime"):
         value = value.to_pydatetime()
     if not isinstance(value, datetime.datetime):
         value = datetime.datetime.fromisoformat(str(value))
     if value.tzinfo is None:
         return value.replace(tzinfo=NY_TZ)
-    return value.astimezone(NY_TZ)
+    return value
 
 
-def fetch_daily_chart_data(ticker_symbol, session_date, fallback_data=None):
-    """Fetch regular-hours intraday points for one completed session."""
+def market_datetime(value):
+    return source_datetime(value).astimezone(NY_TZ)
+
+
+def fetch_recent_daily_chart_data(ticker_symbol, session_date):
+    """Return a short multi-session fallback path when intraday data is unavailable."""
+    ticker = yf.Ticker(ticker_symbol)
+    hist = ticker.history(
+        start=(session_date - datetime.timedelta(days=12)).isoformat(),
+        end=(session_date + datetime.timedelta(days=1)).isoformat(),
+        interval="1d",
+    )
+    hist = hist.dropna(subset=["Close"])
+    positions = [
+        position
+        for position, value in enumerate(hist.index)
+        if index_date(value) <= session_date
+    ][-5:]
+    if len(positions) < 3:
+        raise ValueError("Not enough recent daily bars for chart fallback")
+
+    dates = [index_date(hist.index[position]) for position in positions]
+    return {
+        "times": [date.strftime("%b %d").replace(" 0", " ") for date in dates],
+        "closes": [round(float(hist["Close"].iloc[position]), 2) for position in positions],
+        "source": "daily_5d_fallback",
+        "session_date": session_date.isoformat(),
+        "error": None,
+    }
+
+
+def fetch_daily_chart_data(
+    ticker_symbol,
+    session_date,
+    fallback_data=None,
+    *,
+    regular_hours=True,
+    prefer_multi_day_fallback=False,
+):
+    """Fetch a verified intraday path for the requested market session.
+
+    U.S. market charts are restricted to 9:30 a.m.–4:00 p.m. New York time.
+    Global and crypto charts preserve the source instrument timezone and use the
+    full source-calendar day so their paths are not incorrectly clipped to U.S. hours.
+    """
     try:
         ticker = yf.Ticker(ticker_symbol)
         hist = ticker.history(
@@ -371,27 +424,56 @@ def fetch_daily_chart_data(ticker_symbol, session_date, fallback_data=None):
         )
 
         hist = hist.dropna(subset=["Close"])
-        regular_positions = []
-        regular_times = []
+        chart_positions = []
+        chart_times = []
         for position, value in enumerate(hist.index):
-            timestamp = market_datetime(value)
-            if (
-                timestamp.date() == session_date
-                and datetime.time(9, 30) <= timestamp.time() <= datetime.time(16, 0)
-            ):
-                regular_positions.append(position)
-                regular_times.append(timestamp)
-        if len(regular_positions) < 2:
-            raise ValueError("Not enough regular-hours intraday data returned")
+            source_timestamp = source_datetime(value)
+            if regular_hours:
+                timestamp = source_timestamp.astimezone(NY_TZ)
+                include = (
+                    timestamp.date() == session_date
+                    and datetime.time(9, 30) <= timestamp.time() <= datetime.time(16, 0)
+                )
+            else:
+                timestamp = source_timestamp
+                include = timestamp.date() == session_date
+
+            if include:
+                chart_positions.append(position)
+                chart_times.append(timestamp)
+
+        if len(chart_positions) < 3:
+            raise ValueError("Not enough intraday data returned")
 
         return {
-            "times": [timestamp.strftime("%I:%M %p").lstrip("0") for timestamp in regular_times],
-            "closes": [round(float(hist["Close"].iloc[position]), 2) for position in regular_positions],
+            "times": [timestamp.strftime("%I:%M %p").lstrip("0") for timestamp in chart_times],
+            "closes": [round(float(hist["Close"].iloc[position]), 2) for position in chart_positions],
             "source": "intraday_5m",
             "session_date": session_date.isoformat(),
             "error": None,
         }
     except Exception as exc:
+        if prefer_multi_day_fallback:
+            try:
+                chart = fetch_recent_daily_chart_data(ticker_symbol, session_date)
+                print(
+                    f"  Intraday chart unavailable for {ticker_symbol}: {exc} "
+                    "— using recent daily path"
+                )
+                return chart
+            except Exception as fallback_exc:
+                print(
+                    f"  Intraday and recent-daily chart data unavailable for {ticker_symbol}: "
+                    f"{fallback_exc}"
+                )
+                return {
+                    "times": [],
+                    "closes": [],
+                    "source": "daily_5d_fallback",
+                    "session_date": session_date.isoformat(),
+                    "error": str(fallback_exc),
+                }
+
         print(
             f"  Exception fetching intraday chart data for {ticker_symbol}: "
             f"{exc} — using session open/close fallback"
@@ -881,8 +963,14 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     bottom_sectors = sorted_sectors[-4:]
 
     session_charts = {
-        symbol: fetch_daily_chart_data(symbol, session_date, fallback_data=datasets[symbol])
-        for _, symbol in SUMMARY_TILE_TICKERS
+        symbol: fetch_daily_chart_data(
+            symbol,
+            session_date,
+            fallback_data=datasets[symbol],
+            regular_hours=symbol in US_REGULAR_CHART_TICKERS,
+            prefer_multi_day_fallback=symbol in FULL_DAY_CHART_TICKERS,
+        )
+        for symbol in SESSION_CHART_TICKERS
     }
     megacaps = {
         "AAPL": "Apple",
