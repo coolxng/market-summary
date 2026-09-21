@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
+const faviconUrl = new URL("favicon.svg", siteUrl).toString();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  icons: { icon: "favicon.svg", shortcut: "favicon.svg" },
+  icons: { icon: faviconUrl, shortcut: faviconUrl, apple: faviconUrl },
   openGraph: {
     url: "./",
     siteName: "The Daily Tape",
