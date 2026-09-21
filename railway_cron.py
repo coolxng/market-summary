@@ -38,7 +38,7 @@ def artifact_paths(snapshot):
     session_date = str(snapshot["session_date"])
     return (
         *BASE_ARTIFACTS,
-        Path("public") / "reports" / session_date / "index.html",
+        Path("public") / "reports" / session_date / "legacy.html",
         Path("public") / "reports" / session_date / "report.json",
     )
 
