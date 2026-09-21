@@ -28,10 +28,12 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("daily-tape-theme", theme);
-  }, [theme]);
+  const toggleTheme = () => {
+    const next = theme === "paper" ? "ink" : "paper";
+    document.documentElement.dataset.theme = next;
+    window.localStorage.setItem("daily-tape-theme", next);
+    setTheme(next);
+  };
 
   return (
     <main>
@@ -46,7 +48,7 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
         </nav>
         <button
           className="theme-toggle"
-          onClick={() => setTheme((current) => current === "paper" ? "ink" : "paper")}
+          onClick={toggleTheme}
           aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}
         >
           <span>{theme === "paper" ? "◐" : "◑"}</span>{theme === "paper" ? "Ink" : "Paper"}
