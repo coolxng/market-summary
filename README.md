@@ -42,6 +42,17 @@ It is built for fast end-of-session review: **what moved, where leadership came 
 - **Cross-asset context:** gold, crude oil, major global equity indexes, Bitcoin, Ethereum, Solana, and XRP.
 - **Session narrative:** a one-line read, regime monitor, market/leadership/internals takeaways, macro context, and next-session watch items.
 - **Verified session paths:** intraday charts are tied to the completed regular-hours session when the underlying data is available.
+- **Historical archive:** every completed trading session gets its own permanent `/reports/YYYY-MM-DD/` page.
+
+## Historical report archive
+
+The Daily Tape keeps a permanent archive of completed trading sessions so past reports can be revisited, shared, and referenced later.
+
+- **Latest live dashboard:** https://coolxng.github.io/market-summary/
+- **Report archive:** https://coolxng.github.io/market-summary/reports/
+- **Example archived session:** https://coolxng.github.io/market-summary/reports/2026-09-18/
+- Every completed trading session gets its own permanent `/reports/YYYY-MM-DD/` page.
+- Each archived session preserves both the rendered HTML report and its matching JSON snapshot.
 
 ## Product tour
 
