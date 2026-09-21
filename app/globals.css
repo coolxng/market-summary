@@ -97,7 +97,7 @@ button { font: inherit; }
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(340px, .65fr); gap: clamp(45px, 7vw, 110px); padding: clamp(54px, 7vw, 96px) 0 64px; }
 .section-kicker { margin: 0 0 18px; color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .18em; }
 .hero h1 { max-width: 940px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(50px, 6vw, 92px); line-height: .94; letter-spacing: -.055em; font-weight: 500; text-wrap: balance; }
-.hero h1 em { color: var(--accent); font-weight: 400; }
+.hero h1 em { display: block; color: var(--accent); font-weight: 400; }
 .dek { max-width: 780px; margin: 30px 0 0; color: var(--ink-soft); font-family: Georgia, "Times New Roman", serif; font-size: clamp(18px, 1.5vw, 23px); line-height: 1.52; text-wrap: pretty; }
 .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 34px; }
 .tag { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
