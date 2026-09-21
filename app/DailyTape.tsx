@@ -153,6 +153,17 @@ function sectorLabel(value: string) {
   return value.replace(/\s*\([A-Z]+\)$/, "");
 }
 
+function splitHeadline(value: string) {
+  const words = value.trim().split(/\s+/);
+  if (words.length < 4) return { lead: value, accent: "" };
+
+  const accentCount = Math.min(3, Math.max(2, Math.ceil(words.length / 2)));
+  return {
+    lead: words.slice(0, -accentCount).join(" "),
+    accent: words.slice(-accentCount).join(" "),
+  };
+}
+
 function isoWeek(value: Date) {
   const date = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
   const day = date.getUTCDay() || 7;
@@ -271,6 +282,8 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
     };
   });
   const editorial = dailyReport.narrative.editorial;
+  const headline = editorial?.headline ?? `${sectorLabel(topSector[0])} led the sector ranking.`;
+  const headlineParts = splitHeadline(headline);
   const sp = market["^GSPC"];
   const nasdaq = market["^IXIC"];
   const russell = market["^RUT"];
@@ -331,7 +344,10 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
           <div className="hero-grid">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>
-              <h1>{editorial?.headline ?? `${sectorLabel(topSector[0])} led the sector ranking.`}</h1>
+              <h1>
+                {headlineParts.lead}
+                {headlineParts.accent && <em>{headlineParts.accent}</em>}
+              </h1>
               <p className="dek">{editorial?.opening_summary ?? dailyReport.narrative.daily_takeaway.what_moved}</p>
               <div className="hero-tags">
                 <span className={`tag ${sp.pct_change >= 0 ? "up" : "down"}`}>S&amp;P {formatPct(sp.pct_change)}</span>
