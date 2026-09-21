@@ -195,7 +195,7 @@ class GenerateReportTests(unittest.TestCase):
                 mock.patch.object(generate_report, "fetch_daily_chart_data", side_effect=fake_chart),
                 mock.patch.object(generate_report, "should_use_ai", return_value=False),
             ):
-                changed = generate_report.generate_report(
+                changed = generate_report.generate_html(
                     now=datetime.datetime(2026, 7, 14, 17, 30, tzinfo=generate_report.NY_TZ),
                     snapshot_path=snapshot_path,
                     archive_root=archive_root,
@@ -230,7 +230,7 @@ class GenerateReportTests(unittest.TestCase):
                 mock.patch.object(generate_report, "resolve_completed_sessions", return_value=(session, previous)),
                 mock.patch.object(generate_report, "fetch_daily_data") as fetch_mock,
             ):
-                changed = generate_report.generate_report(snapshot_path=snapshot_path, archive_root=archive_root)
+                changed = generate_report.generate_html(snapshot_path=snapshot_path, archive_root=archive_root)
             self.assertFalse(changed)
             fetch_mock.assert_not_called()
             self.assertFalse(archive_root.exists())
@@ -444,7 +444,7 @@ class EditorialTests(unittest.TestCase):
                         generate_report,'fetch_daily_data',side_effect=fetch),mock.patch.object(generate_report,'fetch_daily_chart_data',side_effect=chart),mock.patch.object(
                         generate_report,'ANTHROPIC_API_KEY','test-private-key'),mock.patch.object(generate_report.urllib.request,'urlopen',side_effect=reply) as send:
                     archive_root=Path(tmp)/'reports'
-                    generate_report.generate_report(snapshot_path=Path(tmp)/'snapshot.json',archive_root=archive_root)
+                    generate_report.generate_html(snapshot_path=Path(tmp)/'snapshot.json',archive_root=archive_root)
                 send.assert_called_once()
                 snapshot=json.loads((Path(tmp)/'snapshot.json').read_text())
                 archived=json.loads((archive_root/session.isoformat()/'report.json').read_text())

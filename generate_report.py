@@ -714,10 +714,16 @@ def generate_editorial(context,cards):
     }
 
 
+def fmt_date(dt, include_day=True):
+    if include_day:
+        return f"{dt.strftime('%b')} {dt.day}"
+    return f"{dt.strftime('%B')} {dt.day}, {dt.strftime('%Y')}"
+
+
 # ─────────────────────────────────────────────
 # REPORT SNAPSHOT GENERATOR
 # ─────────────────────────────────────────────
-def generate_report(now=None, snapshot_path="report_snapshot.json", archive_root="public/reports"):
+def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="public/reports"):
     session_date, previous_session_date = resolve_completed_sessions(now)
     if not has_new_session(session_date, snapshot_path):
         print(f"No new completed trading session after {session_date.isoformat()}; leaving artifacts unchanged.")
@@ -738,6 +744,11 @@ def generate_report(now=None, snapshot_path="report_snapshot.json", archive_root
         datasets,
         expected_session_date=session_date,
         expected_previous_session_date=previous_session_date,
+    )
+
+    full_date = fmt_date(
+        datetime.datetime.combine(session_date, datetime.time(), tzinfo=NY_TZ),
+        include_day=False,
     )
 
     sectors = {
@@ -877,10 +888,10 @@ def generate_report(now=None, snapshot_path="report_snapshot.json", archive_root
     archive_snapshot_output.write_text(snapshot_json, encoding="utf-8")
     print(
         f"Successfully generated {snapshot_output} and {archive_snapshot_output} "
-        f"for {session_date.isoformat()}"
+        f"for {full_date}"
     )
     return True
 
 
 if __name__ == "__main__":
-    generate_report()
+    generate_html()
