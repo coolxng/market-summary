@@ -1437,7 +1437,7 @@ td {{ color:var(--muted); font-size:11px; }}
     report_output = Path(report_path)
     snapshot_output = Path(snapshot_path)
     archive_dir = report_output.parent / "reports" / session_date.isoformat()
-    archive_report_output = archive_dir / "index.html"
+    archive_report_output = archive_dir / "legacy.html"
     archive_snapshot_output = archive_dir / "report.json"
 
     report_output.parent.mkdir(parents=True, exist_ok=True)
