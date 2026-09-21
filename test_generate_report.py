@@ -160,20 +160,6 @@ class GenerateReportTests(unittest.TestCase):
         self.assertEqual(chart["times"], ["9:30 AM", "12:00 PM", "4:00 PM"])
         self.assertEqual(chart["source"], "intraday_5m")
 
-    def test_render_html_with_strong_escapes_other_markup(self):
-        raw = '<script>alert(1)</script><strong>Leader</strong>'
-        sanitized = generate_report.render_html_with_strong(raw)
-        self.assertIn("&lt;script&gt;alert(1)&lt;/script&gt;", sanitized)
-        self.assertIn("<strong>Leader</strong>", sanitized)
-
-    def test_preserve_premium_shell_replaces_body_and_title(self):
-        legacy = "<title>Old</title><style>body { color: black; }</style><body>old</body>"
-        self.assertIsNone(generate_report.preserve_premium_shell(legacy, "New", "<main>new</main>"))
-        premium = legacy.replace("<style>", f"<style>/* {generate_report.PREMIUM_DESIGN_MARKER} */")
-        rendered = generate_report.preserve_premium_shell(premium, "New & Safe", "<main>new</main>")
-        self.assertIn("<title>New &amp; Safe</title>", rendered)
-        self.assertIn("<main>new</main>", rendered)
-
     def test_nikkei_sanity_bound_accepts_current_index_levels(self):
         self.assertTrue(generate_report.is_sane("^N225", 64141.12))
 
@@ -184,7 +170,7 @@ class GenerateReportTests(unittest.TestCase):
                 "^GSPC",
             )
 
-    def test_generated_daily_schema_html_and_session_dates_agree(self):
+    def test_generated_daily_schema_and_session_dates_agree(self):
         session = datetime.date(2026, 7, 14)
         previous = datetime.date(2026, 7, 13)
 
@@ -202,21 +188,21 @@ class GenerateReportTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as temp_dir:
             snapshot_path = Path(temp_dir) / "report_snapshot.json"
-            report_path = Path(temp_dir) / "daily-report.html"
+            archive_root = Path(temp_dir) / "reports"
             with (
                 mock.patch.object(generate_report, "resolve_completed_sessions", return_value=(session, previous)),
                 mock.patch.object(generate_report, "fetch_daily_data", side_effect=fake_fetch),
                 mock.patch.object(generate_report, "fetch_daily_chart_data", side_effect=fake_chart),
                 mock.patch.object(generate_report, "should_use_ai", return_value=False),
             ):
-                changed = generate_report.generate_html(
+                changed = generate_report.generate_report(
                     now=datetime.datetime(2026, 7, 14, 17, 30, tzinfo=generate_report.NY_TZ),
                     snapshot_path=snapshot_path,
-                    report_path=report_path,
+                    archive_root=archive_root,
                 )
 
             snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
-            rendered = report_path.read_text(encoding="utf-8")
+            archived_snapshot = json.loads((archive_root / session.isoformat() / "report.json").read_text(encoding="utf-8"))
             self.assertTrue(changed)
             self.assertEqual(snapshot["report_type"], "daily_market_close")
             self.assertEqual(snapshot["session_date"], "2026-07-14")
@@ -231,26 +217,23 @@ class GenerateReportTests(unittest.TestCase):
             self.assertEqual(len(snapshot["mega_cap_data"]["NVDA"]["session_chart"]["closes"]), 3)
             self.assertNotIn("report_window", snapshot)
             self.assertNotIn("hourly_charts", snapshot)
-            self.assertIn("Daily Market Summary", rendered)
-            self.assertIn("Daily Market Close", rendered)
-            self.assertNotRegex(rendered, r"(?i)weekly|\bWTD\b|week_high|week_low")
+            self.assertEqual(archived_snapshot, snapshot)
 
     def test_same_session_does_not_overwrite_artifacts(self):
         session = datetime.date(2026, 7, 14)
         previous = datetime.date(2026, 7, 13)
         with tempfile.TemporaryDirectory() as temp_dir:
             snapshot_path = Path(temp_dir) / "report_snapshot.json"
-            report_path = Path(temp_dir) / "daily-report.html"
+            archive_root = Path(temp_dir) / "reports"
             snapshot_path.write_text(json.dumps({"report_type": "daily_market_close", "session_date": session.isoformat()}), encoding="utf-8")
-            report_path.write_text("unchanged", encoding="utf-8")
             with (
                 mock.patch.object(generate_report, "resolve_completed_sessions", return_value=(session, previous)),
                 mock.patch.object(generate_report, "fetch_daily_data") as fetch_mock,
             ):
-                changed = generate_report.generate_html(snapshot_path=snapshot_path, report_path=report_path)
+                changed = generate_report.generate_report(snapshot_path=snapshot_path, archive_root=archive_root)
             self.assertFalse(changed)
             fetch_mock.assert_not_called()
-            self.assertEqual(report_path.read_text(encoding="utf-8"), "unchanged")
+            self.assertFalse(archive_root.exists())
 
 
 
@@ -460,14 +443,16 @@ class EditorialTests(unittest.TestCase):
                 with mock.patch.object(generate_report,'resolve_completed_sessions',return_value=(session,previous)),mock.patch.object(
                         generate_report,'fetch_daily_data',side_effect=fetch),mock.patch.object(generate_report,'fetch_daily_chart_data',side_effect=chart),mock.patch.object(
                         generate_report,'ANTHROPIC_API_KEY','test-private-key'),mock.patch.object(generate_report.urllib.request,'urlopen',side_effect=reply) as send:
-                    generate_report.generate_html(snapshot_path=Path(tmp)/'snapshot.json',report_path=Path(tmp)/'report.html')
+                    archive_root=Path(tmp)/'reports'
+                    generate_report.generate_report(snapshot_path=Path(tmp)/'snapshot.json',archive_root=archive_root)
                 send.assert_called_once()
                 snapshot=json.loads((Path(tmp)/'snapshot.json').read_text())
+                archived=json.loads((archive_root/session.isoformat()/'report.json').read_text())
                 self.assertEqual(snapshot['market_data']['^GSPC'],fetch('^GSPC'))
                 self.assertEqual(snapshot['report_mode'],'ai' if succeeds else 'deterministic_fallback')
-                self.assertIn(snapshot['narrative']['editorial']['headline'],(Path(tmp)/'report.html').read_text())
+                self.assertEqual(archived,snapshot)
                 self.assertNotIn('test-private-key',(Path(tmp)/'snapshot.json').read_text())
-                self.assertNotIn('test-private-key',(Path(tmp)/'report.html').read_text())
+                self.assertNotIn('test-private-key',(archive_root/session.isoformat()/'report.json').read_text())
 
     def test_empty_optional_groups_are_valid_but_no_fabricated_ids(self):
         _,cards=self.context();cards={k:v for k,v in cards.items() if v['group']!='megacap'}

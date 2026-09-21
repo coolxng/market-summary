@@ -1,7 +1,7 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
-watchPatterns = ["/**", "!/report_snapshot.json", "!/public/legacy-report.html"]
+watchPatterns = ["/**", "!/report_snapshot.json", "!/public/reports/**/report.json"]
 
 [deploy]
 startCommand = "python railway_cron.py"

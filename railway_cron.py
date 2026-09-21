@@ -16,7 +16,7 @@ BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
-BASE_ARTIFACTS = (Path("report_snapshot.json"), Path("public/legacy-report.html"))
+BASE_ARTIFACTS = (Path("report_snapshot.json"),)
 
 
 def require_environment():
@@ -38,17 +38,14 @@ def artifact_paths(snapshot):
     session_date = str(snapshot["session_date"])
     return (
         *BASE_ARTIFACTS,
-        Path("public") / "reports" / session_date / "legacy.html",
         Path("public") / "reports" / session_date / "report.json",
     )
 
 
 def validate_artifacts():
-    snapshot_path, html_path = BASE_ARTIFACTS
+    (snapshot_path,) = BASE_ARTIFACTS
     if not snapshot_path.exists():
         raise RuntimeError(f"Missing generated artifact: {snapshot_path}")
-    if not html_path.exists():
-        raise RuntimeError(f"Missing generated artifact: {html_path}")
 
     snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
     assert snapshot["report_type"] == "daily_market_close"

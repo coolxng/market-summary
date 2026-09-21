@@ -52,7 +52,7 @@ The Daily Tape keeps a permanent archive of completed trading sessions so past r
 - **Report archive:** https://coolxng.github.io/market-summary/reports/
 - **Example archived session:** https://coolxng.github.io/market-summary/reports/2026-09-18/
 - Every completed trading session gets its own permanent `/reports/YYYY-MM-DD/` page.
-- Each archived session preserves both the rendered HTML report and its matching JSON snapshot.
+- Each archived session preserves a JSON snapshot that the current Next.js report UI renders.
 
 ## Product tour
 
@@ -94,7 +94,7 @@ generate_report.py
     │
     ▼
 report_snapshot.json
-public/legacy-report.html
+public/reports/YYYY-MM-DD/report.json
     │
     ▼
 validated artifacts are committed to main

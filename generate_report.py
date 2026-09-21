@@ -1,5 +1,4 @@
 import datetime
-import html
 import json
 import math
 import os
@@ -58,7 +57,6 @@ SUMMARY_TILE_TICKERS = (
 NY_TZ = ZoneInfo("America/New_York")
 MARKET_CLOSE_SETTLE_TIME = datetime.time(16, 15)
 SESSION_LOOKBACK_DAYS = 15
-PREMIUM_DESIGN_MARKER = "DESIGN TOKENS · Editorial-Finance Premium Minimalist"
 
 
 # ─────────────────────────────────────────────
@@ -139,44 +137,6 @@ def snapshot_session_date(snapshot_path="report_snapshot.json"):
 def has_new_session(session_date, snapshot_path="report_snapshot.json"):
     existing_session = snapshot_session_date(snapshot_path)
     return existing_session is None or session_date > existing_session
-
-
-def render_html_text(value):
-    return html.escape(str(value), quote=True)
-
-
-def render_html_with_strong(value):
-    escaped = render_html_text(value)
-    return escaped.replace("&lt;strong&gt;", "<strong>").replace("&lt;/strong&gt;", "</strong>")
-
-
-def preserve_premium_shell(existing_html, title, body_html):
-    """Reuse a checked-in premium design shell while replacing its report body."""
-    if PREMIUM_DESIGN_MARKER not in existing_html:
-        return None
-    style_end = existing_html.find("</style>")
-    if style_end == -1:
-        return None
-    shell = existing_html[: style_end + len("</style>")]
-    shell = re.sub(
-        r"<title>.*?</title>",
-        f"<title>{render_html_text(title)}</title>",
-        shell,
-        count=1,
-        flags=re.DOTALL,
-    )
-    return f"{shell}\n</head>\n<body>\n{body_html}\n</body>\n</html>\n"
-
-
-def sanitize_text_map(values, allow_strong=False):
-    sanitizer = render_html_with_strong if allow_strong else render_html_text
-    return {key: sanitizer(value) for key, value in values.items()}
-
-
-def sanitize_string_list(values):
-    if not isinstance(values, list):
-        return []
-    return [render_html_text(value) for value in values if str(value).strip()]
 
 
 def validate_dataset(dataset, label, allow_zero=False):
@@ -755,224 +715,9 @@ def generate_editorial(context,cards):
 
 
 # ─────────────────────────────────────────────
-# SVG / HTML HELPERS
+# REPORT SNAPSHOT GENERATOR
 # ─────────────────────────────────────────────
-def fmt_date(dt, include_day=True):
-    if include_day:
-        return f"{dt.strftime('%b')} {dt.day}"
-    return f"{dt.strftime('%B')} {dt.day}, {dt.strftime('%Y')}"
-
-
-def sparkline_svg(closes, positive=True, width=180, height=54, css_class="sparkline"):
-    values = []
-    for value in closes or []:
-        try:
-            values.append(float(value))
-        except (TypeError, ValueError):
-            continue
-
-    if not values:
-        return (
-            f'<svg class="{css_class} empty" viewBox="0 0 {width} {height}" '
-            f'role="img" aria-label="Chart data unavailable">'
-            f'<line x1="4" y1="{height / 2:.1f}" x2="{width - 4}" y2="{height / 2:.1f}" '
-            'class="sparkline-muted"/></svg>'
-        )
-
-    if len(values) == 1:
-        values = [values[0], values[0]]
-
-    minimum = min(values)
-    maximum = max(values)
-    value_range = maximum - minimum or 1.0
-    pad_x = 4.0
-    pad_y = 5.0
-    x_step = (width - pad_x * 2) / max(len(values) - 1, 1)
-    points = []
-
-    for index, value in enumerate(values):
-        x = pad_x + index * x_step
-        y = height - pad_y - ((value - minimum) / value_range) * (height - pad_y * 2)
-        points.append(f"{x:.2f},{y:.2f}")
-
-    trend_class = "positive" if positive else "negative"
-    label = f"Sparkline from {values[0]:,.2f} to {values[-1]:,.2f}"
-    return (
-        f'<svg class="{css_class} {trend_class}" viewBox="0 0 {width} {height}" '
-        f'role="img" aria-label="{render_html_text(label)}" preserveAspectRatio="none">'
-        f'<polyline points="{" ".join(points)}" class="sparkline-line"/>'
-        "</svg>"
-    )
-
-
-def render_bullet_list(items, css_class="decision-list"):
-    safe_items = sanitize_string_list(items)
-    return f'<ul class="{css_class}">' + "".join(f"<li>{item}</li>" for item in safe_items) + "</ul>"
-
-
-def format_metric_value(symbol, data):
-    value = data["end_price"]
-    if symbol in ("BTC-USD", "ETH-USD"):
-        return f"${value:,.0f}"
-    if symbol == "^TNX":
-        return f"{value:.2f}%"
-    if symbol == "^VIX":
-        return f"{value:.2f}"
-    return f"{value:,.2f}"
-
-
-def render_metric_tile(name, symbol, data, chart_data):
-    pct = data["pct_change"]
-    css_class = "positive" if pct >= 0 else "negative"
-    arrow = "▲" if pct >= 0 else "▼"
-    sign = "+" if pct >= 0 else "−"
-    sparkline = sparkline_svg(
-        chart_data.get("closes", []),
-        positive=pct >= 0,
-        width=180,
-        height=52,
-        css_class="metric-sparkline",
-    )
-    return (
-        '<article class="metric-tile">'
-        '<div class="metric-head">'
-        f'<span class="metric-name">{render_html_text(name)}</span>'
-        f'<span class="metric-change {css_class}">{arrow} {sign}{abs(pct):.2f}%</span>'
-        "</div>"
-        f'<div class="metric-value">{format_metric_value(symbol, data)}</div>'
-        f'<div class="metric-chart">{sparkline}</div>'
-        "</article>"
-    )
-
-
-def render_sector_chart(all_sectors_ranked):
-    max_abs = max((abs(value) for _, value in all_sectors_ranked), default=1.0) or 1.0
-    rows = []
-    for rank, (name, value) in enumerate(all_sectors_ranked, start=1):
-        css_class = "positive" if value >= 0 else "negative"
-        width = max(2.5, abs(value) / max_abs * 100)
-        rows.append(
-            '<div class="sector-row">'
-            f'<div class="sector-rank">{rank:02d}</div>'
-            f'<div class="sector-name">{render_html_text(name)}</div>'
-            '<div class="sector-track">'
-            f'<div class="sector-bar {css_class}" style="width:{width:.2f}%"></div>'
-            "</div>"
-            f'<div class="sector-value {css_class}">{value:+.2f}%</div>'
-            "</div>"
-        )
-    return '<div class="sector-chart" role="img" aria-label="All eleven sectors ranked by daily return">' + "".join(rows) + "</div>"
-
-
-def render_megacap_row(ticker, company, data, description, logo_slug):
-    pct = data["pct_change"]
-    css_class = "positive" if pct >= 0 else "negative"
-    sparkline = sparkline_svg(
-        data.get("closes", []),
-        positive=pct >= 0,
-        width=150,
-        height=48,
-        css_class="row-sparkline",
-    )
-    logo = (
-        f'<img src="https://s3-symbol-logo.tradingview.com/{logo_slug}.svg" '
-        f'alt="{ticker} logo" class="company-logo" onerror="this.style.display=\'none\'">'
-        if logo_slug
-        else ""
-    )
-    error_note = '<span class="data-error">data error</span>' if data.get("error") else ""
-    return (
-        f'<article class="company-row" data-ticker="{ticker}">'
-        f'<div class="company-id">{logo}<div><strong>{ticker}</strong><span>{render_html_text(company)}</span></div></div>'
-        f'<div class="company-note">{description} {error_note}</div>'
-        f'<div class="company-spark">{sparkline}</div>'
-        '<div class="company-stats">'
-        f'<span><small>Close</small>${data["end_price"]:,.2f}</span>'
-        f'<span><small>Day High</small>${data["day_high"]:,.2f}</span>'
-        f'<span><small>Day Low</small>${data["day_low"]:,.2f}</span>'
-        f'<span class="{css_class}"><small>1D</small>{pct:+.2f}%</span>'
-        "</div>"
-        "</article>"
-    )
-
-
-def render_global_row(name, data, status):
-    pct = data["pct_change"]
-    css_class = "positive" if pct >= 0 else "negative"
-    sparkline = sparkline_svg(
-        data.get("closes", []),
-        positive=pct >= 0,
-        width=120,
-        height=34,
-        css_class="table-sparkline",
-    )
-    return (
-        "<tr>"
-        f'<td class="global-name">{render_html_text(name)}</td>'
-        f'<td class="number">{data["end_price"]:,.2f}</td>'
-        f'<td class="number {css_class}">{pct:+.2f}%</td>'
-        f'<td class="spark-cell">{sparkline}</td>'
-        f"<td>{status}</td>"
-        "</tr>"
-    )
-
-
-def render_ticker_item(name, value, data):
-    pct = data["pct_change"]
-    css_class = "positive" if pct >= 0 else "negative"
-    return (
-        '<div class="ticker-item">'
-        f'<span class="ticker-name">{render_html_text(name)}</span>'
-        f'<span class="ticker-value">{value}</span>'
-        f'<span class="ticker-change {css_class}">{pct:+.2f}% 1D</span>'
-        "</div>"
-    )
-
-
-def tradingview_widget_html():
-    return r'''
-<section class="section tradingview-section" aria-labelledby="tradingview-heading">
-  <div class="section-heading compact-heading">
-    <div><div class="section-label">Explore Further</div><h2 id="tradingview-heading">Interactive Mega-Cap Charts</h2></div>
-    <p>Supplementary TradingView view for deeper timeframes and interaction.</p>
-  </div>
-  <div class="tradingview-card">
-    <div class="tradingview-widget-container">
-      <div class="tradingview-widget-container__widget"></div>
-      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-overview.js" async>
-      {
-        "lineWidth": 2,
-        "lineType": 0,
-        "chartType": "area",
-        "backgroundColor": "#0F0F0F",
-        "widgetFontColor": "#DBDBDB",
-        "gridLineColor": "rgba(242,242,242,0.06)",
-        "upColor": "#22ab94",
-        "downColor": "#f7525f",
-        "colorTheme": "dark",
-        "isTransparent": false,
-        "locale": "en",
-        "changeMode": "price-and-percent",
-        "symbols": [
-          ["NASDAQ:AAPL|1D"], ["NASDAQ:MSFT|1D"], ["NASDAQ:NVDA|1D"],
-          ["NASDAQ:AMZN|1D"], ["NASDAQ:META|1D"], ["NASDAQ:SNDK|1D"],
-          ["NASDAQ:AMD|1D"], ["NASDAQ:INTC|1D"], ["NASDAQ:MU|1D"]
-        ],
-        "dateRanges": ["1d|1", "1m|30", "3m|60", "12m|1D", "all|1M"],
-        "autosize": true,
-        "height": "520"
-      }
-      </script>
-    </div>
-  </div>
-</section>
-'''
-
-
-# ─────────────────────────────────────────────
-# MAIN HTML GENERATOR
-# ─────────────────────────────────────────────
-def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="public/legacy-report.html"):
+def generate_report(now=None, snapshot_path="report_snapshot.json", archive_root="public/reports"):
     session_date, previous_session_date = resolve_completed_sessions(now)
     if not has_new_session(session_date, snapshot_path):
         print(f"No new completed trading session after {session_date.isoformat()}; leaving artifacts unchanged.")
@@ -1014,14 +759,6 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
     ftse = datasets["^FTSE"]
     hsi = datasets["^HSI"]
 
-    session_date_short = fmt_date(session_date)
-    previous_session_short = fmt_date(previous_session_date)
-    year_str = session_date.strftime("%Y")
-    full_date = fmt_date(
-        datetime.datetime.combine(session_date, datetime.time(), tzinfo=NY_TZ),
-        include_day=False,
-    )
-
     sectors = {
         "Technology (XLK)": "XLK",
         "Financials (XLF)": "XLF",
@@ -1056,11 +793,6 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
         symbol: fetch_daily_chart_data(symbol, session_date, fallback_data=datasets[symbol])
         for _, symbol in SUMMARY_TILE_TICKERS
     }
-    metric_tiles = "".join(
-        render_metric_tile(name, symbol, datasets[symbol], session_charts[symbol])
-        for name, symbol in SUMMARY_TILE_TICKERS
-    )
-
     megacaps = {
         "AAPL": "Apple",
         "MSFT": "Microsoft",
@@ -1121,287 +853,6 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
         "earnings_and_catalysts": [cards[cid]["watch"] for cid in ("megacaps", "nasdaq_gap") if cid in cards],
         "risk_factors": editorial["watchlist"][:2],
     }
-    logo_slugs = {"AAPL": "apple", "MSFT": "microsoft", "NVDA": "nvidia", "AMZN": "amazon",
-                  "META": "meta-platforms", "SNDK": "sandisk", "AMD": "advanced-micro-devices",
-                  "INTC": "intel", "MU": "micron-technology"}
-    megacap_html = "".join(render_megacap_row(ticker, entry["name"], entry["result"],
-                         html.escape(mc_descriptions[ticker]), logo_slugs.get(ticker, ""))
-                         for ticker, entry in megacap_data.items())
-    global_rows = "".join(render_global_row(name, data, html.escape(global_status[key]))
-                         for name, data, key in (("Nikkei 225", n225, "nikkei"),
-                         ("Euro Stoxx 50", stoxx, "stoxx"), ("FTSE 100", ftse, "ftse"),
-                         ("Hang Seng", hsi, "hsi")))
-
-    ticker_items = "".join(
-        (
-            render_ticker_item("S&P 500", f"{sp['end_price']:,.2f}", sp),
-            render_ticker_item("Nasdaq", f"{nd['end_price']:,.2f}", nd),
-            render_ticker_item("DJIA", f"{dj['end_price']:,.2f}", dj),
-            render_ticker_item("VIX", f"{vix['end_price']:.2f}", vix),
-            render_ticker_item("10Y", f"{tnx['end_price']:.2f}%", tnx),
-            render_ticker_item("DXY", f"{dxy['end_price']:.2f}", dxy),
-            render_ticker_item("BTC", f"${btc['end_price']:,.0f}", btc),
-            render_ticker_item("ETH", f"${eth['end_price']:,.0f}", eth),
-        )
-    )
-    ticker_tape = f'<div class="ticker-track">{ticker_items}{ticker_items}</div>'
-
-    market_tone = {"risk_on_confirmed": "Risk-On", "risk_off_confirmed": "Risk-Off"}.get(context["derived_metrics"].get("risk_confirmation", {}).get("signal"), "Mixed")
-    tone_class = "positive" if sp["pct_change"] >= 0 else "negative"
-    sector_chart = render_sector_chart(all_sectors_ranked)
-
-    crypto_cards = "".join(
-        (
-            f'<article class="asset-card"><span>Bitcoin</span><strong>${btc["end_price"]:,.0f}</strong><em class="{"positive" if btc["pct_change"] >= 0 else "negative"}">{btc["pct_change"]:+.2f}%</em><p>{crypto_descriptions["btc"]}</p></article>',
-            f'<article class="asset-card"><span>Ethereum</span><strong>${eth["end_price"]:,.0f}</strong><em class="{"positive" if eth["pct_change"] >= 0 else "negative"}">{eth["pct_change"]:+.2f}%</em><p>{crypto_descriptions["eth"]}</p></article>',
-            f'<article class="asset-card"><span>Solana</span><strong>${sol["end_price"]:,.2f}</strong><em class="{"positive" if sol["pct_change"] >= 0 else "negative"}">{sol["pct_change"]:+.2f}%</em><p>{crypto_descriptions["sol"]}</p></article>',
-            f'<article class="asset-card"><span>XRP</span><strong>${xrp["end_price"]:.4f}</strong><em class="{"positive" if xrp["pct_change"] >= 0 else "negative"}">{xrp["pct_change"]:+.2f}%</em><p>{crypto_descriptions["xrp"]}</p></article>',
-        )
-    )
-
-    next_session_outlook_cards = "".join(
-        (
-            f'<article class="decision-card"><span>Macro</span>{render_bullet_list(next_session_outlook["macro"])}</article>',
-            f'<article class="decision-card"><span>Fed & Rates</span>{render_bullet_list(next_session_outlook["fed_policy"])}</article>',
-            f'<article class="decision-card"><span>Earnings & Catalysts</span>{render_bullet_list(next_session_outlook["earnings_and_catalysts"])}</article>',
-            f'<article class="decision-card"><span>Risk Dashboard</span>{render_bullet_list(next_session_outlook["risk_factors"])}</article>',
-        )
-    )
-
-    daily_takeaway_html = (
-        '<ul class="takeaway-list">'
-        f'<li><span>What moved</span>{daily_takeaway["what_moved"]}</li>'
-        f'<li><span>Possible drivers</span>{daily_takeaway["why"]}</li>'
-        f'<li><span>What to watch next</span>{daily_takeaway["what_to_watch"]}</li>'
-        "</ul>"
-    )
-
-    title = f"Stock Market Summary – {full_date} | The Daily Tape"
-    canonical_url = f"https://coolxng.github.io/market-summary/reports/{session_date.isoformat()}/"
-    description = (
-        f"U.S. stock market close summary for {full_date}, including major indexes, "
-        "sector breadth, mega-cap leadership, rates, commodities, global markets, and crypto."
-    )
-    html_content = f'''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{render_html_text(title)}</title>
-<meta name="description" content="{render_html_text(description)}">
-<link rel="canonical" href="{canonical_url}">
-<meta property="og:type" content="article">
-<meta property="og:site_name" content="The Daily Tape">
-<meta property="og:title" content="{render_html_text(title)}">
-<meta property="og:description" content="{render_html_text(description)}">
-<meta property="og:url" content="{canonical_url}">
-<meta property="og:image" content="https://coolxng.github.io/market-summary/og.png">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{render_html_text(title)}">
-<meta name="twitter:description" content="{render_html_text(description)}">
-<meta name="twitter:image" content="https://coolxng.github.io/market-summary/og.png">
-<link rel="icon" type="image/png" href="https://coolxng.github.io/market-summary/logo.png">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-<style>
-/* {PREMIUM_DESIGN_MARKER} */
-:root {{
-  --bg:#000000; --surface:#080808; --surface-2:#101010;
-  --border:rgba(255,255,255,.10); --border-hover:rgba(255,255,255,.18); --text:rgba(255,255,255,.94); --muted:rgba(255,255,255,.58);
-  --green:#30d158; --red:#ff453a; --accent:#0a84ff; --purple:#bf5af2;
-  --shadow:none;
-}}
-* {{ box-sizing:border-box; }}
-html {{ background:var(--bg); scroll-behavior:smooth; }}
-body {{ margin:0; min-height:100vh; background:var(--bg); color:var(--text); font-family:Inter,system-ui,sans-serif; line-height:1.5; overflow-x:hidden; }}
-a {{ color:inherit; text-decoration:none; }}
-.positive {{ color:var(--green)!important; }} .negative {{ color:var(--red)!important; }}
-.report-shell {{ position:relative; }}
-.report-header {{ position:sticky; top:0; z-index:20; background:#000; border-bottom:1px solid var(--border); }}
-.header-main {{ max-width:1320px; margin:auto; padding:18px 34px 14px; display:flex; align-items:center; justify-content:space-between; gap:18px; }}
-.report-id {{ display:flex; align-items:center; gap:14px; min-width:0; }}
-.report-mark {{ width:34px; height:34px; flex:0 0 34px; border-radius:9px; overflow:hidden; }}
-.report-mark img {{ display:block; width:100%; height:100%; object-fit:cover; }}
-.report-title {{ min-width:0; }}
-.report-title strong {{ display:block; font:600 17px 'Space Grotesk'; letter-spacing:-.02em; }}
-.report-title span {{ display:block; color:var(--muted); font-size:11px; margin-top:2px; }}
-.header-meta {{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:flex-end; }}
-.tone-badge,.date-chip {{ padding:6px 10px; border:1px solid var(--border); border-radius:999px; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; background:var(--surface-2); }}
-.ticker-window {{ overflow:hidden; border-top:1px solid var(--border); background:#000; }}
-.ticker-track {{ display:flex; width:max-content; animation:ticker 55s linear infinite; }}
-.ticker-track:hover {{ animation-play-state:paused; }}
-@keyframes ticker {{ to {{ transform:translateX(-50%); }} }}
-.ticker-item {{ display:grid; grid-template-columns:auto auto; column-gap:10px; padding:10px 24px; border-right:1px solid var(--border); white-space:nowrap; }}
-.ticker-name {{ color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }}
-.ticker-value {{ font:600 12px 'Space Grotesk'; }}
-.ticker-change {{ grid-column:2; font-size:9px; font-weight:700; }}
-.container {{ max-width:1320px; margin:auto; padding:26px 34px 80px; }}
-.metric-grid {{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin-bottom:26px; }}
-.metric-tile,.panel,.asset-card,.decision-card,.tradingview-card {{ background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow); }}
-.metric-tile:hover,.panel:hover,.asset-card:hover,.decision-card:hover,.tradingview-card:hover,.takeaway-list li:hover {{ background:var(--surface-2); border-color:var(--border-hover); }}
-.metric-tile {{ border-radius:12px; padding:14px 15px 10px; min-width:0; }}
-.metric-head {{ display:flex; justify-content:space-between; gap:8px; align-items:center; }}
-.metric-name {{ color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.11em; font-weight:700; }}
-.metric-change {{ font-size:10px; font-weight:700; }}
-.metric-value {{ font:700 25px 'Space Grotesk'; letter-spacing:-.04em; margin-top:8px; }}
-.metric-chart {{ height:52px; margin-top:5px; }}
-.metric-sparkline,.row-sparkline,.table-sparkline {{ width:100%; height:100%; display:block; overflow:visible; }}
-.sparkline-line {{ fill:none; stroke:currentColor; stroke-width:2.25; vector-effect:non-scaling-stroke; stroke-linecap:round; stroke-linejoin:round; }}
-.sparkline-muted {{ stroke:var(--muted); stroke-width:1; stroke-dasharray:3 4; }}
-.section {{ margin-top:44px; padding-top:28px; border-top:1px solid var(--border); }}
-.section-heading {{ display:flex; justify-content:space-between; align-items:end; gap:24px; margin-bottom:17px; }}
-.section-heading h2 {{ margin:2px 0 0; font:600 clamp(22px,3vw,32px) 'Space Grotesk'; letter-spacing:-.035em; }}
-.section-heading p {{ margin:0; color:var(--muted); max-width:560px; font-size:12px; text-align:right; }}
-.section-label {{ color:var(--accent); font-size:9px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; }}
-.panel {{ border-radius:12px; padding:18px; }}
-.breadth-strip {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:12px; }}
-.breadth-stat {{ border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--surface-2); }}
-.breadth-stat span {{ color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.1em; }}
-.breadth-stat strong {{ display:block; font:700 20px 'Space Grotesk'; margin-top:3px; }}
-.sector-chart {{ display:flex; flex-direction:column; gap:9px; }}
-.sector-row {{ display:grid; grid-template-columns:28px minmax(150px,220px) minmax(120px,1fr) 70px; gap:10px; align-items:center; }}
-.sector-rank {{ color:var(--muted); font:600 10px 'Space Grotesk'; }}
-.sector-name {{ font-size:11px; font-weight:600; }}
-.sector-track {{ height:9px; border-radius:999px; background:rgba(255,255,255,.05); overflow:hidden; }}
-.sector-bar {{ height:100%; border-radius:999px; background:currentColor; opacity:.9; }}
-.sector-value {{ font:700 11px 'Space Grotesk'; text-align:right; }}
-.caption-grid {{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }}
-.caption-grid p {{ margin:0; padding:10px 12px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; color:var(--muted); font-size:11px; }}
-.company-list {{ overflow:hidden; padding:0; }}
-.company-row {{ display:grid; grid-template-columns:150px minmax(220px,1fr) 150px 260px; gap:16px; align-items:center; padding:15px 18px; border-bottom:1px solid var(--border); }}
-.company-row:last-child {{ border-bottom:0; }}
-.company-id {{ display:flex; align-items:center; gap:10px; }}
-.company-logo {{ width:32px; height:32px; border-radius:50%; padding:4px; background:rgba(255,255,255,.08); }}
-.company-id strong {{ display:block; font:700 12px 'Space Grotesk'; }}
-.company-id span {{ display:block; color:var(--muted); font-size:9px; margin-top:2px; }}
-.company-note {{ color:var(--muted); font-size:11px; }}
-.company-spark {{ height:48px; }}
-.company-stats {{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }}
-.company-stats span {{ font:600 10px 'Space Grotesk'; white-space:nowrap; }}
-.company-stats small {{ display:block; color:var(--muted); font:700 8px Inter; text-transform:uppercase; letter-spacing:.08em; margin-bottom:3px; }}
-.data-error {{ color:var(--red); font-size:9px; }}
-.table-wrap {{ overflow:auto; padding:0; }}
-table {{ width:100%; border-collapse:collapse; min-width:880px; }}
-th {{ color:var(--muted); background:var(--surface-2); text-align:left; font-size:9px; letter-spacing:.1em; text-transform:uppercase; }}
-th,td {{ padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:middle; }}
-tr:last-child td {{ border-bottom:0; }}
-td {{ color:var(--muted); font-size:11px; }}
-.global-name {{ color:var(--text); font-weight:700; }}
-.number {{ color:var(--text); font:600 11px 'Space Grotesk'; white-space:nowrap; }}
-.spark-cell {{ width:140px; height:45px; }}
-.asset-grid,.decision-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }}
-.asset-card,.decision-card {{ border-radius:12px; padding:15px; }}
-.asset-card span,.decision-card>span {{ color:var(--muted); font-size:9px; text-transform:uppercase; letter-spacing:.11em; font-weight:700; }}
-.asset-card strong {{ display:block; font:700 22px 'Space Grotesk'; margin-top:7px; }}
-.asset-card em {{ display:block; font-style:normal; font-size:10px; font-weight:700; margin-top:3px; }}
-.asset-card p {{ color:var(--muted); font-size:10px; margin:10px 0 0; }}
-.takeaway-list,.decision-list {{ list-style:none; padding:0; margin:0; }}
-.takeaway-list {{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }}
-.takeaway-list li {{ border:1px solid var(--border); background:var(--surface); border-radius:14px; padding:15px; color:var(--text); font-size:11px; }}
-.takeaway-list span {{ display:block; color:var(--accent); font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:.1em; margin-bottom:7px; }}
-.decision-list {{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }}
-.decision-list li {{ color:var(--muted); font-size:10px; padding-left:13px; position:relative; }}
-.decision-list li:before {{ content:'•'; position:absolute; left:0; color:var(--accent); }}
-.compact-heading {{ align-items:center; }}
-.tradingview-card {{ border-radius:12px; overflow:hidden; height:520px; }}
-.tradingview-widget-container,.tradingview-widget-container__widget,.tradingview-card iframe {{ width:100%!important; height:100%!important; }}
-.footer {{ max-width:1320px; margin:auto; padding:30px 34px 46px; color:var(--muted); font-size:10px; display:flex; justify-content:space-between; gap:18px; border-top:1px solid var(--border); }}
-@media(max-width:1100px) {{
-  .metric-grid {{ grid-template-columns:repeat(2,1fr); }}
-  .company-row {{ grid-template-columns:135px 1fr 130px; }}
-  .company-stats {{ grid-column:2 / 4; }}
-  .asset-grid,.decision-grid {{ grid-template-columns:repeat(2,1fr); }}
-}}
-@media(max-width:720px) {{
-  .header-main,.container,.footer {{ padding-left:16px; padding-right:16px; }}
-  .header-main,.section-heading {{ align-items:flex-start; }}
-  .header-main,.section-heading,.footer {{ flex-direction:column; }}
-  .header-meta {{ justify-content:flex-start; }}
-  .section-heading p {{ text-align:left; }}
-  .metric-grid,.breadth-strip,.caption-grid,.asset-grid,.decision-grid,.takeaway-list {{ grid-template-columns:1fr; }}
-  .sector-row {{ grid-template-columns:24px 130px 1fr 62px; gap:7px; }}
-  .company-row {{ grid-template-columns:1fr 110px; }}
-  .company-note,.company-stats {{ grid-column:1 / 3; }}
-}}
-@media(prefers-reduced-motion:reduce) {{ .ticker-track {{ animation:none; }} }}
-</style>
-</head>
-<body>
-<div class="report-shell">
-<header class="report-header">
-  <div class="header-main">
-    <div class="report-id">
-      <div class="report-mark"><img src="https://coolxng.github.io/market-summary/logo.png" alt=""></div>
-      <div class="report-title"><strong>Daily Market Close</strong><span>{session_date_short}, {year_str} · Versus {previous_session_short} close</span></div>
-    </div>
-    <div class="header-meta"><span class="tone-badge {tone_class}">{market_tone}</span><span class="date-chip">Post-Market Close</span></div>
-  </div>
-  <div class="ticker-window" aria-label="Scrolling market ticker">{ticker_tape}</div>
-</header>
-
-<main class="container">
-  <section aria-label="Core market metrics"><div class="metric-grid">{metric_tiles}</div></section>
-
-  <section class="section" id="sectors">
-    <div class="section-heading"><div><div class="section-label">01 · Breadth & Sectors</div><h2>All 11 sectors, ranked</h2></div><p>{advances} sectors advanced and {declines} declined. Full ranking replaces prose-first sector coverage.</p></div>
-    <div class="breadth-strip">
-      <div class="breadth-stat"><span>Cap-Weighted S&P</span><strong>{sp['pct_change']:+.2f}%</strong></div>
-      <div class="breadth-stat"><span>Equal-Weight S&P</span><strong>{rsp['pct_change']:+.2f}%</strong></div>
-      <div class="breadth-stat"><span>SPY Check</span><strong>{spy['pct_change']:+.2f}%</strong></div>
-      <div class="breadth-stat"><span>Positive Sectors</span><strong>{breadth_share:.1f}%</strong></div>
-    </div>
-    <div class="panel">{sector_chart}<div class="caption-grid"><p>{sector_bullets['top_bullet1']}</p><p>{sector_bullets['top_bullet2']}</p><p>{sector_bullets['bot_bullet1']}</p><p>{sector_bullets['bot_bullet2']}</p></div></div>
-  </section>
-
-  <section class="section" id="megacaps">
-    <div class="section-heading"><div><div class="section-label">02 · Mega-Cap & AI</div><h2>Session price action</h2></div><p>Each row shows the completed session close, high, low, and 1D move.</p></div>
-    <div class="panel company-list">{megacap_html}</div>
-  </section>
-
-{tradingview_widget_html()}
-
-  <section class="section" id="global">
-    <div class="section-heading"><div><div class="section-label">03 · Global Markets</div><h2>Cross-market read-through</h2></div><p>Latest daily closes provide context around the completed U.S. session.</p></div>
-    <div class="panel table-wrap"><table><thead><tr><th>Index</th><th>Close</th><th>1D</th><th>Session Trend</th><th>Status</th></tr></thead><tbody>{global_rows}</tbody></table></div>
-  </section>
-
-  <section class="section" id="crypto">
-    <div class="section-heading"><div><div class="section-label">04 · Digital Assets</div><h2>Crypto risk dashboard</h2></div><p>Compact price and narrative cards for the broader liquidity read.</p></div>
-    <div class="asset-grid">{crypto_cards}</div>
-  </section>
-
-  <section class="section" aria-label="Editorial brief">
-    <div class="section-heading"><div><h2>{html.escape(editorial['headline'])}</h2></div></div>
-    <p>{html.escape(editorial['opening_summary'])}</p>
-    <p><strong>Interpretation:</strong> {html.escape(editorial['regime']['interpretation'])}</p>
-    <p>{html.escape(editorial['macro_read']['observed'])}</p>
-  </section>
-  <section class="section" id="takeaway">
-    <div class="section-heading"><div><div class="section-label">05 · Decision Summary</div><h2>Investor takeaway</h2></div><p>Three decisions, not another paragraph.</p></div>
-    {daily_takeaway_html}
-  </section>
-
-  <section class="section" id="outlook">
-    <div class="section-heading"><div><div class="section-label">06 · Next Session Outlook</div><h2>What to watch next</h2></div><p>Each category is reduced to two scannable, evidence-aware bullets.</p></div>
-    <div class="decision-grid">{next_session_outlook_cards}</div>
-  </section>
-
-  <section class="section" id="macro">
-    <div class="section-heading"><div><div class="section-label">07 · Macro Reference</div><h2>Rates, dollar, and commodities</h2></div><p>Secondary values retained below the primary digest.</p></div>
-    <div class="breadth-strip">
-      <div class="breadth-stat"><span>13W T-Bill</span><strong>{irx['end_price']:.2f}%</strong></div>
-      <div class="breadth-stat"><span>Gold</span><strong>${gold['end_price']:,.2f}</strong></div>
-      <div class="breadth-stat"><span>Crude Oil</span><strong>${oil['end_price']:,.2f}</strong></div>
-      <div class="breadth-stat"><span>Russell 2000</span><strong>{rut['end_price']:,.2f}</strong></div>
-    </div>
-  </section>
-</main>
-
-<footer class="footer"><span>Automated Daily Market Summary · Completed U.S. session · Data via yfinance</span><span>Narrative mode: {'Claude' if ai_enabled else 'Deterministic fallback'} · {full_date}</span></footer>
-</div>
-</body>
-</html>
-'''
-
     snapshot = {
         "report_type": "daily_market_close",
         "session_date": session_date.isoformat(),
@@ -1435,27 +886,22 @@ td {{ color:var(--muted); font-size:11px; }}
         },
     }
 
-    report_output = Path(report_path)
     snapshot_output = Path(snapshot_path)
-    archive_dir = report_output.parent / "reports" / session_date.isoformat()
-    archive_report_output = archive_dir / "legacy.html"
+    archive_dir = Path(archive_root) / session_date.isoformat()
     archive_snapshot_output = archive_dir / "report.json"
 
-    report_output.parent.mkdir(parents=True, exist_ok=True)
     snapshot_output.parent.mkdir(parents=True, exist_ok=True)
     archive_dir.mkdir(parents=True, exist_ok=True)
 
     snapshot_json = json.dumps(snapshot, indent=2) + "\n"
-    report_output.write_text(html_content, encoding="utf-8")
     snapshot_output.write_text(snapshot_json, encoding="utf-8")
-    archive_report_output.write_text(html_content, encoding="utf-8")
     archive_snapshot_output.write_text(snapshot_json, encoding="utf-8")
     print(
-        f"Successfully generated {snapshot_output}, {report_output}, "
-        f"{archive_snapshot_output}, and {archive_report_output} for {full_date}"
+        f"Successfully generated {snapshot_output} and {archive_snapshot_output} "
+        f"for {session_date.isoformat()}"
     )
     return True
 
 
 if __name__ == "__main__":
-    generate_html()
+    generate_report()
