@@ -339,15 +339,6 @@ function countdownValue(now: Date, target: Date) {
   return `${hours}H ${String(remainder).padStart(2, "0")}M`;
 }
 
-function publicationDateLabel(target: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: CENTRAL_TIME_ZONE,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(target);
-}
-
 function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Date): PublicationIndicator {
   const today = centralCalendarDate(now);
   const todayKey = calendarKey(today);
@@ -365,7 +356,7 @@ function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Da
       mode: "published",
       label: "JUST PUBLISHED",
       value: minutesSincePublished < 1 ? "UPDATED NOW" : `UPDATED ${minutesSincePublished}M AGO`,
-      meta: `Next issue ${relativePublicationName(now, nextTarget).toLowerCase()} at 3:30 PM CT`,
+      meta: `Next issue ${relativePublicationName(now, nextTarget).toLowerCase()} · 30 min after U.S. market close`,
     };
   }
 
@@ -374,7 +365,7 @@ function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Da
       mode: "building",
       label: "PREPARING TODAY'S ISSUE",
       value: "IN PROGRESS",
-      meta: "Scheduled for 3:30 PM CT",
+      meta: "Publishing now",
     };
   }
 
@@ -383,7 +374,7 @@ function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Da
     mode: "countdown",
     label: "NEXT ISSUE IN",
     value: countdownValue(now, nextTarget),
-    meta: `Publishes ${publicationDateLabel(nextTarget)} at 3:30 PM CT`,
+    meta: "30 min after U.S. market close",
   };
 }
 
@@ -525,7 +516,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   const generatedLabel = generatedAt.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" });
   const publicationStatus = archived ? null : now
     ? getPublicationIndicator(now, dailyReport.session_date, generatedAt)
-    : { mode: "countdown", label: "NEXT ISSUE IN", value: "SCHEDULED", meta: "Publishes at 3:30 PM CT" } satisfies PublicationIndicator;
+    : { mode: "countdown", label: "NEXT ISSUE IN", value: "SCHEDULED", meta: "30 min after U.S. market close" } satisfies PublicationIndicator;
   const sectorTotal = sectorEntries.length;
   const breadthTone = breadth.positive_sector_share >= 60 ? "Broad" : breadth.positive_sector_share >= 45 ? "Mixed" : "Narrow";
   const riskSignal = dailyReport.derived_metrics?.risk_confirmation?.signal;
