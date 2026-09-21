@@ -46,7 +46,7 @@ jobs:
 
       - name: Validate Generated Artifacts
         run: |
-          python -c "import json; from pathlib import Path; snapshot = json.loads(Path('report_snapshot.json').read_text()); date = snapshot['session_date']; assert Path('public/legacy-report.html').exists(); assert Path(f'public/reports/{date}/index.html').exists(); assert Path(f'public/reports/{date}/report.json').exists(); assert snapshot['report_type'] == 'daily_market_close'; assert snapshot['session_date'] > snapshot['previous_session_date']; assert snapshot['market_data']['^GSPC']['end_price'] > 0; assert snapshot['market_data']['^IXIC']['end_price'] > 0; assert snapshot['market_data']['^TNX']['end_price'] > 0; assert snapshot['daily_market_breadth']['positive_sector_share'] >= 0"
+          python -c "import json; from pathlib import Path; snapshot = json.loads(Path('report_snapshot.json').read_text()); date = snapshot['session_date']; assert Path('public/legacy-report.html').exists(); assert Path(f'public/reports/{date}/legacy.html').exists(); assert Path(f'public/reports/{date}/report.json').exists(); assert snapshot['report_type'] == 'daily_market_close'; assert snapshot['session_date'] > snapshot['previous_session_date']; assert snapshot['market_data']['^GSPC']['end_price'] > 0; assert snapshot['market_data']['^IXIC']['end_price'] > 0; assert snapshot['market_data']['^TNX']['end_price'] > 0; assert snapshot['daily_market_breadth']['positive_sector_share'] >= 0"
           npm ci --ignore-scripts
           npm run build
 
