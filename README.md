@@ -111,3 +111,5 @@ Next.js static export → live dashboard
 Market data is sourced through `yfinance` and therefore depends on upstream availability and data quality. The generator includes sanity bounds and artifact validation to catch obvious failures, but those checks are not a guarantee that every upstream quote is error-free.
 
 When Anthropic is enabled, narrative text is machine-generated from the report context. Important market information should still be verified against primary or institutional sources before it is used for financial decisions.
+
+© 2026 coolxng. All rights reserved.
