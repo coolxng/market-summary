@@ -568,6 +568,20 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
       <div className="page" id="top">
         <section className="hero" id="brief">
           <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
+          {publicationStatus && (
+            <div
+              className={`publication-banner publication-banner--${publicationStatus.mode}`}
+              aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}
+            >
+              <span className="publication-banner__status">
+                <i className="publication-banner__dot" aria-hidden="true" />
+                <span className="publication-banner__label">{publicationStatus.label}</span>
+                <strong className="publication-banner__value">{publicationStatus.value}</strong>
+              </span>
+              <span className="publication-banner__divider" aria-hidden="true" />
+              <span className="publication-banner__meta">{publicationStatus.meta}</span>
+            </div>
+          )}
           <div className="hero-grid">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>
@@ -581,21 +595,6 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
                 <span className="tag neutral">Breadth {breadth.advances}/{sectorTotal}</span>
                 <span className={`tag ${vix.pct_change <= 0 ? "up" : "down"}`}>VIX {formatPct(vix.pct_change)}</span>
               </div>
-              {publicationStatus && (
-                <div
-                  className={`hero-status hero-status--${publicationStatus.mode}`}
-                  aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}
-                >
-                  <div className="hero-status__top">
-                    <span className="hero-status__eyebrow">
-                      <i className="hero-status__dot" aria-hidden="true" />
-                      {publicationStatus.label}
-                    </span>
-                    <strong className="hero-status__value">{publicationStatus.value}</strong>
-                  </div>
-                  <p className="hero-status__meta">{publicationStatus.meta}</p>
-                </div>
-              )}
             </div>
             <aside className="regime-card" aria-label="Market regime signals">
               <div className="regime-heading"><span>REGIME MONITOR</span><span className="live-dot">SESSION CLOSED</span></div>
