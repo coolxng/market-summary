@@ -43,6 +43,9 @@ jobs:
       - name: Install Dependencies
         run: npm ci --ignore-scripts
 
+      - name: Lint
+        run: npm run lint
+
       - name: Build Static Site
         env:
           GITHUB_PAGES: "true"
@@ -57,8 +60,12 @@ jobs:
           test -f out/sitemap.xml
           test -f out/reports/index.html
           test -f out/reports/2026-09-18/index.html
+          test -f out/reports/2026-09-18/report.json
           grep -q '/market-summary/_next/' out/index.html
           grep -q 'THE DAILY TAPE' out/index.html
+          grep -q 'THE DAILY TAPE' out/reports/2026-09-18/index.html
+          grep -q 'ARCHIVED DAILY TAPE' out/reports/2026-09-18/index.html
+          ! grep -q 'Daily Market Close' out/reports/2026-09-18/index.html
           grep -q 'reports/2026-09-18' out/sitemap.xml
 
       - name: Upload GitHub Pages Artifact
