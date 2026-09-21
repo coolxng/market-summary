@@ -41,7 +41,15 @@ const websiteSchema = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var t=localStorage.getItem("daily-tape-theme");if(t==="ink"){document.documentElement.dataset.theme="ink"}}catch(e){}',
+          }}
+        />
+      </head>
       <body>
         <script
           type="application/ld+json"
