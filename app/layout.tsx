@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  icons: { icon: logoUrl, shortcut: logoUrl, apple: logoUrl },
+  icons: { apple: logoUrl },
   openGraph: {
     url: "./",
     siteName: "The Daily Tape",
@@ -44,10 +44,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <meta name="theme-color" content="#f3f0e7" />
+        <link id="site-favicon" rel="icon" type="image/svg+xml" href={new URL("favicon-light.svg", siteUrl).toString()} />
         <script
           dangerouslySetInnerHTML={{
             __html:
-              'try{var t=localStorage.getItem("daily-tape-theme");if(t==="ink"){document.documentElement.dataset.theme="ink"}}catch(e){}',
+              'try{var t=localStorage.getItem("daily-tape-theme");if(t==="ink"){document.documentElement.dataset.theme="ink";document.querySelector(\'meta[name="theme-color"]\').content="#080808";var i=document.getElementById("site-favicon");i.href=new URL("favicon-dark.svg",i.href).href}}catch(e){}',
           }}
         />
       </head>
