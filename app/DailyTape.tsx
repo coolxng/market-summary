@@ -345,7 +345,7 @@ function publicationDateLabel(target: Date) {
     weekday: "short",
     month: "short",
     day: "numeric",
-  }).format(target).toUpperCase();
+  }).format(target);
 }
 
 function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Date): PublicationIndicator {
@@ -363,27 +363,27 @@ function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Da
     const nextTarget = nextPublication(now);
     return {
       mode: "published",
-      label: "LATEST TAPE LIVE",
+      label: "JUST PUBLISHED",
       value: minutesSincePublished < 1 ? "UPDATED NOW" : `UPDATED ${minutesSincePublished}M AGO`,
-      meta: `NEXT TAPE ${relativePublicationName(now, nextTarget)} · 3:30 PM CT`,
+      meta: `Next issue ${relativePublicationName(now, nextTarget).toLowerCase()} at 3:30 PM CT`,
     };
   }
 
   if (todayTarget && now.getTime() >= todayTarget.getTime() && !publishedToday) {
     return {
       mode: "building",
-      label: "BUILDING TODAY'S TAPE",
-      value: "PUBLISHING",
-      meta: "AUTOMATED UPDATE IN PROGRESS",
+      label: "PREPARING TODAY'S ISSUE",
+      value: "IN PROGRESS",
+      meta: "Scheduled for 3:30 PM CT",
     };
   }
 
   const nextTarget = nextPublication(now);
   return {
     mode: "countdown",
-    label: "NEXT TAPE",
+    label: "NEXT ISSUE IN",
     value: countdownValue(now, nextTarget),
-    meta: `EXPECTED ${publicationDateLabel(nextTarget)} · 3:30 PM CT`,
+    meta: `Publishes ${publicationDateLabel(nextTarget)} at 3:30 PM CT`,
   };
 }
 
@@ -525,7 +525,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   const generatedLabel = generatedAt.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" });
   const publicationStatus = archived ? null : now
     ? getPublicationIndicator(now, dailyReport.session_date, generatedAt)
-    : { mode: "countdown", label: "NEXT TAPE", value: "SCHEDULED", meta: "EXPECTED 3:30 PM CT" } satisfies PublicationIndicator;
+    : { mode: "countdown", label: "NEXT ISSUE IN", value: "SCHEDULED", meta: "Publishes at 3:30 PM CT" } satisfies PublicationIndicator;
   const sectorTotal = sectorEntries.length;
   const breadthTone = breadth.positive_sector_share >= 60 ? "Broad" : breadth.positive_sector_share >= 45 ? "Mixed" : "Narrow";
   const riskSignal = dailyReport.derived_metrics?.risk_confirmation?.signal;
@@ -568,13 +568,6 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
       <div className="page" id="top">
         <section className="hero" id="brief">
           <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
-          {publicationStatus && (
-            <div className={`publication-status ${publicationStatus.mode}`} aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}>
-              <span className="publication-status__label"><i className="publication-status__dot" aria-hidden="true" />{publicationStatus.label}</span>
-              <strong className="publication-status__value">{publicationStatus.value}</strong>
-              <span className="publication-status__meta">{publicationStatus.meta}</span>
-            </div>
-          )}
           <div className="hero-grid">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>
@@ -588,6 +581,21 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
                 <span className="tag neutral">Breadth {breadth.advances}/{sectorTotal}</span>
                 <span className={`tag ${vix.pct_change <= 0 ? "up" : "down"}`}>VIX {formatPct(vix.pct_change)}</span>
               </div>
+              {publicationStatus && (
+                <div
+                  className={`hero-status hero-status--${publicationStatus.mode}`}
+                  aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}
+                >
+                  <div className="hero-status__top">
+                    <span className="hero-status__eyebrow">
+                      <i className="hero-status__dot" aria-hidden="true" />
+                      {publicationStatus.label}
+                    </span>
+                    <strong className="hero-status__value">{publicationStatus.value}</strong>
+                  </div>
+                  <p className="hero-status__meta">{publicationStatus.meta}</p>
+                </div>
+              )}
             </div>
             <aside className="regime-card" aria-label="Market regime signals">
               <div className="regime-heading"><span>REGIME MONITOR</span><span className="live-dot">SESSION CLOSED</span></div>
