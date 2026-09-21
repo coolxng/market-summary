@@ -115,6 +115,41 @@ class GenerateReportTests(unittest.TestCase):
         now = datetime.datetime(2026, 7, 14, 15, 59, tzinfo=generate_report.NY_TZ)
         self.assertEqual(generate_report.latest_completed_session_candidate(now), datetime.date(2026, 7, 13))
 
+    def test_session_calendar_uses_stooq_when_yahoo_fails(self):
+        csv_payload = (
+            "Date,Open,High,Low,Close,Volume\n"
+            "2026-07-10,6200,6220,6180,6210,0\n"
+            "2026-07-13,6215,6250,6205,6240,0\n"
+            "2026-07-14,6240,6280,6230,6275,0\n"
+        )
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return csv_payload.encode("utf-8")
+
+        with (
+            mock.patch.object(generate_report.yf, "Ticker", side_effect=RuntimeError("Yahoo unavailable")),
+            mock.patch.object(generate_report.urllib.request, "urlopen", return_value=FakeResponse()) as stooq_request,
+        ):
+            dates = generate_report.fetch_recent_session_dates(datetime.date(2026, 7, 14))
+
+        self.assertEqual(
+            dates,
+            [datetime.date(2026, 7, 10), datetime.date(2026, 7, 13), datetime.date(2026, 7, 14)],
+        )
+        request = stooq_request.call_args.args[0]
+        self.assertIn("stooq.com/q/d/l/", request.full_url)
+        self.assertIn("s=%5Espx", request.full_url)
+
+    def test_vix_stooq_symbol_uses_stooq_vix_code(self):
+        self.assertEqual(generate_report.STOOQ_SYMBOLS["^VIX"], "vi.c")
+
     def test_dst_and_standard_time_are_converted_to_new_york(self):
         utc = datetime.timezone.utc
         summer = datetime.datetime(2026, 7, 14, 21, 30, tzinfo=utc)
