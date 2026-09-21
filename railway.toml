@@ -5,5 +5,5 @@ watchPatterns = ["/**", "!/report_snapshot.json", "!/public/reports/**/report.js
 
 [deploy]
 startCommand = "python railway_cron.py"
-cronSchedule = "30 21 * * 1-5"
+cronSchedule = "30 20,21 * * 1-5"
 restartPolicyType = "NEVER"
