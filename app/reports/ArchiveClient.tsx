@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import styles from "./reports.module.css";
 
+const logoSrc = "https://coolxng.github.io/market-summary/logo.png";
+
 export type ArchiveReport = {
   date: string;
   displayDate: string;
@@ -39,7 +41,7 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
     <main>
       <header className="site-header">
         <a className="brand" href="../" aria-label="The Daily Tape home">
-          <span className="brand-mark"><i /><i /><i /></span>
+          <span className="brand-mark" style={{ backgroundImage: `url("${logoSrc}")` }} />
           <span>THE DAILY TAPE</span>
         </a>
         <nav aria-label="Archive navigation">

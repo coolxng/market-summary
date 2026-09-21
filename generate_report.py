@@ -1200,7 +1200,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", report_path="p
 <meta name="twitter:title" content="{render_html_text(title)}">
 <meta name="twitter:description" content="{render_html_text(description)}">
 <meta name="twitter:image" content="https://coolxng.github.io/market-summary/og.png">
-<link rel="icon" type="image/svg+xml" href="https://coolxng.github.io/market-summary/favicon.svg">
+<link rel="icon" type="image/png" href="https://coolxng.github.io/market-summary/logo.png">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 /* {PREMIUM_DESIGN_MARKER} */
@@ -1219,7 +1219,8 @@ a {{ color:inherit; text-decoration:none; }}
 .report-header {{ position:sticky; top:0; z-index:20; background:#000; border-bottom:1px solid var(--border); }}
 .header-main {{ max-width:1320px; margin:auto; padding:18px 34px 14px; display:flex; align-items:center; justify-content:space-between; gap:18px; }}
 .report-id {{ display:flex; align-items:center; gap:14px; min-width:0; }}
-.report-mark {{ width:34px; height:34px; border-radius:10px; display:grid; place-items:center; background:var(--accent); color:#fff; font:700 13px 'Space Grotesk'; }}
+.report-mark {{ width:34px; height:34px; flex:0 0 34px; border-radius:9px; overflow:hidden; }}
+.report-mark img {{ display:block; width:100%; height:100%; object-fit:cover; }}
 .report-title {{ min-width:0; }}
 .report-title strong {{ display:block; font:600 17px 'Space Grotesk'; letter-spacing:-.02em; }}
 .report-title span {{ display:block; color:var(--muted); font-size:11px; margin-top:2px; }}
@@ -1329,7 +1330,7 @@ td {{ color:var(--muted); font-size:11px; }}
 <header class="report-header">
   <div class="header-main">
     <div class="report-id">
-      <div class="report-mark">MS</div>
+      <div class="report-mark"><img src="https://coolxng.github.io/market-summary/logo.png" alt=""></div>
       <div class="report-title"><strong>Daily Market Close</strong><span>{session_date_short}, {year_str} · Versus {previous_session_short} close</span></div>
     </div>
     <div class="header-meta"><span class="tone-badge {tone_class}">{market_tone}</span><span class="date-chip">Post-Market Close</span></div>

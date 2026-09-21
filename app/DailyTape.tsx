@@ -72,6 +72,8 @@ export type DailyReport = {
 };
 
 
+const logoSrc = "https://coolxng.github.io/market-summary/logo.png";
+
 const sections = [
   ["brief", "The brief"],
   ["scorecard", "Scorecard"],
@@ -331,7 +333,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   return (
     <main>
       <header className="site-header">
-        <a className="brand" href={homeHref} aria-label="The Daily Tape home"><span className="brand-mark"><i /><i /><i /></span><span>THE DAILY TAPE</span></a>
+        <a className="brand" href={homeHref} aria-label="The Daily Tape home"><span className="brand-mark" style={{ backgroundImage: `url("${logoSrc}")` }} /><span>THE DAILY TAPE</span></a>
         <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={archiveHref}>Archive</a></nav>
         <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
           <span>{theme === "paper" ? "◐" : "◑"}</span>{theme === "paper" ? "Ink" : "Paper"}
