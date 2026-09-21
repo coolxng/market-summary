@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
-const logoUrl = new URL("logo.png", siteUrl).toString();
+const appleTouchIconUrl = new URL("apple-touch-icon.png", siteUrl).toString();
+const favicon16Url = new URL("favicon-16x16.png", siteUrl).toString();
+const favicon32Url = new URL("favicon-32x32.png", siteUrl).toString();
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -14,7 +16,13 @@ export const metadata: Metadata = {
     follow: true,
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
-  icons: { apple: logoUrl },
+  icons: {
+    icon: [
+      { url: favicon32Url, type: "image/png", sizes: "32x32" },
+      { url: favicon16Url, type: "image/png", sizes: "16x16" },
+    ],
+    apple: [{ url: appleTouchIconUrl, type: "image/png", sizes: "180x180" }],
+  },
   openGraph: {
     url: "./",
     siteName: "The Daily Tape",
