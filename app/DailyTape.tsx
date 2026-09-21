@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 type MarketDatum = {
   dates: string[];
@@ -244,19 +244,18 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
     return () => window.cancelAnimationFrame(frame);
   }, []);
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("daily-tape-theme", theme);
-  }, [theme]);
+  const toggleTheme = () => {
+    const next = theme === "paper" ? "ink" : "paper";
+    document.documentElement.dataset.theme = next;
+    window.localStorage.setItem("daily-tape-theme", next);
+    setTheme(next);
+  };
 
-  const sectorEntries = useMemo(
-    () => Object.entries(dailyReport.daily_sector_performance).sort((a, b) => b[1] - a[1]),
-    [],
-  );
+  const sectorEntries = Object.entries(dailyReport.daily_sector_performance).sort((a, b) => b[1] - a[1]);
   const sectorAbsMax = Math.max(...sectorEntries.map(([, value]) => Math.abs(value)));
   const topSector = sectorEntries[0];
   const bottomSector = sectorEntries[sectorEntries.length - 1];
-  const megaCaps = useMemo(() => Object.keys(megaCapNames).map((ticker) => {
+  const megaCaps = Object.keys(megaCapNames).map((ticker) => {
     const snapshot = dailyReport.mega_cap_data?.[ticker];
     const item = snapshot?.result ?? parseMegaCapFallback(ticker, dailyReport);
     const chart = snapshot?.session_chart;
@@ -270,7 +269,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
       chartSource: chart?.source,
       hasSessionRange: Boolean(snapshot),
     };
-  }), []);
+  });
   const editorial = dailyReport.narrative.editorial;
   const sp = market["^GSPC"];
   const nasdaq = market["^IXIC"];
@@ -321,7 +320,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
       <header className="site-header">
         <a className="brand" href={homeHref} aria-label="The Daily Tape home"><span className="brand-mark"><i /><i /><i /></span><span>THE DAILY TAPE</span></a>
         <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={archiveHref}>Archive</a></nav>
-        <button className="theme-toggle" onClick={() => setTheme((current) => current === "paper" ? "ink" : "paper")} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
+        <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
           <span>{theme === "paper" ? "◐" : "◑"}</span>{theme === "paper" ? "Ink" : "Paper"}
         </button>
       </header>
