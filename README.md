@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./public/favicon.svg" alt="The Daily Tape favicon" width="92" />
+<img src="./public/logo.png" alt="The Daily Tape favicon" width="92" />
 
 # The Daily Tape
 
