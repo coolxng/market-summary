@@ -70,7 +70,7 @@ button { font: inherit; }
 .site-header nav a::after { content: ""; position: absolute; left: 0; right: 100%; bottom: -1px; height: 2px; background: var(--accent); transition: right .2s ease; }
 .site-header nav a:hover { color: var(--ink); }
 .site-header nav a:hover::after { right: 0; }
-.theme-toggle { justify-self: end; display: inline-flex; align-items: center; gap: 7px; border: 0; color: var(--ink); background: transparent; cursor: pointer; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+.theme-toggle { justify-self: end; display: inline-flex; align-items: center; justify-content: flex-start; gap: 7px; width: 78px; border: 0; color: var(--ink); background: transparent; cursor: pointer; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
 .theme-toggle span { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 50%; font-size: 16px; }
 
 .page { width: min(1420px, 92vw); margin: 0 auto; }
@@ -296,7 +296,7 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
   .page { width: min(100% - 32px, 1420px); }
   .site-header { min-height: 58px; padding: 0 16px; }
   .brand { font-size: 10px; }
-  .theme-toggle { font-size: 0; }
+  .theme-toggle { width: 28px; font-size: 0; }
   .issue-line span:nth-child(2) { display: none; }
   .hero-grid { padding: 48px 0 58px; gap: 44px; }
   .hero h1 { font-size: clamp(48px, 16vw, 76px); }
