@@ -77,5 +77,5 @@ export default async function ArchivedReportPage({ params }: { params: Promise<{
   const report = readReport(date);
   if (!report) notFound();
 
-  return <DailyTape report={report} archived archiveHref="../" />;
+  return <DailyTape report={report} archived archiveHref="../" homeHref="../../" />;
 }
