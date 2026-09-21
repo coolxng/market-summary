@@ -66,7 +66,7 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
           <div className={styles.heroGrid}>
             <div>
               <p className={styles.kicker}>THE ARCHIVE</p>
-              <h1>Past sessions.<br />Same tape.</h1>
+              <h1>Past sessions.</h1>
             </div>
             <p className={styles.dek}>
               Every completed report keeps the same data-first Daily Tape experience, with its original session data, commentary, breadth, leadership, macro context, and price paths.
