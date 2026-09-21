@@ -50,7 +50,7 @@ STOOQ_SYMBOLS = {
     "^GSPC": "^spx",
     "^IXIC": "^ndq",
     "^DJI": "^dji",
-    "^VIX": "^vix",
+    "^VIX": "vi.c",
 }
 
 CORE_TICKERS = ("^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "DX-Y.NYB")
@@ -111,15 +111,57 @@ def index_date(value):
     return datetime.date.fromisoformat(str(value)[:10])
 
 
-def fetch_recent_session_dates(candidate_date):
-    """Use S&P 500 bars as the source of truth for U.S. trading sessions."""
-    history = yf.Ticker("^GSPC").history(
-        start=(candidate_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)).isoformat(),
-        end=(candidate_date + datetime.timedelta(days=1)).isoformat(),
-        interval="1d",
+def fetch_stooq_daily_rows(stooq_symbol, start_date, end_date):
+    """Return validated Stooq daily CSV rows ordered by date."""
+    query = urllib.parse.urlencode(
+        {
+            "s": stooq_symbol,
+            "d1": start_date.strftime("%Y%m%d"),
+            "d2": end_date.strftime("%Y%m%d"),
+            "i": "d",
+        }
     )
-    history = history.dropna(subset=["Close"])
-    return sorted({index_date(value) for value in history.index if index_date(value) <= candidate_date})
+    request = urllib.request.Request(
+        f"https://stooq.com/q/d/l/?{query}",
+        headers={"User-Agent": "market-summary/1.0"},
+    )
+    with urllib.request.urlopen(request, timeout=20) as response:
+        payload = response.read().decode("utf-8-sig")
+
+    rows = []
+    for row in csv.DictReader(io.StringIO(payload)):
+        date_value = row.get("Date")
+        close_value = row.get("Close")
+        if not date_value or close_value in (None, "", "N/D"):
+            continue
+        rows.append((index_date(date_value), row))
+    rows.sort(key=lambda item: item[0])
+    return rows
+
+
+def fetch_recent_session_dates(candidate_date):
+    """Resolve recent U.S. sessions from Yahoo, falling back to Stooq S&P 500 dates."""
+    start_date = candidate_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)
+    try:
+        history = yf.Ticker("^GSPC").history(
+            start=start_date.isoformat(),
+            end=(candidate_date + datetime.timedelta(days=1)).isoformat(),
+            interval="1d",
+        )
+        history = history.dropna(subset=["Close"])
+        dates = sorted({index_date(value) for value in history.index if index_date(value) <= candidate_date})
+        if len(dates) >= 2:
+            return dates
+        print("  Yahoo session calendar returned fewer than two bars — trying Stooq")
+    except Exception as exc:
+        print(f"  Exception resolving Yahoo session calendar: {exc} — trying Stooq")
+
+    stooq_rows = fetch_stooq_daily_rows(
+        STOOQ_SYMBOLS["^GSPC"],
+        start_date,
+        candidate_date,
+    )
+    return sorted({row_date for row_date, _ in stooq_rows if row_date <= candidate_date})
 
 
 def resolve_completed_sessions(now=None, session_dates=None):
@@ -246,32 +288,11 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
     if stooq_symbol:
         try:
             start_date = session_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)
-            query = urllib.parse.urlencode(
-                {
-                    "s": stooq_symbol,
-                    "d1": start_date.strftime("%Y%m%d"),
-                    "d2": session_date.strftime("%Y%m%d"),
-                    "i": "d",
-                }
-            )
-            request = urllib.request.Request(
-                f"https://stooq.com/q/d/l/?{query}",
-                headers={"User-Agent": "market-summary/1.0"},
-            )
-            with urllib.request.urlopen(request, timeout=20) as response:
-                payload = response.read().decode("utf-8-sig")
-
-            rows = []
-            for row in csv.DictReader(io.StringIO(payload)):
-                date_value = row.get("Date")
-                close_value = row.get("Close")
-                if not date_value or close_value in (None, "", "N/D"):
-                    continue
-                row_date = index_date(date_value)
-                if row_date <= session_date:
-                    rows.append((row_date, row))
-
-            rows.sort(key=lambda item: item[0])
+            rows = [
+                (row_date, row)
+                for row_date, row in fetch_stooq_daily_rows(stooq_symbol, start_date, session_date)
+                if row_date <= session_date
+            ]
             if len(rows) < 2:
                 raise ValueError("Stooq returned fewer than two eligible daily bars")
 
