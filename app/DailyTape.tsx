@@ -178,6 +178,215 @@ function hasVerifiedClose(item: MarketDatum | undefined) {
   return Boolean(item && !item.error && item.end_price > 0 && item.closes.length > 0);
 }
 
+type CalendarDate = { year: number; month: number; day: number };
+type PublicationIndicator = {
+  mode: "countdown" | "building" | "published";
+  label: string;
+  value: string;
+  meta: string;
+};
+
+const CENTRAL_TIME_ZONE = "America/Chicago";
+const PUBLISH_HOUR = 15;
+const PUBLISH_MINUTE = 30;
+const RECENT_PUBLISH_WINDOW_MINUTES = 90;
+
+function calendarKey({ year, month, day }: CalendarDate) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function centralCalendarDate(value: Date): CalendarDate {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(value);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return { year: Number(values.year), month: Number(values.month), day: Number(values.day) };
+}
+
+function addCalendarDays(value: CalendarDate, amount: number): CalendarDate {
+  const date = new Date(Date.UTC(value.year, value.month - 1, value.day + amount));
+  return { year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() };
+}
+
+function calendarWeekday(value: CalendarDate) {
+  return new Date(Date.UTC(value.year, value.month - 1, value.day)).getUTCDay();
+}
+
+function nthWeekdayOfMonth(year: number, month: number, weekday: number, occurrence: number): CalendarDate {
+  const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay();
+  const day = 1 + ((weekday - firstWeekday + 7) % 7) + ((occurrence - 1) * 7);
+  return { year, month, day };
+}
+
+function lastWeekdayOfMonth(year: number, month: number, weekday: number): CalendarDate {
+  const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+  const lastWeekday = new Date(Date.UTC(year, month - 1, lastDay)).getUTCDay();
+  return { year, month, day: lastDay - ((lastWeekday - weekday + 7) % 7) };
+}
+
+function observedFixedHoliday(year: number, month: number, day: number): CalendarDate {
+  const date = { year, month, day };
+  const weekday = calendarWeekday(date);
+  if (weekday === 6) return addCalendarDays(date, -1);
+  if (weekday === 0) return addCalendarDays(date, 1);
+  return date;
+}
+
+function easterSunday(year: number): CalendarDate {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = ((19 * a) + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + (2 * e) + (2 * i) - h - k) % 7;
+  const m = Math.floor((a + (11 * h) + (22 * l)) / 451);
+  const month = Math.floor((h + l - (7 * m) + 114) / 31);
+  const day = ((h + l - (7 * m) + 114) % 31) + 1;
+  return { year, month, day };
+}
+
+function marketHolidayKeys(year: number) {
+  const holidays = new Set<string>();
+  const add = (value: CalendarDate) => holidays.add(calendarKey(value));
+
+  const newYearsDay = { year, month: 1, day: 1 };
+  const newYearsWeekday = calendarWeekday(newYearsDay);
+  if (newYearsWeekday !== 6) add(newYearsWeekday === 0 ? addCalendarDays(newYearsDay, 1) : newYearsDay);
+
+  add(nthWeekdayOfMonth(year, 1, 1, 3));
+  add(nthWeekdayOfMonth(year, 2, 1, 3));
+  add(addCalendarDays(easterSunday(year), -2));
+  add(lastWeekdayOfMonth(year, 5, 1));
+  add(observedFixedHoliday(year, 6, 19));
+  add(observedFixedHoliday(year, 7, 4));
+  add(nthWeekdayOfMonth(year, 9, 1, 1));
+  add(nthWeekdayOfMonth(year, 11, 4, 4));
+  add(observedFixedHoliday(year, 12, 25));
+
+  return holidays;
+}
+
+function isTradingDay(value: CalendarDate) {
+  const weekday = calendarWeekday(value);
+  if (weekday === 0 || weekday === 6) return false;
+  const key = calendarKey(value);
+  return [value.year - 1, value.year, value.year + 1].every((year) => !marketHolidayKeys(year).has(key));
+}
+
+function centralDateTime(value: CalendarDate, hour: number, minute: number) {
+  const guess = Date.UTC(value.year, value.month - 1, value.day, hour, minute);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).formatToParts(new Date(guess));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  const zonedAsUtc = Date.UTC(
+    Number(values.year),
+    Number(values.month) - 1,
+    Number(values.day),
+    Number(values.hour),
+    Number(values.minute),
+    Number(values.second),
+  );
+  const offset = zonedAsUtc - guess;
+  return new Date(guess - offset);
+}
+
+function publicationTarget(value: CalendarDate) {
+  return centralDateTime(value, PUBLISH_HOUR, PUBLISH_MINUTE);
+}
+
+function nextPublication(now: Date) {
+  let candidate = centralCalendarDate(now);
+  for (let index = 0; index < 14; index += 1) {
+    if (isTradingDay(candidate)) {
+      const target = publicationTarget(candidate);
+      if (target.getTime() > now.getTime()) return target;
+    }
+    candidate = addCalendarDays(candidate, 1);
+  }
+  return publicationTarget(addCalendarDays(candidate, 1));
+}
+
+function relativePublicationName(now: Date, target: Date) {
+  const today = centralCalendarDate(now);
+  const targetDate = centralCalendarDate(target);
+  const tomorrow = addCalendarDays(today, 1);
+  if (calendarKey(targetDate) === calendarKey(tomorrow)) return "TOMORROW";
+  return new Intl.DateTimeFormat("en-US", { timeZone: CENTRAL_TIME_ZONE, weekday: "long" }).format(target).toUpperCase();
+}
+
+function countdownValue(now: Date, target: Date) {
+  const minutes = Math.max(0, Math.ceil((target.getTime() - now.getTime()) / 60000));
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  if (hours >= 24) return relativePublicationName(now, target);
+  if (hours === 0) return `${remainder}M`;
+  return `${hours}H ${String(remainder).padStart(2, "0")}M`;
+}
+
+function publicationDateLabel(target: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: CENTRAL_TIME_ZONE,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  }).format(target).toUpperCase();
+}
+
+function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Date): PublicationIndicator {
+  const today = centralCalendarDate(now);
+  const todayKey = calendarKey(today);
+  const tradingToday = isTradingDay(today);
+  const todayTarget = tradingToday ? publicationTarget(today) : null;
+  const publishedToday = sessionDate === todayKey;
+  const generatedTime = generatedAt.getTime();
+  const minutesSincePublished = Number.isFinite(generatedTime)
+    ? Math.floor((now.getTime() - generatedTime) / 60000)
+    : Number.POSITIVE_INFINITY;
+
+  if (publishedToday && minutesSincePublished >= 0 && minutesSincePublished <= RECENT_PUBLISH_WINDOW_MINUTES) {
+    const nextTarget = nextPublication(now);
+    return {
+      mode: "published",
+      label: "LATEST TAPE LIVE",
+      value: minutesSincePublished < 1 ? "UPDATED NOW" : `UPDATED ${minutesSincePublished}M AGO`,
+      meta: `NEXT TAPE ${relativePublicationName(now, nextTarget)} · 3:30 PM CT`,
+    };
+  }
+
+  if (todayTarget && now.getTime() >= todayTarget.getTime() && !publishedToday) {
+    return {
+      mode: "building",
+      label: "BUILDING TODAY'S TAPE",
+      value: "PUBLISHING",
+      meta: "AUTOMATED UPDATE IN PROGRESS",
+    };
+  }
+
+  const nextTarget = nextPublication(now);
+  return {
+    mode: "countdown",
+    label: "NEXT TAPE",
+    value: countdownValue(now, nextTarget),
+    meta: `EXPECTED ${publicationDateLabel(nextTarget)} · 3:30 PM CT`,
+  };
+}
+
 function Sparkline({ values, positive }: { values: number[]; positive: boolean }) {
   if (values.length < 2) return <div className="spark-empty">No chart data</div>;
   const min = Math.min(...values);
@@ -248,6 +457,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   const dailyReport = report;
   const market = dailyReport.market_data;
   const [theme, setTheme] = useState<"paper" | "ink">("paper");
+  const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("daily-tape-theme");
@@ -256,6 +466,14 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
     const frame = window.requestAnimationFrame(() => setTheme("ink"));
     return () => window.cancelAnimationFrame(frame);
   }, []);
+
+  useEffect(() => {
+    if (archived) return;
+    const updateNow = () => setNow(new Date());
+    updateNow();
+    const interval = window.setInterval(updateNow, 60000);
+    return () => window.clearInterval(interval);
+  }, [archived]);
 
   const toggleTheme = () => {
     const next = theme === "paper" ? "ink" : "paper";
@@ -305,6 +523,9 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
   const issue = `${String(sessionDate.getFullYear()).slice(-2)}.${String(isoWeek(sessionDate)).padStart(2, "0")}`;
   const generatedAt = new Date(dailyReport.generated_at);
   const generatedLabel = generatedAt.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" });
+  const publicationStatus = archived ? null : now
+    ? getPublicationIndicator(now, dailyReport.session_date, generatedAt)
+    : { mode: "countdown", label: "NEXT TAPE", value: "SCHEDULED", meta: "EXPECTED 3:30 PM CT" } satisfies PublicationIndicator;
   const sectorTotal = sectorEntries.length;
   const breadthTone = breadth.positive_sector_share >= 60 ? "Broad" : breadth.positive_sector_share >= 45 ? "Mixed" : "Narrow";
   const riskSignal = dailyReport.derived_metrics?.risk_confirmation?.signal;
@@ -347,6 +568,13 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
       <div className="page" id="top">
         <section className="hero" id="brief">
           <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
+          {publicationStatus && (
+            <div className={`publication-status ${publicationStatus.mode}`} aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}>
+              <span className="publication-status__label"><i className="publication-status__dot" aria-hidden="true" />{publicationStatus.label}</span>
+              <strong className="publication-status__value">{publicationStatus.value}</strong>
+              <span className="publication-status__meta">{publicationStatus.meta}</span>
+            </div>
+          )}
           <div className="hero-grid">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>

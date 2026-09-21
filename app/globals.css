@@ -91,6 +91,33 @@ button { font: inherit; }
 .issue-line > span:last-child { font-size: 11px; font-variant-numeric: tabular-nums; }
 .issue-line > span:last-child { justify-self: end; }
 .issue-line b { margin-right: 6px; color: var(--accent); font-size: 8px; letter-spacing: .12em; }
+
+.publication-status {
+  display: grid;
+  grid-template-columns: minmax(190px, .7fr) auto minmax(260px, 1fr);
+  align-items: center;
+  gap: 20px;
+  min-height: 48px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  background: color-mix(in srgb, var(--panel) 76%, transparent);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+.publication-status__label { display: inline-flex; align-items: center; gap: 9px; width: fit-content; color: var(--ink-soft); }
+.publication-status__dot { display: block; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 14%, transparent); }
+.publication-status__value { color: var(--accent); font-size: 12px; font-weight: 900; letter-spacing: .1em; font-variant-numeric: tabular-nums; }
+.publication-status__meta { justify-self: end; color: var(--ink-soft); text-align: right; }
+.publication-status.building .publication-status__dot { animation: publication-pulse 1.4s ease-in-out infinite; }
+.publication-status.published .publication-status__dot { background: var(--up); box-shadow: 0 0 0 4px color-mix(in srgb, var(--up) 14%, transparent); }
+.publication-status.published .publication-status__value { color: var(--up); }
+@keyframes publication-pulse {
+  0%, 100% { opacity: .45; transform: scale(.88); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
 .hero-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(340px, .65fr); gap: clamp(45px, 7vw, 110px); padding: clamp(54px, 7vw, 96px) 0 64px; }
 .section-kicker { margin: 0 0 18px; color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .18em; }
 .hero h1 { max-width: 940px; margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(50px, 6vw, 92px); line-height: .94; letter-spacing: -.055em; font-weight: 500; text-wrap: balance; }
@@ -265,6 +292,8 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 @media (max-width: 760px) {
   .issue-line { grid-template-columns: 1fr; gap: 8px; }
   .issue-line > span:last-child { justify-self: start; }
+  .publication-status { grid-template-columns: 1fr auto; gap: 8px 16px; }
+  .publication-status__meta { grid-column: 1 / -1; justify-self: start; text-align: left; }
 }
 
 @media (max-width: 1080px) {
@@ -328,4 +357,5 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
+  .publication-status.building .publication-status__dot { animation: none !important; }
 }
