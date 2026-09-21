@@ -323,7 +323,7 @@ export default function Home() {
     <main>
       <header className="site-header">
         <a className="brand" href="#top" aria-label="The Daily Tape home"><span className="brand-mark"><i /><i /><i /></span><span>THE DAILY TAPE</span></a>
-        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}</nav>
+        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href="./reports/">Archive</a></nav>
         <button className="theme-toggle" onClick={() => setTheme((current) => current === "paper" ? "ink" : "paper")} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
           <span>{theme === "paper" ? "◐" : "◑"}</span>{theme === "paper" ? "Ink" : "Paper"}
         </button>
