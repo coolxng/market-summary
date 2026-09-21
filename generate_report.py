@@ -1,8 +1,11 @@
+import csv
 import datetime
+import io
 import json
 import math
 import os
 import re
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -41,6 +44,13 @@ SANITY_BOUNDS = {
 FALLBACKS = {
     "GC=F": "GLD",
     "CL=F": "USO",
+}
+
+STOOQ_SYMBOLS = {
+    "^GSPC": "^spx",
+    "^IXIC": "^ndq",
+    "^DJI": "^dji",
+    "^VIX": "^vix",
 }
 
 CORE_TICKERS = ("^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "DX-Y.NYB")
@@ -231,6 +241,74 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
             }
         except Exception as exc:
             print(f"  Exception fetching {ticker_used}: {exc}")
+
+    stooq_symbol = STOOQ_SYMBOLS.get(ticker_symbol)
+    if stooq_symbol:
+        try:
+            start_date = session_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)
+            query = urllib.parse.urlencode(
+                {
+                    "s": stooq_symbol,
+                    "d1": start_date.strftime("%Y%m%d"),
+                    "d2": session_date.strftime("%Y%m%d"),
+                    "i": "d",
+                }
+            )
+            request = urllib.request.Request(
+                f"https://stooq.com/q/d/l/?{query}",
+                headers={"User-Agent": "market-summary/1.0"},
+            )
+            with urllib.request.urlopen(request, timeout=20) as response:
+                payload = response.read().decode("utf-8-sig")
+
+            rows = []
+            for row in csv.DictReader(io.StringIO(payload)):
+                date_value = row.get("Date")
+                close_value = row.get("Close")
+                if not date_value or close_value in (None, "", "N/D"):
+                    continue
+                row_date = index_date(date_value)
+                if row_date <= session_date:
+                    rows.append((row_date, row))
+
+            rows.sort(key=lambda item: item[0])
+            if len(rows) < 2:
+                raise ValueError("Stooq returned fewer than two eligible daily bars")
+
+            prior_date, previous_row = rows[-2]
+            current_date, current_row = rows[-1]
+            end_price = round(float(current_row["Close"]), 2)
+            prev_close = round(float(previous_row["Close"]), 2)
+            session_open = round(float(current_row.get("Open") or end_price), 2)
+            day_high = round(float(current_row.get("High") or end_price), 2)
+            day_low = round(float(current_row.get("Low") or end_price), 2)
+
+            if not is_sane(ticker_symbol, end_price):
+                raise ValueError(
+                    f"Stooq sanity check failed for {ticker_symbol}: end_price={end_price}"
+                )
+
+            pct_change = ((end_price - prev_close) / prev_close) * 100 if prev_close else 0.0
+            print(f"  Stooq fallback succeeded for {ticker_symbol} via {stooq_symbol}")
+            return {
+                "dates": [prior_date.isoformat(), current_date.isoformat()],
+                "closes": [prev_close, end_price],
+                "end_price": end_price,
+                "pct_change": round(pct_change, 2),
+                "abs_change": round(end_price - prev_close, 2),
+                "prev_close": prev_close,
+                "session_open": session_open,
+                "day_high": day_high,
+                "day_low": day_low,
+                "session_date": current_date.isoformat(),
+                "previous_session_date": prior_date.isoformat(),
+                "ticker_used": ticker_symbol,
+                "data_source": "stooq",
+                "source_symbol": stooq_symbol,
+                "error": None,
+            }
+        except Exception as exc:
+            print(f"  Exception fetching Stooq fallback for {ticker_symbol}: {exc}")
 
     print(f"  All fetch attempts failed for {ticker_symbol}. Using zeroed data.")
     return {
