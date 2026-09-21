@@ -1,13 +1,28 @@
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Credentials / keys
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
+
+# Existing
 node_modules/
 .next/
 out/
 *.tsbuildinfo
-
-# Local environment and credentials
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-.venv/
-__pycache__/
