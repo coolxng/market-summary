@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
-import styles from "./reports.module.css";
+import ArchiveClient, { type ArchiveReport } from "./ArchiveClient";
 
 export const metadata: Metadata = {
   title: "Daily Market Report Archive | The Daily Tape",
@@ -18,18 +18,12 @@ export const metadata: Metadata = {
 
 const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
-function getReports() {
-  const reportsDir = path.join(process.cwd(), "public", "reports");
-  if (!fs.existsSync(reportsDir)) return [];
-
-  return fs
-    .readdirSync(reportsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
-    .filter((entry) => fs.existsSync(path.join(reportsDir, entry.name, "index.html")))
-    .map((entry) => entry.name)
-    .sort()
-    .reverse();
-}
+type StoredReport = {
+  session_date?: string;
+  market_data?: Record<string, { pct_change?: number; end_price?: number }>;
+  daily_market_breadth?: { positive_sector_share?: number };
+  narrative?: { editorial?: { headline?: string }; daily_takeaway?: { what_moved?: string } };
+};
 
 function formatDate(date: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -40,43 +34,45 @@ function formatDate(date: string) {
   }).format(new Date(`${date}T12:00:00Z`));
 }
 
+function finiteOrNull(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function getReports(): ArchiveReport[] {
+  const reportsDir = path.join(process.cwd(), "public", "reports");
+  if (!fs.existsSync(reportsDir)) return [];
+
+  return fs
+    .readdirSync(reportsDir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
+    .map((entry) => {
+      const file = path.join(reportsDir, entry.name, "report.json");
+      if (!fs.existsSync(file)) return null;
+
+      try {
+        const report = JSON.parse(fs.readFileSync(file, "utf8")) as StoredReport;
+        const headline =
+          report.narrative?.editorial?.headline ??
+          report.narrative?.daily_takeaway?.what_moved ??
+          "Completed U.S. market session";
+
+        return {
+          date: entry.name,
+          displayDate: formatDate(entry.name),
+          headline,
+          sp500: finiteOrNull(report.market_data?.["^GSPC"]?.pct_change),
+          nasdaq: finiteOrNull(report.market_data?.["^IXIC"]?.pct_change),
+          vix: finiteOrNull(report.market_data?.["^VIX"]?.end_price),
+          breadth: finiteOrNull(report.daily_market_breadth?.positive_sector_share),
+        };
+      } catch {
+        return null;
+      }
+    })
+    .filter((report): report is ArchiveReport => report !== null)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
 export default function ReportsPage() {
-  const reports = getReports();
-
-  return (
-    <main className={styles.shell}>
-      <header className={styles.header}>
-        <a href="../" className={styles.brand}>THE DAILY TAPE</a>
-        <a href="../" className={styles.back}>Current report</a>
-      </header>
-
-      <section className={styles.hero}>
-        <p>DAILY MARKET INTELLIGENCE</p>
-        <h1>Market report archive</h1>
-        <span>
-          Permanent snapshots of completed U.S. trading sessions. Each report preserves the market data and commentary published for that session.
-        </span>
-      </section>
-
-      <section className={styles.list} aria-label="Archived Daily Tape reports">
-        {reports.length === 0 ? (
-          <p className={styles.empty}>No archived sessions yet.</p>
-        ) : (
-          reports.map((date, index) => (
-            <a className={styles.row} href={`./${date}/`} key={date}>
-              <span>{String(reports.length - index).padStart(3, "0")}</span>
-              <strong>{formatDate(date)}</strong>
-              <small>{date}</small>
-              <b>Open report →</b>
-            </a>
-          ))
-        )}
-      </section>
-
-      <footer className={styles.footer}>
-        <span>THE DAILY TAPE</span>
-        <span>{reports.length} archived session{reports.length === 1 ? "" : "s"}</span>
-      </footer>
-    </main>
-  );
+  return <ArchiveClient reports={getReports()} />;
 }
