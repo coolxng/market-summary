@@ -22,8 +22,14 @@
   letter-spacing: .14em;
 }
 
-.issueLine > span:nth-child(2) {
+.issueLine > span:first-child {
   color: var(--accent);
+}
+
+.issueLine > span:nth-child(2),
+.issueLine > span:last-child {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
 .issueLine > span:last-child {
@@ -33,7 +39,7 @@
 
 .issueLine b {
   margin-right: 6px;
-  color: var(--ink-soft);
+  color: var(--accent);
   font-size: 8px;
   letter-spacing: .12em;
 }
@@ -168,7 +174,8 @@
 }
 
 .stat strong {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 900;
   font-variant-numeric: tabular-nums;
 }
 
