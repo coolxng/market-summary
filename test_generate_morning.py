@@ -1,6 +1,10 @@
 import datetime
+import sys
+import types
 import unittest
 from unittest import mock
+
+sys.modules.setdefault("yfinance", types.SimpleNamespace(Ticker=None))
 
 import generate_morning
 
