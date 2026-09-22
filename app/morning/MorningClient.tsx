@@ -8,8 +8,10 @@ type Quote = {
   symbol: string;
   price: number | null;
   reference_close: number | null;
+  reference_date?: string | null;
   pct_change: number | null;
   timestamp: string | null;
+  stale?: boolean;
   source: string;
   error: string | null;
 };
@@ -17,10 +19,13 @@ type Quote = {
 type CalendarEvent = {
   date: string;
   time?: string;
+  time_zone?: string | null;
   title?: string;
   ticker?: string;
   country?: string;
+  category?: string;
   source: string;
+  source_url?: string;
 };
 
 type Headline = {
@@ -49,6 +54,7 @@ export type MorningSnapshot = {
     label?: string;
     error?: string | null;
   };
+  what_matters_today?: string[];
   notes: string[];
 };
 
@@ -72,10 +78,21 @@ function QuoteGrid({ items, label }: { items: Record<string, Quote>; label: stri
     <div className={styles.quoteGrid} aria-label={label}>
       {entries.map((item) => (
         <article key={item.symbol}>
-          <div><span>{item.symbol}</span><b className={(item.pct_change ?? 0) >= 0 ? "positive" : "negative"}>{pct(item.pct_change)}</b></div>
+          <div>
+            <span>{item.symbol}</span>
+            <b className={item.pct_change == null ? "" : item.pct_change >= 0 ? "positive" : "negative"}>{pct(item.pct_change)}</b>
+          </div>
           <strong>{price(item.price)}</strong>
           <p>{item.name}</p>
-          <small>{item.error ? "Unavailable" : item.timestamp ? new Date(item.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" }) : "Latest available"}</small>
+          <small>
+            {item.error
+              ? "Unavailable"
+              : item.stale
+                ? "Stale · previous close only"
+                : item.timestamp
+                  ? new Date(item.timestamp).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" })
+                  : "Latest available"}
+          </small>
         </article>
       ))}
     </div>
@@ -152,8 +169,22 @@ export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot 
           </div>
         </section>
 
+        {!!snapshot.what_matters_today?.length && (
+          <section className={styles.matters} aria-label="What matters today">
+            <div className={styles.mattersHead}>
+              <p className={styles.kicker}>WHAT MATTERS TODAY</p>
+              <span>Observed setup only</span>
+            </div>
+            <div className={styles.mattersGrid}>
+              {snapshot.what_matters_today.slice(0, 3).map((item, index) => (
+                <article key={item}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></article>
+              ))}
+            </div>
+          </section>
+        )}
+
         <section className={styles.section}>
-          <div className={styles.heading}><div><p className={styles.kicker}>01 / FUTURES</p><h2>U.S. index setup</h2></div><p>Latest extended-hours/futures quote versus the prior available daily close.</p></div>
+          <div className={styles.heading}><div><p className={styles.kicker}>01 / FUTURES</p><h2>U.S. index setup</h2></div><p>Latest extended-hours/futures quote versus the latest completed daily reference close.</p></div>
           <QuoteGrid items={snapshot.futures} label="U.S. index futures" />
         </section>
 
@@ -175,7 +206,8 @@ export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot 
                 <article key={`${event.date}-${event.title ?? event.ticker}-${index}`}>
                   <div><span>{new Date(`${event.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span><small>{event.time ?? "TBD"}</small></div>
                   <strong>{event.title ?? `${event.ticker} earnings`}</strong>
-                  <p>{event.source}</p>
+                  <p>{[event.category, event.country, event.source].filter(Boolean).join(" · ")}</p>
+                  {event.source_url && <a href={event.source_url} target="_blank" rel="noreferrer">Source ↗</a>}
                 </article>
               )) : <div className={styles.empty}>Calendar data will populate during the next Morning Tape generation.</div>}
             </div>
@@ -184,7 +216,7 @@ export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot 
           <div>
             <div className={styles.headingCompact}><p className={styles.kicker}>05 / HEADLINES</p><h2>Source-linked context</h2></div>
             <div className={styles.news}>
-              {snapshot.market_headlines?.items?.length ? snapshot.market_headlines.items.slice(0, 8).map((item) => (
+              {snapshot.market_headlines?.items?.length ? snapshot.market_headlines.items.slice(0, 6).map((item) => (
                 <a href={item.url} target="_blank" rel="noreferrer" key={item.url}>
                   <span>{item.publisher}</span>
                   <strong>{item.title}</strong>

@@ -50,3 +50,15 @@
 .footer a:hover { color: var(--accent); }
 @media (max-width: 1000px) { .heroGrid, .twoCol { grid-template-columns: 1fr; } .health { max-width: 520px; } .quoteGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 700px) { .page { width: min(100% - 32px, 1420px); } .issueLine { grid-template-columns: 1fr; gap: 7px; } .issueLine > span:last-child { justify-self: start; } .heroGrid { padding: 48px 0 56px; } .heading, .footer { align-items: flex-start; flex-direction: column; } .quoteGrid { grid-template-columns: 1fr; } .twoCol { gap: 70px; } .news a { grid-template-columns: 1fr auto; gap: 7px 12px; } .news a span { grid-column: 1 / -1; } .note { grid-template-columns: 1fr; } }
+
+.matters { padding: 28px 0 72px; border-top: 1px solid var(--line); }
+.mattersHead { display: flex; justify-content: space-between; align-items: baseline; gap: 24px; margin-bottom: 14px; }
+.mattersHead .kicker { margin: 0; }
+.mattersHead span { color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.mattersGrid { border-top: 1px solid var(--ink); }
+.mattersGrid article { display: grid; grid-template-columns: 46px 1fr; gap: 18px; align-items: start; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.mattersGrid article > span { color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.mattersGrid article p { margin: 0; max-width: 920px; font-family: Georgia, serif; font-size: clamp(15px, 1.3vw, 19px); line-height: 1.45; }
+.calendar article > a { grid-column: 2; color: var(--accent); font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.calendar article > a:hover { text-decoration: underline; }
+@media (max-width: 700px) { .mattersHead { align-items: flex-start; flex-direction: column; gap: 6px; } }
