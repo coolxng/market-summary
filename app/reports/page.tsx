@@ -1,7 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
+import report from "../../report_snapshot.json";
 import type { Metadata } from "next";
 import ArchiveClient, { type ArchiveReport } from "./ArchiveClient";
+import { archivedReports, reportHeadline } from "../lib/archive";
+import { buildRegimeTimeline, classifyRegime, REGIME_LABEL } from "../lib/regime";
+import { formatSessionDate } from "../lib/format";
+import { verified, isFiniteNumber, type DailyReport } from "../lib/report";
 
 export const metadata: Metadata = {
   title: "Daily Market Report Archive | The Daily Tape",
@@ -16,65 +19,49 @@ export const metadata: Metadata = {
   },
 };
 
-const datePattern = /^\d{4}-\d{2}-\d{2}$/;
-
-type StoredReport = {
-  session_date?: string;
-  market_data?: Record<string, { pct_change?: number; end_price?: number }>;
-  daily_market_breadth?: { positive_sector_share?: number };
-  derived_metrics?: { risk_confirmation?: { signal?: string } };
-  narrative?: { editorial?: { headline?: string }; daily_takeaway?: { what_moved?: string } };
-};
-
-function formatDate(date: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(`${date}T12:00:00Z`));
+function pct(issue: DailyReport, symbol: string) {
+  return verified(issue.market_data?.[symbol])?.pct_change ?? null;
 }
 
-function finiteOrNull(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function getReports(): ArchiveReport[] {
-  const reportsDir = path.join(process.cwd(), "public", "reports");
-  if (!fs.existsSync(reportsDir)) return [];
-
-  return fs
-    .readdirSync(reportsDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
-    .map((entry) => {
-      const file = path.join(reportsDir, entry.name, "report.json");
-      if (!fs.existsSync(file)) return null;
-
-      try {
-        const report = JSON.parse(fs.readFileSync(file, "utf8")) as StoredReport;
-        const headline =
-          report.narrative?.editorial?.headline ??
-          report.narrative?.daily_takeaway?.what_moved ??
-          "Completed U.S. market session";
-
-        return {
-          date: entry.name,
-          displayDate: formatDate(entry.name),
-          headline,
-          sp500: finiteOrNull(report.market_data?.["^GSPC"]?.pct_change),
-          nasdaq: finiteOrNull(report.market_data?.["^IXIC"]?.pct_change),
-          vix: finiteOrNull(report.market_data?.["^VIX"]?.end_price),
-          breadth: finiteOrNull(report.daily_market_breadth?.positive_sector_share),
-          regime: report.derived_metrics?.risk_confirmation?.signal ?? "mixed",
-        };
-      } catch {
-        return null;
-      }
-    })
-    .filter((report): report is ArchiveReport => report !== null)
-    .sort((a, b) => b.date.localeCompare(a.date));
+function summarize(date: string, issue: DailyReport): ArchiveReport {
+  const sectors = Object.entries(issue.daily_sector_performance ?? {}).filter(([, value]) => isFiniteNumber(value)).sort((a, b) => b[1] - a[1]);
+  const names = Object.entries(issue.mega_cap_data ?? {})
+    .map(([ticker, entry]) => [ticker, verified(entry.result)?.pct_change] as const)
+    .filter((entry): entry is readonly [string, number] => entry[1] != null)
+    .sort((a, b) => b[1] - a[1]);
+  const { regime, basis } = classifyRegime(issue);
+  const headline = reportHeadline(issue);
+  const topSector = sectors[0]?.[0] ?? null;
+  const bottomSector = sectors.at(-1)?.[0] ?? null;
+  const leader = names[0]?.[0] ?? null;
+  const laggard = names.at(-1)?.[0] ?? null;
+  const displayDate = formatSessionDate(date);
+  return {
+    date,
+    displayDate,
+    weekday: formatSessionDate(date, { weekday: "short" }),
+    month: formatSessionDate(date, { month: "long", year: "numeric" }),
+    headline,
+    sp500: pct(issue, "^GSPC"),
+    nasdaq: pct(issue, "^IXIC"),
+    vix: verified(issue.market_data?.["^VIX"])?.end_price ?? null,
+    breadth: isFiniteNumber(issue.daily_market_breadth?.positive_sector_share) && sectors.length ? issue.daily_market_breadth.positive_sector_share : null,
+    regime,
+    regimeBasis: basis,
+    topSector,
+    bottomSector,
+    leader,
+    laggard,
+    search: [
+      date, displayDate, headline, REGIME_LABEL[regime], topSector, bottomSector,
+      ...Object.keys(issue.mega_cap_data ?? {}), ...sectors.map(([name]) => name),
+    ].filter(Boolean).join(" ").toLowerCase(),
+  };
 }
 
 export default function ReportsPage() {
-  return <ArchiveClient reports={getReports()} />;
+  const archive = archivedReports();
+  const reports = archive.map(({ date, report: issue }) => summarize(date, issue)).reverse();
+  const timeline = buildRegimeTimeline(report as unknown as DailyReport, archive.map(({ date, report: issue }) => ({ report: issue, href: `${date}/` })));
+  return <ArchiveClient reports={reports} timeline={timeline} rule={(report as unknown as DailyReport).regime_history?.rule} />;
 }

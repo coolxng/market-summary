@@ -4,7 +4,8 @@ import { useEffect } from "react";
 
 export type ShortcutTarget =
   | { kind: "href"; href: string }
-  | { kind: "anchor"; id: string };
+  | { kind: "anchor"; id: string }
+  | { kind: "focus"; id: string };
 
 // Single-key shortcuts that never fire while typing, with modifier keys held,
 // or when an interactive widget (chart, select, button) has focus.
@@ -24,6 +25,10 @@ export default function KeyboardShortcuts({ bindings }: { bindings: Record<strin
       }
       const element = document.getElementById(binding.id);
       if (!element) return;
+      if (binding.kind === "focus") {
+        element.focus();
+        return;
+      }
       const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       element.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
       if (!element.hasAttribute("tabindex")) element.setAttribute("tabindex", "-1");

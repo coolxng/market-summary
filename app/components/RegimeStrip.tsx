@@ -43,25 +43,27 @@ export default function RegimeStrip({ entries, hrefBase, rule }: { entries: Regi
           {counts.unavailable ? <b className="regime-count">{counts.unavailable} unavailable</b> : null}
         </strong>
       </div>
-      <ol className="regime-strip__cells" aria-label="Regime by session, oldest to newest">
-        {entries.map((entry) => {
-          const className = `regime-cell regime-cell--${entry.regime}${entry.basis === "reconstructed" ? " regime-cell--reconstructed" : ""}${entry.date === active.date ? " is-active" : ""}`;
-          const props = {
-            className,
-            "aria-label": describe(entry),
-            onMouseEnter: () => setActiveDate(entry.date),
-            onFocus: () => setActiveDate(entry.date),
-          };
-          return (
-            <li key={entry.date}>
-              {entry.href && hrefBase != null
-                ? <a href={`${hrefBase}${entry.href}`} {...props} />
-                : <button type="button" {...props} onClick={() => setActiveDate(entry.date)} />}
-            </li>
-          );
-        })}
-      </ol>
-      <div className="regime-strip__axis" aria-hidden="true"><span>{dateLabel(entries[0].date, { month: "short", day: "numeric" })}</span><span>{dateLabel(entries.at(-1)!.date, { month: "short", day: "numeric" })}</span></div>
+      <div className="regime-strip__track" style={{ maxWidth: `${entries.length * 44}px` }}>
+        <ol className="regime-strip__cells" aria-label="Regime by session, oldest to newest">
+          {entries.map((entry) => {
+            const className = `regime-cell regime-cell--${entry.regime}${entry.basis === "reconstructed" ? " regime-cell--reconstructed" : ""}${entry.date === active.date ? " is-active" : ""}`;
+            const props = {
+              className,
+              "aria-label": describe(entry),
+              onMouseEnter: () => setActiveDate(entry.date),
+              onFocus: () => setActiveDate(entry.date),
+            };
+            return (
+              <li key={entry.date}>
+                {entry.href && hrefBase != null
+                  ? <a href={`${hrefBase}${entry.href}`} {...props} />
+                  : <button type="button" {...props} onClick={() => setActiveDate(entry.date)} />}
+              </li>
+            );
+          })}
+        </ol>
+        <div className="regime-strip__axis" aria-hidden="true"><span>{dateLabel(entries[0].date, { month: "short", day: "numeric" })}</span><span>{dateLabel(entries.at(-1)!.date, { month: "short", day: "numeric" })}</span></div>
+      </div>
       <div className="regime-strip__readout" aria-live="polite">
         <strong className={`regime-label regime-label--${active.regime}`}>{REGIME_LABEL[active.regime]}</strong>
         <span>{dateLabel(active.date)}</span>

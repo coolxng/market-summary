@@ -164,6 +164,10 @@ export type ArchiveComparison = {
   vixPercentile: number | null;
   regimeStreak: number;
   sp500FiveSessionReturn: number | null;
+  topSector: string | null;
+  topSectorStreak: number;
+  topSectorLedCount: number;
+  topSectorWindow: number;
 };
 
 export default function DailyTape({
@@ -211,7 +215,7 @@ export default function DailyTape({
   });
 
   const editorial = dailyReport.narrative.editorial;
-  const headline = editorial?.headline ?? (topSector ? `${sectorLabel(topSector[0])} led the sector ranking.` : "The session closed.");
+  const headline = decodeText(editorial?.headline ?? (topSector ? `${sectorLabel(topSector[0])} led the sector ranking.` : "The session closed."));
   const headlineParts = splitHeadline(headline);
   const sp = verified(market["^GSPC"]);
   const nasdaq = verified(market["^IXIC"]);
@@ -305,7 +309,7 @@ export default function DailyTape({
                 {headlineParts.lead}
                 {headlineParts.accent && <em>{headlineParts.accent}</em>}
               </h1>
-              <p className="dek">{editorial?.opening_summary ?? dailyReport.narrative.daily_takeaway.what_moved}</p>
+              <p className="dek">{decodeText(editorial?.opening_summary ?? dailyReport.narrative.daily_takeaway.what_moved)}</p>
               <div className="hero-tags">
                 <span className={`tag ${sp && sp.pct_change >= 0 ? "up" : "down"}`}>S&amp;P {formatPct(sp?.pct_change)}</span>
                 <span className="tag neutral">Breadth {breadth.advances}/{sectorTotal}</span>
@@ -381,9 +385,14 @@ export default function DailyTape({
                 <p>Consecutive archived sessions with the same regime classification.</p>
               </article>
               <article>
+                <span>LEADERSHIP STREAK</span>
+                <strong>{archiveComparison.topSector ? archiveComparison.topSectorStreak : "—"}</strong>
+                <p>{archiveComparison.topSector ? `${archiveComparison.topSector} ranked first in ${archiveComparison.topSectorStreak} consecutive archived session${archiveComparison.topSectorStreak === 1 ? "" : "s"} and ${archiveComparison.topSectorLedCount} of the last ${archiveComparison.topSectorWindow}.` : "Sector ranking unavailable."}</p>
+              </article>
+              <article>
                 <span>S&amp;P 5-SESSION</span>
                 <strong className={toneClass(archiveComparison.sp500FiveSessionReturn)}>{formatPct(archiveComparison.sp500FiveSessionReturn)}</strong>
-                <p>Compounded from the archived Daily Tape session returns.</p>
+                <p>{archiveComparison.sp500FiveSessionReturn == null ? "Needs five consecutive archived sessions." : "Compounded from five archived Daily Tape session returns."}</p>
               </article>
             </div>
           </section>

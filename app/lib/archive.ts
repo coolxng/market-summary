@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { DailyReport } from "./report";
+import { decodeText } from "./format";
 
 // Build-time access to archived snapshots in public/reports/YYYY-MM-DD/report.json.
 // Results are memoized per build worker so the many static routes that need the
@@ -50,5 +51,5 @@ export function archivedReports(): Array<{ date: string; report: DailyReport }> 
 }
 
 export function reportHeadline(report: DailyReport) {
-  return report.narrative?.editorial?.headline ?? report.narrative?.daily_takeaway?.what_moved ?? "Completed U.S. market session";
+  return decodeText(report.narrative?.editorial?.headline ?? report.narrative?.daily_takeaway?.what_moved ?? "Completed U.S. market session");
 }

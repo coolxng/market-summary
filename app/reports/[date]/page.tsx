@@ -1,40 +1,18 @@
-import fs from "node:fs";
-import path from "node:path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import DailyTape, { type ArchiveComparison, type DailyReport } from "../../DailyTape";
 import { buildRegimeTimeline, classifyRegime } from "../../lib/regime";
+import { archivedDates, archivedReport } from "../../lib/archive";
 
 export const dynamic = "force-static";
 export const dynamicParams = false;
 
-const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/").replace(/\/$/, "");
+const reportDates = archivedDates;
+const readReport = archivedReport;
 
-function reportsDir() {
-  return path.join(process.cwd(), "public", "reports");
-}
-
-function reportPath(date: string) {
-  return path.join(reportsDir(), date, "report.json");
-}
-
-function reportDates() {
-  const dir = reportsDir();
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
-    .filter((entry) => fs.existsSync(reportPath(entry.name)))
-    .map((entry) => entry.name)
-    .sort();
-}
-
-function readReport(date: string): DailyReport | null {
-  if (!datePattern.test(date)) return null;
-  const file = reportPath(date);
-  if (!fs.existsSync(file)) return null;
-  return JSON.parse(fs.readFileSync(file, "utf8")) as DailyReport;
+function topSectorOf(report: DailyReport) {
+  return Object.entries(report.daily_sector_performance ?? {}).filter(([, value]) => finite(value)).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 }
 
 function average(values: number[]) {
@@ -83,12 +61,29 @@ function buildArchiveComparison(date: string, report: DailyReport): ArchiveCompa
   const fiveReturns = fiveReports
     .map((item) => item.market_data?.["^GSPC"]?.pct_change)
     .filter(finite);
-  const sp500FiveSessionReturn = fiveReturns.length === fiveReports.length && fiveReturns.length
+  // Only reported once five consecutive archived sessions exist; a shorter
+  // sample is not relabeled as a five-session return.
+  const sp500FiveSessionReturn = fiveReports.length === 5 && fiveReturns.length === 5
     ? (fiveReturns.reduce((factor, value) => factor * (1 + value / 100), 1) - 1) * 100
     : null;
 
+  const topSector = topSectorOf(report);
+  let topSectorStreak = topSector ? 1 : 0;
+  if (topSector) {
+    for (let cursor = priorReports.length - 1; cursor >= 0; cursor -= 1) {
+      if (topSectorOf(priorReports[cursor]) !== topSector) break;
+      topSectorStreak += 1;
+    }
+  }
+  const leadWindow = [...priorReports, report].slice(-10);
+  const topSectorLedCount = topSector ? leadWindow.filter((item) => topSectorOf(item) === topSector).length : 0;
+
   return {
     sampleSize: priorReports.length,
+    topSector: topSector ? topSector.replace(/\s*\([A-Z]+\)$/, "") : null,
+    topSectorStreak,
+    topSectorLedCount,
+    topSectorWindow: leadWindow.length,
     breadthAverage,
     breadthDelta,
     vixPercentile,

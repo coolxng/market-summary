@@ -263,7 +263,7 @@ button { font: inherit; }
 
 .archive-context-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   border: solid var(--line);
   border-width: 1px 0 0 1px;
 }
