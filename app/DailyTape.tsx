@@ -481,7 +481,7 @@ function Sparkline({ values, positive }: { values: number[]; positive: boolean }
   );
 }
 
-function IndexCard({ item, chart, name, short, currency = false, digits = 2, suffix = "" }: { item: MarketDatum; chart?: SessionChart; name: string; short: string; currency?: boolean; digits?: number; suffix?: string }) {
+function IndexCard({ item, chart, name, short, slug, assetBaseHref, currency = false, digits = 2, suffix = "" }: { item: MarketDatum; chart?: SessionChart; name: string; short: string; slug: string; assetBaseHref: string; currency?: boolean; digits?: number; suffix?: string }) {
   const positive = item.pct_change >= 0;
   return (
     <article className="index-card">
@@ -491,6 +491,7 @@ function IndexCard({ item, chart, name, short, currency = false, digits = 2, suf
       </div>
       <div className="index-value">{currency ? "$" : ""}{formatNumber(item.end_price, digits)}{suffix}</div>
       <div className="index-name">{name}</div>
+      <a className="asset-card-link" href={`${assetBaseHref}${slug}/`}>Open asset →</a>
       <Sparkline values={chart?.closes ?? item.closes} positive={positive} />
     </article>
   );
@@ -530,7 +531,7 @@ function parseMegaCapFallback(ticker: string, dailyReport: DailyReport): MarketD
   };
 }
 
-export default function DailyTape({ report, archived = false, archiveHref = "./reports/", homeHref = "#top" }: { report: DailyReport; archived?: boolean; archiveHref?: string; homeHref?: string }) {
+export default function DailyTape({ report, archived = false, archiveHref = "./reports/", homeHref = "#top", assetBaseHref = "./assets/" }: { report: DailyReport; archived?: boolean; archiveHref?: string; homeHref?: string; assetBaseHref?: string }) {
   const dailyReport = report;
   const market = dailyReport.market_data;
   const [theme, setTheme] = useState<"paper" | "ink">("paper");
@@ -685,14 +686,14 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
         <section className="scorecard section-block" id="scorecard">
           <div className="section-heading"><div><p className="section-kicker">01 / SCORECARD</p><h2>The tape, at a glance</h2></div><p>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</p></div>
           <div className="index-grid">
-            <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" />
-            <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" />
-            <IndexCard item={market["^DJI"]} chart={dailyReport.session_charts["^DJI"]} name="Dow Jones" short="DJIA" />
-            <IndexCard item={market["^VIX"]} chart={dailyReport.session_charts["^VIX"]} name="CBOE Volatility" short="VIX" />
-            <IndexCard item={market["^TNX"]} chart={dailyReport.session_charts["^TNX"]} name="10-Year Treasury" short="10Y" suffix="%" />
-            <IndexCard item={market["DX-Y.NYB"]} chart={dailyReport.session_charts["DX-Y.NYB"]} name="U.S. Dollar Index" short="DXY" />
-            <IndexCard item={market["BTC-USD"]} chart={dailyReport.session_charts["BTC-USD"]} name="Bitcoin" short="BTC" currency digits={0} />
-            <IndexCard item={market["ETH-USD"]} chart={dailyReport.session_charts["ETH-USD"]} name="Ethereum" short="ETH" currency digits={0} />
+            <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" slug="spx" assetBaseHref={assetBaseHref} />
+            <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" slug="nasdaq" assetBaseHref={assetBaseHref} />
+            <IndexCard item={market["^DJI"]} chart={dailyReport.session_charts["^DJI"]} name="Dow Jones" short="DJIA" slug="dow" assetBaseHref={assetBaseHref} />
+            <IndexCard item={market["^VIX"]} chart={dailyReport.session_charts["^VIX"]} name="CBOE Volatility" short="VIX" slug="vix" assetBaseHref={assetBaseHref} />
+            <IndexCard item={market["^TNX"]} chart={dailyReport.session_charts["^TNX"]} name="10-Year Treasury" short="10Y" slug="us-10y" assetBaseHref={assetBaseHref} suffix="%" />
+            <IndexCard item={market["DX-Y.NYB"]} chart={dailyReport.session_charts["DX-Y.NYB"]} name="U.S. Dollar Index" short="DXY" slug="dxy" assetBaseHref={assetBaseHref} />
+            <IndexCard item={market["BTC-USD"]} chart={dailyReport.session_charts["BTC-USD"]} name="Bitcoin" short="BTC" slug="bitcoin" assetBaseHref={assetBaseHref} currency digits={0} />
+            <IndexCard item={market["ETH-USD"]} chart={dailyReport.session_charts["ETH-USD"]} name="Ethereum" short="ETH" slug="ethereum" assetBaseHref={assetBaseHref} currency digits={0} />
           </div>
         </section>
 
