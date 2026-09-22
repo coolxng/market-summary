@@ -35,25 +35,26 @@ It is built for fast end-of-session review: **what moved, where leadership came 
 
 ## What it tracks
 
-- **Market scorecard:** S&P 500, Nasdaq Composite, Dow Jones, Russell 2000, VIX, 10-year Treasury yield, and DXY.
-- **Sector leadership:** all 11 S&P sector ETFs, ranked by session return.
-- **Breadth:** cap-weighted vs. equal-weight S&P performance, advancing sectors, positive-sector share, and participation context.
-- **Mega-cap and semiconductor leadership:** AAPL, MSFT, NVDA, AMZN, META, SNDK, AMD, INTC, and MU.
-- **Cross-asset context:** gold, crude oil, major global equity indexes, Bitcoin, Ethereum, Solana, and XRP.
-- **Session narrative:** a one-line read, regime monitor, market/leadership/internals takeaways, macro context, and next-session watch items.
-- **Verified session paths:** intraday charts are tied to the completed regular-hours session when the underlying data is available.
-- **Historical archive:** every completed trading session gets its own permanent `/reports/YYYY-MM-DD/` page.
+- **Market scorecard:** S&P 500, Nasdaq Composite, Dow Jones, Russell 2000, VIX, 10-year Treasury yield, DXY, Bitcoin and Ethereum.
+- **Sector leadership:** all 11 S&P sector ETFs ranked by session return, plus relative strength versus SPY over 1D, 5D and 1M for sectors and tracked large caps.
+- **Market internals:** sectors advancing, equal weight versus cap weight (1D/5D/1M), sector ETFs above their 20/50/200-day averages, 20-session highs and lows, and a 20-session sector advance/decline line. Every measure names its tracked universe; exchange-wide NYSE/Nasdaq breadth is listed as not covered rather than approximated.
+- **Rates and credit:** Cboe yield indexes for the session, the official U.S. Treasury par curve (including 2Y, 2s10s, 3M–10Y, 5s30s and real yields), actual ICE BofA credit spreads from FRED, and bond ETFs clearly labeled as price proxies.
+- **Regime history:** 60 sessions of Constructive / Mixed / Defensive classifications. Days published in an archived issue are shown as published; other days are reconstructed with the same rule and labeled.
+- **Verified catalysts:** Federal Reserve, BLS and BEA releases first, then an exact allowlist of reputable publishers. Every item has a source, link and timestamp, and none is presented as the cause of a move.
+- **Market calendar:** U.S. economic releases (actual, consensus and previous as published), Treasury auctions, tracked earnings and NYSE market-structure dates for the current and next session, in Central Time.
+- **Mega-cap and semiconductor leadership:** AAPL, MSFT, NVDA, AMZN, META, SNDK, AMD, INTC and MU.
+- **Cross-asset context:** gold, crude oil, major global equity indexes, Bitcoin, Ethereum, Solana and XRP, each labeled with its own local session date.
+- **Data health:** a freshness and status strip (Verified / Partial / Some feeds unavailable / Limited) and a per-source feed list on every issue.
 
 ## Daily workflow
 
-The roadmap build expands The Daily Tape from a single close report into a repeat-use market workflow:
-
-- **Morning Tape:** futures, overnight/global markets, rates, dollar, commodities, crypto, upcoming economic events, tracked earnings, and source-linked headlines.
-- **Close Tape:** the existing end-of-session report, enriched with catalysts/calendar context, data health, rates and credit, trend participation, relative strength, and a local watchlist.
-- **Asset dashboards:** interactive 1D / 5D / 1M / 3M / YTD / 1Y price paths with hover inspection, moving averages, watchlist controls, and source-linked context.
-- **Search:** fast lookup across tracked assets and archived sessions.
-- **Delivery:** RSS plus installable PWA support so the Tape can live outside a browser tab.
-- **Research archive:** permanent dated reports with previous/next navigation and regime-history context.
+- **Morning Tape (`/morning/`):** index futures with freshness and delay labels, overnight Asia and Europe, the official Treasury curve, the dollar, commodities, crypto, today's calendar, overnight catalysts and a short observed-only "What matters today".
+- **Close Tape (`/`):** the end-of-session report.
+- **Asset pages (`/assets/<slug>/`):** interactive 1D / 5D / 1M / 3M / YTD / 1Y charts with pointer, touch and keyboard inspection, session range, moving averages, tagged catalysts and recent archive sessions.
+- **Archive (`/reports/`):** permanent dated issues with search by date, headline, sector or ticker, a regime filter, previous/next navigation and historical comparisons.
+- **Watchlist:** up to 20 tracked assets stored only in the browser.
+- **Delivery and sharing:** Discord posts for new issues only, RSS, an installable PWA that never serves stale market data offline, and permanent share links for key sections.
+- **Keyboard:** press `?` on any page for shortcuts.
 
 ### Production services
 
@@ -110,6 +111,8 @@ generate_report.py
     ├─ downloads market data with yfinance
     ├─ validates core prices and sanity bounds
     ├─ builds index, sector, breadth, macro, crypto, and intraday data
+    ├─ adds calendar, catalysts, Treasury curve and credit spreads (failures are non-fatal and recorded)
+    ├─ computes internals, relative strength and 60-session regime history
     └─ generates market commentary
     │
     ▼
@@ -126,9 +129,33 @@ GitHub Pages workflow
 Next.js static export → live dashboard
 ```
 
+## Configuration
+
+| Variable | Where | Purpose |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | Railway | Optional narrative rewording; the report falls back to deterministic copy without it |
+| `GITHUB_TOKEN` | Railway | Commits generated artifacts |
+| `GITHUB_BRANCH` | Railway | Branch the crons commit to (default `main`) |
+| `DISCORD_WEBHOOK_URL` | Railway | Optional delivery channel |
+| `DAILY_TAPE_DISABLED_FEEDS` | Railway | Optional comma-separated feed ids to skip |
+| `PLAUSIBLE_DOMAIN` | GitHub repository variable | Optional, cookieless analytics |
+
+No keys are needed for the calendar, catalyst, Treasury or FRED feeds.
+
+More detail: [data providers](docs/DATA_PROVIDERS.md), [delivery](docs/DELIVERY.md), [analytics](docs/ANALYTICS.md).
+
+## Development
+
+```bash
+python -m unittest -v          # fully offline; no test touches the network
+npm run lint
+npm run build:pages            # static export to ./out
+python scripts/validate_export.py
+```
+
 ## Data notes
 
-Market data is sourced through `yfinance` and therefore depends on upstream availability and data quality. The generator includes sanity bounds and artifact validation to catch obvious failures, but those checks are not a guarantee that every upstream quote is error-free.
+Market data is sourced through `yfinance` and therefore depends on upstream availability and data quality. The generator applies sanity bounds, rejects rows from a different session than the report, stores unavailable values as null rather than zero, and records every source's status in the report. Those checks are not a guarantee that every upstream quote is error-free.
 
 When Anthropic is enabled, narrative text is machine-generated from the report context. Important market information should still be verified against primary or institutional sources before it is used for financial decisions.
 
