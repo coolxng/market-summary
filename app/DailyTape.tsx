@@ -722,6 +722,7 @@ export default function DailyTape({
     ["HYG", rateDatum("hyg"), "hyg"],
     ["LQD", rateDatum("lqd"), "lqd"],
     ["TIP", rateDatum("tip"), "tip"],
+    ["MOVE", rateDatum("move"), "move"],
   ] as const;
   const curve5s10s = typeof dailyReport.rates_credit?.["5s10s_bp"] === "number"
     ? dailyReport.rates_credit["5s10s_bp"] as number
