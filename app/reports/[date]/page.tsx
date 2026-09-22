@@ -18,6 +18,17 @@ function reportPath(date: string) {
   return path.join(reportsDir(), date, "report.json");
 }
 
+function reportDates() {
+  const dir = reportsDir();
+  if (!fs.existsSync(dir)) return [];
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
+    .filter((entry) => fs.existsSync(reportPath(entry.name)))
+    .map((entry) => entry.name)
+    .sort();
+}
+
 function readReport(date: string): DailyReport | null {
   if (!datePattern.test(date)) return null;
   const file = reportPath(date);
@@ -26,14 +37,7 @@ function readReport(date: string): DailyReport | null {
 }
 
 export function generateStaticParams() {
-  const dir = reportsDir();
-  if (!fs.existsSync(dir)) return [];
-
-  return fs
-    .readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory() && datePattern.test(entry.name))
-    .filter((entry) => fs.existsSync(reportPath(entry.name)))
-    .map((entry) => ({ date: entry.name }));
+  return reportDates().map((date) => ({ date }));
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ date: string }> }): Promise<Metadata> {
@@ -77,5 +81,20 @@ export default async function ArchivedReportPage({ params }: { params: Promise<{
   const report = readReport(date);
   if (!report) notFound();
 
-  return <DailyTape report={report} archived archiveHref="../" homeHref="../../" assetBaseHref="../../assets/" />;
+  const dates = reportDates();
+  const index = dates.indexOf(date);
+  const previousDate = index > 0 ? dates[index - 1] : null;
+  const nextDate = index >= 0 && index < dates.length - 1 ? dates[index + 1] : null;
+
+  return (
+    <DailyTape
+      report={report}
+      archived
+      archiveHref="../"
+      homeHref="../../"
+      assetBaseHref="../../assets/"
+      previousReportHref={previousDate ? `../${previousDate}/` : undefined}
+      nextReportHref={nextDate ? `../${nextDate}/` : undefined}
+    />
+  );
 }
