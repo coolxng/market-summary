@@ -3,7 +3,12 @@ import os
 import unittest
 from unittest import mock
 
-import morning_cron
+import sys
+import types
+
+sys.modules.setdefault("yfinance", types.SimpleNamespace(Ticker=None))
+
+import morning_cron  # noqa: E402
 
 
 class MorningScheduleTests(unittest.TestCase):

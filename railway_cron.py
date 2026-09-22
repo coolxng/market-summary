@@ -11,11 +11,12 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from delivery import close_publication, deliver, failure_publication
+
 
 REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "coolxng/market-summary")
 BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
 BASE_ARTIFACTS = (Path("report_snapshot.json"),)
 CENTRAL_TZ = ZoneInfo("America/Chicago")
@@ -182,112 +183,16 @@ def commit_artifacts(snapshot):
     return {"updated": True, "commit_sha": commit["sha"]}
 
 
-def format_session_date(value):
-    try:
-        return datetime.date.fromisoformat(str(value)).strftime("%B %-d, %Y")
-    except (TypeError, ValueError):
-        return str(value)
-
-
-def discord_post(payload):
-    if not DISCORD_WEBHOOK_URL:
-        print("DISCORD_WEBHOOK_URL is not set; skipping Discord notification.")
-        return False
-
-    request = urllib.request.Request(
-        DISCORD_WEBHOOK_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={
-            "Content-Type": "application/json",
-            "User-Agent": "market-summary-railway-cron",
-        },
-    )
-
-    try:
-        with urllib.request.urlopen(request, timeout=15) as response:
-            response.read()
-        print("Discord notification sent.")
-        return True
-    except Exception as exc:
-        print(f"Warning: Discord notification failed: {exc}", file=sys.stderr)
-        return False
-
-
 def send_success_notification(snapshot, publish_result):
-    session_date = format_session_date(snapshot.get("session_date", "Unknown"))
-    updated = publish_result["updated"]
-    commit_sha = publish_result["commit_sha"]
-
-    if updated:
-        title = "📈 Market Summary Updated"
-        description = (
-            f"**The Daily Tape** for **{session_date}** is live.\n\n"
-            f"**[View Market Summary →]({SITE_URL})**"
-        )
-        color = 0x2ECC71
-        status = "Published"
-        commit_value = f"`{commit_sha[:7]}`"
-    else:
-        title = "✅ Market Summary Checked"
-        description = (
-            "The Railway job completed successfully, but there was no new completed "
-            f"market session to publish.\n\n**[View Current Report →]({SITE_URL})**"
-        )
-        color = 0x95A5A6
-        status = "No update needed"
-        commit_value = "No new commit"
-
-    payload = {
-        "username": "Market Summary",
-        "allowed_mentions": {"parse": []},
-        "embeds": [
-            {
-                "title": title,
-                "url": SITE_URL,
-                "description": description,
-                "color": color,
-                "fields": [
-                    {"name": "Session", "value": session_date, "inline": True},
-                    {"name": "Status", "value": status, "inline": True},
-                    {"name": "Commit", "value": commit_value, "inline": True},
-                ],
-                "footer": {"text": "market-summary • Railway"},
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            }
-        ],
-    }
-    discord_post(payload)
+    """Post only when a new session was committed; quiet runs stay quiet."""
+    if not publish_result["updated"]:
+        print("No new session was published; skipping delivery.")
+        return {}
+    return deliver(close_publication(snapshot, SITE_URL))
 
 
 def send_failure_notification(error):
-    error_text = str(error).strip() or error.__class__.__name__
-    if len(error_text) > 800:
-        error_text = f"{error_text[:797]}..."
-
-    payload = {
-        "username": "Market Summary",
-        "allowed_mentions": {"parse": []},
-        "embeds": [
-            {
-                "title": "❌ Market Summary Failed",
-                "url": SITE_URL,
-                "description": (
-                    "The Railway market-summary job failed before it could finish publishing.\n\n"
-                    f"```text\n{error_text}\n```\n"
-                    f"**[Open Last Live Report →]({SITE_URL})**"
-                ),
-                "color": 0xE74C3C,
-                "fields": [
-                    {"name": "Status", "value": "Failed", "inline": True},
-                    {"name": "Service", "value": "Railway Cron", "inline": True},
-                ],
-                "footer": {"text": "market-summary • Railway"},
-                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-            }
-        ],
-    }
-    discord_post(payload)
+    return deliver(failure_publication(error, SITE_URL, service="Close Tape"))
 
 
 def should_publish_now(now=None):

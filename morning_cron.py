@@ -9,13 +9,13 @@ import urllib.request
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
+from delivery import deliver, failure_publication, morning_publication
 from generate_morning import generate_morning_snapshot
 
 
 REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "coolxng/market-summary")
 BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
 ARTIFACTS = (Path("morning_snapshot.json"), Path("public/morning/latest.json"))
 CENTRAL_TZ = ZoneInfo("America/Chicago")
@@ -132,38 +132,10 @@ def commit_artifacts(snapshot):
 
 
 def notify(snapshot, commit_sha):
-    if not DISCORD_WEBHOOK_URL or not commit_sha:
-        return
-    morning_url = f"{SITE_URL.rstrip('/')}/morning/"
-    payload = {
-        "username": "The Daily Tape",
-        "allowed_mentions": {"parse": []},
-        "embeds": [{
-            "title": "☀️ Morning Tape Ready",
-            "url": morning_url,
-            "description": (
-                f"Premarket setup for **{snapshot['market_date']}** is ready.\n\n"
-                f"**[Open Morning Tape →]({morning_url})**"
-            ),
-            "color": 0xFF5C35,
-            "fields": [
-                {"name": "Quote coverage", "value": f"{snapshot['data_quality']['coverage_pct']:.1f}%", "inline": True},
-                {"name": "Status", "value": snapshot["status"].title(), "inline": True},
-            ],
-            "footer": {"text": "market-summary • Railway"},
-        }],
-    }
-    request = urllib.request.Request(
-        DISCORD_WEBHOOK_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={"Content-Type": "application/json", "User-Agent": "market-summary-morning-cron"},
-    )
-    try:
-        with urllib.request.urlopen(request, timeout=15) as response:
-            response.read()
-    except Exception as exc:
-        print(f"Warning: Morning Tape Discord notification failed: {exc}")
+    """Deliver only when a new Morning Tape was committed."""
+    if not commit_sha:
+        return {}
+    return deliver(morning_publication(snapshot, SITE_URL))
 
 
 def should_publish_now(now=None):
@@ -181,11 +153,15 @@ def main():
         print("Morning Tape DST guard: this UTC slot is not 7 AM America/Chicago; exiting.")
         return
 
-    require_environment()
-    snapshot = generate_morning_snapshot()
-    validate_snapshot(snapshot)
-    commit_sha = commit_artifacts(snapshot)
-    notify(snapshot, commit_sha)
+    try:
+        require_environment()
+        snapshot = generate_morning_snapshot()
+        validate_snapshot(snapshot)
+        commit_sha = commit_artifacts(snapshot)
+        notify(snapshot, commit_sha)
+    except Exception as exc:
+        deliver(failure_publication(exc, f"{SITE_URL.rstrip('/')}/morning/", service="Morning Tape"))
+        raise
 
 
 if __name__ == "__main__":
