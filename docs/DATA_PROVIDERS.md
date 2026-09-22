@@ -1,0 +1,81 @@
+# Data providers
+
+The Daily Tape separates what it publishes into three kinds of information:
+
+| Kind | Meaning | Where it comes from |
+| --- | --- | --- |
+| **Observed** | Prices, returns and ratios computed from market data | Yahoo Finance via `yfinance` (Stooq fallback for core indexes) |
+| **Verified catalyst** | An external development with a publisher, link and timestamp | Official RSS feeds and allowlisted news publishers |
+| **Interpretation** | Clearly labeled reading of observed data | Deterministic evidence cards, optionally reworded by Claude under strict validation |
+
+Catalysts and calendar items are always shown as context. The narrative layer is not allowed to attribute a price move to them (see `validate_editorial_prose` in `generate_report.py`).
+
+## Feed contract
+
+Every calendar and catalyst provider in `data_providers.py` returns a normalized `FeedResult`:
+
+```json
+{
+  "id": "nasdaq_economic",
+  "name": "Nasdaq Economic Calendar",
+  "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
+  "status": "ok | empty | unavailable | disabled",
+  "as_of": "2026-09-22T20:31:04+00:00",
+  "items": [],
+  "error": null
+}
+```
+
+- A provider failure never raises into report generation. The feed is marked `unavailable` and its items are omitted.
+- Missing values stay `null`. Nothing is converted to zero, estimated, or filled with placeholder text.
+- Feed status (without items) is stored in the report so the page can show which sources were checked.
+
+## Calendar providers (`build_market_calendar`)
+
+Window: the current trading session (if the anchor date trades) plus the next NYSE trading session, from `trading_calendar.session_window`.
+
+| Feed id | Source | Notes |
+| --- | --- | --- |
+| `nasdaq_economic` | Nasdaq economic calendar JSON | U.S. rows only. The `gmt` field is treated as GMT and converted to Central Time; the source time is stored alongside for audit. Actual, consensus and previous are copied as published. Nasdaq does not publish an importance rating, so none is shown. |
+| `treasury_auctions` | U.S. Treasury Fiscal Data `upcoming_auctions` | Auction date, term, type, offering size and CUSIP. The dataset has no auction close time, so the time is shown as not published. |
+| `yahoo_earnings` | Yahoo Finance company calendar | Tracked mega-cap and semiconductor names only. A two-date answer is labeled as an estimated window. |
+| `market_structure` | `trading_calendar.py` rules | NYSE holidays, 1:00 PM ET early closes and third-Friday options expiration. Items are labeled "Rule-based" because rules cannot anticipate unscheduled closures. |
+
+Category labels (Inflation, Employment, and so on) are keyword classifications of the event title. They are not importance scores.
+
+## Catalyst providers (`build_verified_catalysts`)
+
+Window: from 4:00 PM ET on the previous session to generation time (close report), or from the previous close to generation time (Morning Tape). Items without a timestamp are dropped because they cannot be placed in the window.
+
+| Feed id | Source |
+| --- | --- |
+| `fed_monetary` | Federal Reserve monetary policy press releases RSS |
+| `fed_speeches` | Federal Reserve speeches RSS |
+| `bls_releases` | U.S. Bureau of Labor Statistics latest releases RSS |
+| `bea_releases` | U.S. Bureau of Economic Analysis releases RSS |
+| `yahoo_news` | Yahoo Finance news search, filtered to an exact publisher allowlist (Reuters, Bloomberg, CNBC, AP, WSJ, Dow Jones, FT, MarketWatch, Barron's, Yahoo Finance) |
+
+Official items are listed first. At most six items are published. "Tagged by source" tickers come from the publisher's own metadata; The Daily Tape does not infer affected assets.
+
+## Configuration
+
+| Variable | Purpose |
+| --- | --- |
+| `DAILY_TAPE_DISABLED_FEEDS` | Comma-separated feed ids to skip, for example `yahoo_news,bls_releases`. Disabled feeds are reported as disabled, not unavailable. |
+
+No API keys are required for the current providers. None are committed.
+
+## Adding a provider
+
+1. Write a function that returns `feed_result(...)` through the `_run` helper so failures are contained.
+2. Normalize items to the calendar or catalyst item shape used in `app/lib/report.ts` (`CalendarItem` or `Catalyst`).
+3. Add it to the provider list in `build_market_calendar` or `build_verified_catalysts`.
+4. Add unit tests that mock `http_get`; the test suite must never touch the network because `railway_cron.py` runs it before publishing.
+
+A paid economic calendar with provider-assigned importance, or a licensed newswire, would slot in the same way. Read the key from an environment variable in the provider function and return a `disabled` feed when the key is absent.
+
+## Market data
+
+`generate_report.fetch_daily_data` uses Yahoo Finance first and Stooq as a fallback for core indexes and U.S. tickers. Rows that cannot be fetched are stored with `null` prices and an `error`. Core indexes still fail the run through `validate_core_datasets`, so a report is never published without them.
+
+`build_data_quality` checks every row against the report session. Overseas indexes and crypto run on other calendars, so they are compared with the previous U.S. session instead. When their latest local session differs from the report date, the page labels the row with that date.

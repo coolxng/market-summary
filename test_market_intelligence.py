@@ -1,71 +1,63 @@
 import datetime
+import sys
 import types
 import unittest
-from unittest import mock
 
-import market_intelligence
+sys.modules.setdefault("yfinance", types.SimpleNamespace(Ticker=None))
+
+import market_intelligence  # noqa: E402
 
 
-class MarketIntelligenceTests(unittest.TestCase):
-    def test_calendar_gmt_time_is_normalized_to_central(self):
-        event = market_intelligence._calendar_event(
+def row(session, price=100.0, error=None):
+    return {"session_date": session, "end_price": price, "error": error, "data_source": "yahoo_finance"}
+
+
+class DataQualityTests(unittest.TestCase):
+    session = datetime.date(2026, 9, 21)
+
+    def test_full_coverage_and_healthy_feeds_are_verified(self):
+        quality = market_intelligence.build_data_quality(
+            {"^GSPC": row("2026-09-21")},
+            self.session,
+            feed_groups=([{"name": "Calendar", "status": "ok"}], [{"name": "News", "status": "empty"}]),
+        )
+        self.assertEqual(quality["status"], "healthy")
+        self.assertEqual(quality["overall"], "verified")
+        self.assertEqual(quality["unavailable_feeds"], [])
+
+    def test_unavailable_feed_makes_status_partial(self):
+        quality = market_intelligence.build_data_quality(
+            {"^GSPC": row("2026-09-21")},
+            self.session,
+            feed_groups=([{"name": "Nasdaq Economic Calendar", "status": "unavailable"}],),
+        )
+        self.assertEqual(quality["overall"], "partial")
+        self.assertEqual(quality["unavailable_feeds"], ["Nasdaq Economic Calendar"])
+
+    def test_stale_and_missing_rows_are_flagged(self):
+        quality = market_intelligence.build_data_quality(
             {
-                "eventName": "CPI",
-                "gmt": "13:30:00",
-                "country": "United States",
-                "actual": "2.7%",
-                "consensus": "2.8%",
-                "previous": "2.9%",
+                "^GSPC": row("2026-09-21"),
+                "GC=F": row("2026-09-18"),
+                "CL=F": row(None, price=None, error="Data unavailable for CL=F"),
             },
-            datetime.date(2026, 9, 22),
+            self.session,
         )
-        self.assertEqual(event["time"], "8:30 AM CT")
-        self.assertEqual(event["time_zone"], "America/Chicago")
-        self.assertEqual(event["category"], "Economic data")
-        self.assertEqual(event["source_url"], market_intelligence.NASDAQ_CALENDAR_PAGE)
+        self.assertEqual(quality["valid"], 1)
+        self.assertIn("GC=F: stale session 2026-09-18", quality["issues"])
+        self.assertIn("CL=F: unavailable", quality["issues"])
+        self.assertEqual(quality["overall"], "limited")
 
-    def test_calendar_preserves_source_importance_without_inventing_one(self):
-        event = market_intelligence._calendar_event(
-            {"eventName": "Claims", "time": "8:30 AM", "importance": "High"},
-            datetime.date(2026, 9, 22),
+    def test_other_calendars_record_local_session_instead_of_stale(self):
+        quality = market_intelligence.build_data_quality(
+            {"^GSPC": row("2026-09-21"), "^N225": row("2026-09-18"), "BTC-USD": row("2026-09-20"), "^FTSE": row("2026-09-10")},
+            self.session,
+            local_calendar_symbols=("^N225", "BTC-USD", "^FTSE"),
+            previous_session=datetime.date(2026, 9, 18),
         )
-        self.assertEqual(event["importance"], "High")
-
-        event_without_importance = market_intelligence._calendar_event(
-            {"eventName": "Claims", "time": "8:30 AM"},
-            datetime.date(2026, 9, 22),
-        )
-        self.assertIsNone(event_without_importance["importance"])
-
-    @mock.patch.object(market_intelligence, "_runtime_data_available", return_value=True)
-    @mock.patch.object(market_intelligence, "_yahoo_news_via_http", return_value=[])
-    @mock.patch.object(market_intelligence, "_yahoo_news_via_search")
-    def test_headline_feed_omits_unapproved_publishers(self, search, _http, _runtime):
-        close = datetime.datetime(2026, 9, 22, 16, 0, tzinfo=market_intelligence.NY_TZ)
-        timestamp = int(close.timestamp())
-        search.return_value = [
-            {
-                "title": "Reuters development",
-                "link": "https://example.com/reuters",
-                "publisher": "Reuters",
-                "providerPublishTime": timestamp,
-                "relatedTickers": ["SPY"],
-            },
-            {
-                "title": "Random blog claim",
-                "link": "https://example.com/blog",
-                "publisher": "Random Finance Blog",
-                "providerPublishTime": timestamp,
-            },
-        ]
-        result = market_intelligence.fetch_market_headlines(
-            datetime.date(2026, 9, 22),
-            queries=("stock market",),
-            max_items=6,
-        )
-        self.assertEqual(len(result["items"]), 1)
-        self.assertEqual(result["items"][0]["publisher"], "Reuters")
-        self.assertEqual(result["items"][0]["affected_assets"], ["SPY"])
+        self.assertEqual(quality["local_sessions"], {"^N225": "2026-09-18", "BTC-USD": "2026-09-20"})
+        self.assertEqual(quality["issues"], ["^FTSE: stale session 2026-09-10"])
+        self.assertEqual(quality["valid"], 3)
 
 
 if __name__ == "__main__":

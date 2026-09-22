@@ -10,6 +10,7 @@ from unittest import mock
 sys.modules.setdefault("yfinance", types.SimpleNamespace(Ticker=None))
 
 import generate_report
+import offline_fixtures
 
 
 class FakeColumn:
@@ -296,6 +297,7 @@ class GenerateReportTests(unittest.TestCase):
                 mock.patch.object(generate_report, "fetch_daily_data", side_effect=fake_fetch),
                 mock.patch.object(generate_report, "fetch_daily_chart_data", side_effect=fake_chart),
                 mock.patch.object(generate_report, "should_use_ai", return_value=False),
+                offline_fixtures.offline_generation(generate_report),
             ):
                 changed = generate_report.generate_html(
                     now=datetime.datetime(2026, 7, 14, 17, 30, tzinfo=generate_report.NY_TZ),
@@ -547,7 +549,7 @@ class EditorialTests(unittest.TestCase):
                     return self.response(json.dumps(ai_response) if succeeds else 'not-json')
                 with mock.patch.object(generate_report,'resolve_completed_sessions',return_value=(session,previous)),mock.patch.object(
                         generate_report,'fetch_daily_data',side_effect=fetch),mock.patch.object(generate_report,'fetch_daily_chart_data',side_effect=chart),mock.patch.object(
-                        generate_report,'ANTHROPIC_API_KEY','test-private-key'),mock.patch.object(generate_report.urllib.request,'urlopen',side_effect=reply) as send:
+                        generate_report,'ANTHROPIC_API_KEY','test-private-key'),mock.patch.object(generate_report.urllib.request,'urlopen',side_effect=reply) as send,offline_fixtures.offline_generation(generate_report):
                     archive_root=Path(tmp)/'reports'
                     generate_report.generate_html(snapshot_path=Path(tmp)/'snapshot.json',archive_root=archive_root)
                 send.assert_called_once()
@@ -558,6 +560,17 @@ class EditorialTests(unittest.TestCase):
                 self.assertEqual(archived,snapshot)
                 self.assertNotIn('test-private-key',(Path(tmp)/'snapshot.json').read_text())
                 self.assertNotIn('test-private-key',(archive_root/session.isoformat()/'report.json').read_text())
+
+    def test_opening_summary_does_not_repeat_index_move(self):
+        cards = {
+            'index': {'observed': 'S&P 500 +1.49% at the close.'},
+            'risk': {'observed': 'S&P 500 +1.49%; VIX +0.41%; positive sector share 18.2%.'},
+        }
+        self.assertEqual(
+            generate_report.compose_observed(cards, ['index', 'risk']),
+            'S&P 500 +1.49% at the close. VIX +0.41%; positive sector share 18.2%.',
+        )
+        self.assertEqual(generate_report.compose_observed(cards, ['risk']), cards['risk']['observed'])
 
     def test_empty_optional_groups_are_valid_but_no_fabricated_ids(self):
         _,cards=self.context();cards={k:v for k,v in cards.items() if v['group']!='megacap'}

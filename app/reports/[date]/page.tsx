@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import DailyTape, { type DailyReport } from "../../DailyTape";
+import DailyTape, { type ArchiveComparison, type DailyReport } from "../../DailyTape";
+import { classifyRegime } from "../../lib/regime";
 
 export const dynamic = "force-static";
 export const dynamicParams = false;
@@ -35,15 +36,6 @@ function readReport(date: string): DailyReport | null {
   if (!fs.existsSync(file)) return null;
   return JSON.parse(fs.readFileSync(file, "utf8")) as DailyReport;
 }
-
-type ArchiveComparison = {
-  sampleSize: number;
-  breadthAverage: number | null;
-  breadthDelta: number | null;
-  vixPercentile: number | null;
-  regimeStreak: number;
-  sp500FiveSessionReturn: number | null;
-};
 
 function average(values: number[]) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
@@ -78,11 +70,11 @@ function buildArchiveComparison(date: string, report: DailyReport): ArchiveCompa
     ? (vixSample.filter((value) => value <= currentVix).length / vixSample.length) * 100
     : null;
 
-  const currentRegime = report.derived_metrics?.risk_confirmation?.signal;
-  let regimeStreak = currentRegime ? 1 : 0;
-  if (currentRegime) {
+  const currentRegime = classifyRegime(report).regime;
+  let regimeStreak = currentRegime === "unavailable" ? 0 : 1;
+  if (regimeStreak) {
     for (let cursor = priorReports.length - 1; cursor >= 0; cursor -= 1) {
-      if (priorReports[cursor].derived_metrics?.risk_confirmation?.signal !== currentRegime) break;
+      if (classifyRegime(priorReports[cursor]).regime !== currentRegime) break;
       regimeStreak += 1;
     }
   }

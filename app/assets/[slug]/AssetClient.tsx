@@ -166,7 +166,7 @@ export default function AssetClient({
   headlines,
 }: {
   asset: AssetDefinition;
-  current: { end_price: number; pct_change: number; day_high?: number; day_low?: number; prev_close?: number } | null;
+  current: { end_price: number; pct_change: number; day_high?: number | null; day_low?: number | null; prev_close?: number | null } | null;
   session: SessionSeries | null;
   history: History | null;
   headlines: Headline[];

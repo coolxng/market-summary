@@ -5,7 +5,8 @@ from zoneinfo import ZoneInfo
 
 import yfinance as yf
 
-from market_intelligence import fetch_economic_calendar, fetch_market_headlines, fetch_tracked_earnings
+import trading_calendar
+from data_providers import build_market_calendar, build_verified_catalysts
 
 
 NY_TZ = ZoneInfo("America/New_York")
@@ -144,12 +145,11 @@ def generate_morning_snapshot(now=None, snapshot_path="morning_snapshot.json", p
         for symbol, name in GLOBAL.items()
     }
 
-    economic = fetch_economic_calendar(market_date, days=3, max_items=12)
-    earnings = fetch_tracked_earnings(TRACKED_EARNINGS, market_date, days=5, max_items=10)
-    headlines = fetch_market_headlines(
-        market_date,
-        queries=("stock market", "Federal Reserve", "Treasury yields", "technology stocks"),
-        max_items=6,
+    market_calendar = build_market_calendar(market_date, TRACKED_EARNINGS)
+    previous_session = trading_calendar.previous_trading_day(market_date)
+    catalysts = build_verified_catalysts(
+        datetime.datetime.combine(previous_session, datetime.time(16, 0), tzinfo=NY_TZ),
+        current,
     )
 
     all_quotes = [*futures.values(), *cross_asset.values(), *global_markets.values()]
@@ -169,18 +169,13 @@ def generate_morning_snapshot(now=None, snapshot_path="morning_snapshot.json", p
         what_matters_today.append(
             f'{leading_future["name"]}: {leading_future["pct_change"]:+.2f}% versus the {leading_future["reference_date"]} reference close.'
         )
-    economic_items = economic.get("items") or []
-    if economic_items:
-        first_event = economic_items[0]
-        what_matters_today.append(
-            f'Calendar: {first_event.get("title", "scheduled release")} at {first_event.get("time", "TBD")}.'
-        )
-    headline_items = headlines.get("items") or []
-    if headline_items:
-        first_headline = headline_items[0]
-        what_matters_today.append(
-            f'Source-linked: {first_headline["title"]} — {first_headline["publisher"]}.'
-        )
+    today_events = [item for item in market_calendar["items"] if item["date"] == market_date.isoformat() and item.get("time")]
+    if today_events:
+        first_event = today_events[0]
+        what_matters_today.append(f'Calendar: {first_event["title"]} at {first_event["time"]}.')
+    if catalysts["items"]:
+        first_catalyst = catalysts["items"][0]
+        what_matters_today.append(f'Source-linked: {first_catalyst["title"]} ({first_catalyst["publisher"]}).')
 
     snapshot = {
         "report_type": "morning_tape",
@@ -195,11 +190,8 @@ def generate_morning_snapshot(now=None, snapshot_path="morning_snapshot.json", p
         "futures": futures,
         "cross_asset": cross_asset,
         "global_markets": global_markets,
-        "market_calendar": {
-            "economic": economic,
-            "earnings": earnings,
-        },
-        "market_headlines": headlines,
+        "market_calendar": market_calendar,
+        "verified_catalysts": catalysts,
         "what_matters_today": what_matters_today,
         "notes": [
             "Futures and extended-hours moves are compared with the latest completed daily reference close.",

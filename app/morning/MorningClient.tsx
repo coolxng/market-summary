@@ -1,4 +1,7 @@
 import SiteHeader from "../components/SiteHeader";
+import MarketCalendarList from "../components/MarketCalendarList";
+import CatalystList from "../components/CatalystList";
+import { calendarOf, catalystsOf, type CatalystSet, type DailyReport } from "../lib/report";
 import styles from "./morning.module.css";
 
 type Quote = {
@@ -14,25 +17,6 @@ type Quote = {
   error: string | null;
 };
 
-type CalendarEvent = {
-  date: string;
-  time?: string;
-  time_zone?: string | null;
-  title?: string;
-  ticker?: string;
-  country?: string;
-  category?: string;
-  source: string;
-  source_url?: string;
-};
-
-type Headline = {
-  title: string;
-  url: string;
-  publisher: string;
-  published_at?: number | null;
-};
-
 export type MorningSnapshot = {
   report_type: "morning_tape";
   market_date: string | null;
@@ -42,16 +26,9 @@ export type MorningSnapshot = {
   futures: Record<string, Quote>;
   cross_asset: Record<string, Quote>;
   global_markets: Record<string, Quote>;
-  market_calendar: {
-    economic: { items: CalendarEvent[]; source: string; error?: string | null };
-    earnings: { items: CalendarEvent[]; source: string; error?: string | null };
-  };
-  market_headlines: {
-    items: Headline[];
-    source: string;
-    label?: string;
-    error?: string | null;
-  };
+  market_calendar?: DailyReport["market_calendar"];
+  verified_catalysts?: CatalystSet;
+  market_headlines?: DailyReport["market_headlines"];
   what_matters_today?: string[];
   notes: string[];
 };
@@ -98,10 +75,8 @@ function QuoteGrid({ items, label }: { items: Record<string, Quote>; label: stri
 }
 
 export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot }) {
-  const events = [
-    ...(snapshot.market_calendar?.economic.items ?? []),
-    ...(snapshot.market_calendar?.earnings.items ?? []),
-  ].sort((a, b) => `${a.date} ${a.time ?? ""}`.localeCompare(`${b.date} ${b.time ?? ""}`));
+  const calendar = calendarOf(snapshot);
+  const catalysts = catalystsOf(snapshot);
 
   const generated = snapshot.generated_at
     ? new Date(snapshot.generated_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" })
@@ -162,33 +137,14 @@ export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot 
           <QuoteGrid items={snapshot.global_markets} label="Global equity markets" />
         </section>
 
-        <section className={styles.twoCol}>
-          <div>
-            <div className={styles.headingCompact}><p className={styles.kicker}>04 / CALENDAR</p><h2>On the clock</h2></div>
-            <div className={styles.calendar}>
-              {events.length ? events.slice(0, 10).map((event, index) => (
-                <article key={`${event.date}-${event.title ?? event.ticker}-${index}`}>
-                  <div><span>{new Date(`${event.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span><small>{event.time ?? "TBD"}</small></div>
-                  <strong>{event.title ?? `${event.ticker} earnings`}</strong>
-                  <p>{[event.category, event.country, event.source].filter(Boolean).join(" · ")}</p>
-                  {event.source_url && <a href={event.source_url} target="_blank" rel="noreferrer">Source ↗</a>}
-                </article>
-              )) : <div className={styles.empty}>Calendar data will populate during the next Morning Tape generation.</div>}
-            </div>
-          </div>
+        <section className={styles.section} id="calendar">
+          <div className={styles.heading}><div><p className={styles.kicker}>04 / TODAY&apos;S CALENDAR</p><h2>On the clock</h2></div><p>U.S. releases, Treasury auctions, tracked earnings and market-structure dates for today and the next session. Times in Central Time.</p></div>
+          <MarketCalendarList calendar={calendar} currentLabel="Today" emptyNote={snapshot.generated_at ? undefined : "Calendar data will populate during the first Morning Tape generation."} />
+        </section>
 
-          <div>
-            <div className={styles.headingCompact}><p className={styles.kicker}>05 / HEADLINES</p><h2>Source-linked context</h2></div>
-            <div className={styles.news}>
-              {snapshot.market_headlines?.items?.length ? snapshot.market_headlines.items.slice(0, 6).map((item) => (
-                <a href={item.url} target="_blank" rel="noreferrer" key={item.url}>
-                  <span>{item.publisher}</span>
-                  <strong>{item.title}</strong>
-                  <b>Source ↗</b>
-                </a>
-              )) : <div className={styles.empty}>Source-linked headlines will populate during the next Morning Tape generation.</div>}
-            </div>
-          </div>
+        <section className={styles.section} id="catalysts">
+          <div className={styles.heading}><div><p className={styles.kicker}>05 / OVERNIGHT CATALYSTS</p><h2>On the record overnight</h2></div><p>Published since the prior U.S. close by official sources or allowlisted publishers. Context only, never a claimed cause.</p></div>
+          <CatalystList catalysts={catalysts} assetBaseHref="../assets/" />
         </section>
 
         <aside className={styles.note}>

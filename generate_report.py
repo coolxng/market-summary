@@ -12,13 +12,8 @@ from zoneinfo import ZoneInfo
 
 import yfinance as yf
 
-from market_intelligence import (
-    build_data_quality,
-    fetch_economic_calendar,
-    fetch_history_bundle,
-    fetch_market_headlines,
-    fetch_tracked_earnings,
-)
+from data_providers import build_market_calendar, build_verified_catalysts
+from market_intelligence import build_data_quality, fetch_history_bundle
 
 
 # ─────────────────────────────────────────────
@@ -356,17 +351,18 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
         except Exception as exc:
             print(f"  Exception fetching Stooq fallback for {ticker_symbol}: {exc}")
 
-    print(f"  All fetch attempts failed for {ticker_symbol}. Using zeroed data.")
+    print(f"  All fetch attempts failed for {ticker_symbol}. Marking it unavailable.")
+    # Unavailable rows keep null values so no consumer can mistake them for a flat session.
     return {
         "dates": [],
         "closes": [],
-        "end_price": 0.0,
-        "pct_change": 0.0,
-        "abs_change": 0.0,
-        "prev_close": 0.0,
-        "session_open": 0.0,
-        "day_high": 0.0,
-        "day_low": 0.0,
+        "end_price": None,
+        "pct_change": None,
+        "abs_change": None,
+        "prev_close": None,
+        "session_open": None,
+        "day_high": None,
+        "day_low": None,
         "session_date": None,
         "previous_session_date": None,
         "ticker_used": ticker_symbol,
@@ -657,7 +653,7 @@ def build_editorial_context(datasets, sectors, megacaps, charts, spy, rsp, sessi
             'The path distinguishes intraday follow-through from the previous-close return; sampled bars do not establish an event catalyst.',
             'Check whether the next session extends the closing direction or reverses it.')
     context={'session_date':session,'market':market,'sectors':sector_rows,'megacaps':stocks,'derived_metrics':metrics,
-             'limitations':['No verified news, earnings or economic calendar; do not infer events.',
+             'limitations':['Verified catalysts and calendar items are published separately with sources; never attribute price moves to events.',
                             'Missing/stale/error rows are null; no imputed zero returns.',
                             'Sector ETFs and the selected technology sample are proxies, not whole-market breadth.',
                             'Futures fallback instruments remain explicitly labeled; global and crypto clocks differ.']}
@@ -817,6 +813,23 @@ def parse_editorial_response(raw, cards):
     }
 
 
+INDEX_MOVE_PATTERN = re.compile(r'S&P 500 [+-]\d+\.\d+%')
+
+
+def compose_observed(cards, card_ids):
+    """Join observed facts without repeating an index move already stated."""
+    seen = set()
+    parts = []
+    for cid in card_ids:
+        text = cards[cid]['observed']
+        for token in INDEX_MOVE_PATTERN.findall(text):
+            if token in seen:
+                text = text.replace(f'{token}; ', '', 1)
+            seen.add(token)
+        parts.append(text)
+    return ' '.join(parts)
+
+
 def generate_editorial(context,cards):
     """Use one bounded Claude request for selection plus qualitative writing.
 
@@ -883,6 +896,8 @@ def generate_editorial(context,cards):
             status = 'request_or_validation_failed'
 
     def render(key, field):
+        if field == 'observed':
+            return compose_observed(cards, plan[key])
         return ' '.join(cards[cid][field] for cid in plan[key])
 
     deterministic_headline = render('headline', 'headline')
@@ -1133,16 +1148,21 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     else:
         rates_credit["5s10s_bp"] = None
 
-    market_headlines = fetch_market_headlines(session_date, max_items=6)
-    economic_calendar = fetch_economic_calendar(session_date + datetime.timedelta(days=1))
-    tracked_earnings = fetch_tracked_earnings(megacaps.keys(), session_date + datetime.timedelta(days=1))
-    market_calendar = {
-        "economic": economic_calendar,
-        "earnings": tracked_earnings,
-        "note": "Calendar items are source-linked schedule context and are not treated as causes of price moves.",
-    }
+    market_calendar = build_market_calendar(session_date, megacaps.keys())
+    previous_close = datetime.datetime.combine(previous_session_date, datetime.time(16, 0), tzinfo=NY_TZ)
+    catalyst_end = max(
+        normalize_market_now(now),
+        datetime.datetime.combine(session_date, datetime.time(16, 0), tzinfo=NY_TZ),
+    )
+    verified_catalysts = build_verified_catalysts(previous_close, catalyst_end)
 
-    data_quality = build_data_quality(datasets, session_date)
+    data_quality = build_data_quality(
+        datasets,
+        session_date,
+        feed_groups=(market_calendar["feeds"], verified_catalysts["feeds"]),
+        local_calendar_symbols=FULL_DAY_CHART_TICKERS,
+        previous_session=previous_session_date,
+    )
 
     advances = sum(1 for value in sector_perf.values() if value > 0)
     declines = sum(1 for value in sector_perf.values() if value < 0)
@@ -1187,7 +1207,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "derived_metrics": context["derived_metrics"],
         "data_quality": data_quality,
         "market_calendar": market_calendar,
-        "market_headlines": market_headlines,
+        "verified_catalysts": verified_catalysts,
         "rates_credit": rates_credit,
         "market_internals": market_internals,
         "asset_catalog": asset_catalog,
