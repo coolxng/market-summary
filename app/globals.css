@@ -534,6 +534,7 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 
 .watchlist-controls {
   display: flex;
+  align-items: center;
   gap: 10px;
   margin-bottom: 24px;
 }
@@ -541,78 +542,32 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 .watchlist-controls button {
   min-height: 42px;
   border: 1px solid var(--line);
+  border-radius: 0;
   color: var(--ink);
   background: var(--panel);
   font: inherit;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 800;
 }
-.watchlist-controls select {
-  min-width: min(420px, 70vw);
-  padding: 0 12px;
-}
-.watchlist-controls button {
-  padding: 0 16px;
-  cursor: pointer;
-  text-transform: uppercase;
-  letter-spacing: .07em;
-}
+.watchlist-controls select { min-width: min(420px, 70vw); padding: 0 12px; }
+.watchlist-controls button { padding: 0 16px; cursor: pointer; text-transform: uppercase; letter-spacing: .07em; }
 .watchlist-controls button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.watchlist-controls button:disabled { opacity: .45; cursor: default; }
-.watchlist-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border: solid var(--line);
-  border-width: 1px 0 0 1px;
-}
-.watchlist-card {
-  min-width: 0;
-  padding: 20px;
-  background: var(--panel);
-  border: solid var(--line);
-  border-width: 0 1px 1px 0;
-}
-.watchlist-card > div:first-child,
-.watchlist-card__foot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-}
-.watchlist-card > div:first-child > span {
-  font-size: 9px;
-  font-weight: 900;
-  letter-spacing: .12em;
-}
-.watchlist-card > div:first-child button {
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--line);
-  border-radius: 50%;
-  color: var(--ink-soft);
-  background: transparent;
-  cursor: pointer;
-}
-.watchlist-card > strong {
-  display: block;
-  margin-top: 24px;
-  font-size: 31px;
-  font-weight: 650;
-  letter-spacing: -.035em;
-  font-variant-numeric: tabular-nums;
-}
-.watchlist-card > p {
-  margin: 5px 0 20px;
-  color: var(--ink-soft);
-  font-family: Georgia, serif;
-  font-size: 12px;
-}
-.watchlist-card__foot {
-  padding-top: 13px;
-  border-top: 1px solid var(--line);
-  font-size: 9px;
-}
+.watchlist-controls :disabled { opacity: .45; cursor: default; }
+.watchlist-count { margin-left: auto; color: var(--ink-soft); font-size: 10px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.watchlist-grid { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0; padding: 0; border: solid var(--line); border-width: 1px 0 0 1px; list-style: none; }
+.watchlist-card { min-width: 0; padding: 20px; background: var(--panel); border: solid var(--line); border-width: 0 1px 1px 0; }
+.watchlist-card__head, .watchlist-card__foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.watchlist-card__head span { font-size: 9px; font-weight: 900; letter-spacing: .12em; }
+.watchlist-card__head button { width: 28px; height: 28px; border: 1px solid var(--line); border-radius: 50%; color: var(--ink-soft); background: transparent; cursor: pointer; font-size: 14px; line-height: 1; }
+.watchlist-card__head button:hover { border-color: var(--down); color: var(--down); }
+.watchlist-card > strong { display: block; margin-top: 20px; font-size: 29px; font-weight: 650; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.watchlist-card > p { min-height: 30px; margin: 5px 0 10px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 12px; }
+.watchlist-card__spark svg { display: block; width: 100%; height: 34px; }
+.watchlist-card__nospark { display: block; height: 34px; color: var(--ink-soft); font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.watchlist-card__foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 10px; }
+.watchlist-card__foot b small { color: var(--ink-soft); font-size: 7px; letter-spacing: .1em; }
 .watchlist-card__foot a { color: var(--accent); font-weight: 900; }
+.watchlist-card__catalyst { padding: 1px 6px; border: 1px solid var(--accent); font-size: 8px; letter-spacing: .06em; text-transform: uppercase; }
 .watchlist-empty {
   padding: 28px;
   border: 1px dashed var(--line);
@@ -968,8 +923,8 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
   .archive-session-nav { grid-template-columns: 1fr 1fr; }
   .archive-session-nav > a { grid-column: 1 / -1; grid-row: 1; justify-self: center; }
   .archive-session-nav > span:last-child { justify-self: end; }
-  .watchlist-controls { display: grid; grid-template-columns: 1fr; }
-  .watchlist-controls select { min-width: 0; width: 100%; }
+  .watchlist-controls { flex-wrap: wrap; }
+  .watchlist-controls select { flex: 1 1 100%; min-width: 0; width: 100%; }
   .watchlist-grid,
   .internals-grid { grid-template-columns: 1fr; }
   .rates-cells { grid-template-columns: 1fr 1fr; }

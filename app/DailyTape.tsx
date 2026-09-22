@@ -255,25 +255,35 @@ export default function DailyTape({
     ["04", "Risk dashboard", dailyReport.narrative.next_session_outlook.risk_factors],
   ];
 
-  // Watchlist rows only carry a 1D move for this session; nothing else is substituted.
-  const watchAssets: WatchAsset[] = assetCatalog.map((asset) => {
-    const direct = verified(market[asset.symbol] ?? dailyReport.mega_cap_data?.[asset.symbol]?.result);
-    const sectorReturn = Object.entries(dailyReport.daily_sector_performance).find(([name]) => sectorSymbol(name) === asset.symbol)?.[1];
-    const history = dailyReport.asset_history?.[asset.symbol];
-    const historyClose = history?.as_of === dailyReport.session_date ? history.closes.at(-1) ?? null : null;
-    return {
-      slug: asset.slug,
-      symbol: asset.symbol,
-      name: asset.name,
-      price: direct?.end_price ?? historyClose,
-      pct_change: direct?.pct_change ?? sectorReturn ?? null,
-    };
-  });
-
   const calendar = calendarOf(dailyReport);
   const catalysts = catalystsOf(dailyReport);
   const quality = dailyReport.data_quality;
   const allFeeds = [...(calendar?.feeds ?? []), ...(catalysts?.feeds ?? [])];
+
+  // Watchlist rows carry only this session's 1D move; nothing else is substituted.
+  const watchAssets: WatchAsset[] = assetCatalog.map((asset) => {
+    const direct = verified(market[asset.symbol] ?? dailyReport.mega_cap_data?.[asset.symbol]?.result ?? dailyReport.sector_data?.[asset.symbol]);
+    const sectorReturn = Object.entries(dailyReport.daily_sector_performance).find(([name]) => sectorSymbol(name) === asset.symbol)?.[1];
+    const history = dailyReport.asset_history?.[asset.symbol];
+    const historyClose = history?.as_of === dailyReport.session_date ? history.closes.at(-1) ?? null : null;
+    const asYield = asset.category === "Rates" && asset.priceSuffix === "%";
+    return {
+      slug: asset.slug,
+      symbol: asset.symbol,
+      name: asset.name,
+      category: asset.category,
+      price: direct?.end_price ?? historyClose,
+      change: asYield ? direct?.abs_change ?? null : direct?.pct_change ?? sectorReturn ?? null,
+      changeUnit: asYield ? "bps" : "pct",
+      pricePrefix: asset.pricePrefix,
+      priceSuffix: asset.priceSuffix,
+      digits: asset.digits,
+      spark: history && !history.error ? history.closes.slice(-22) : [],
+      catalysts: (catalysts?.items ?? []).filter((item) => (item.related_tickers ?? []).includes(asset.symbol)).length,
+      localCalendar: asset.category === "Crypto" || ["^N225", "^STOXX50E", "^FTSE", "^HSI"].includes(asset.symbol),
+      otherSession: direct?.session_date && direct.session_date !== dailyReport.session_date ? formatSessionDate(direct.session_date, { month: "short", day: "numeric" }) : null,
+    };
+  });
 
   const tenYearChange = tenYear?.abs_change ?? null;
 
@@ -412,7 +422,7 @@ export default function DailyTape({
           </div>
         </section>
 
-        {!archived && <WatchlistPanel assets={watchAssets} assetBaseHref={assetBaseHref} />}
+        {!archived && <WatchlistPanel assets={watchAssets} assetBaseHref={assetBaseHref} sessionLabel={formatSessionDate(dailyReport.session_date, { month: "short", day: "numeric" })} />}
 
         <section className="section-block catalyst-section" id="catalysts" aria-labelledby="catalysts-title">
           <SectionHeading id="catalysts" number="02" kicker="VERIFIED CATALYSTS" title="On the record">
