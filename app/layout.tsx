@@ -4,8 +4,6 @@ import PWARegister from "./components/PWARegister";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
 const appleTouchIconUrl = new URL("apple-touch-icon.png", siteUrl).toString();
-const favicon16Url = new URL("favicon-16x16.png", siteUrl).toString();
-const favicon32Url = new URL("favicon-32x32.png", siteUrl).toString();
 const analyticsDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
 const analyticsSrc = process.env.NEXT_PUBLIC_PLAUSIBLE_SRC ?? "https://plausible.io/js/script.js";
 
@@ -23,10 +21,6 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large" },
   },
   icons: {
-    icon: [
-      { url: favicon32Url, type: "image/png", sizes: "32x32" },
-      { url: favicon16Url, type: "image/png", sizes: "16x16" },
-    ],
     apple: [{ url: appleTouchIconUrl, type: "image/png", sizes: "180x180" }],
   },
   openGraph: {
@@ -59,11 +53,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#f3f0e7" />
-        <link id="site-favicon" rel="icon" type="image/svg+xml" href={new URL("favicon-light.svg", siteUrl).toString()} />
         <script
           dangerouslySetInnerHTML={{
-            __html:
-              'try{var t=localStorage.getItem("daily-tape-theme");if(t==="ink"){document.documentElement.dataset.theme="ink";document.querySelector(\'meta[name="theme-color"]\').content="#080808";var i=document.getElementById("site-favicon");i.href=new URL("favicon-dark.svg",i.href).href}}catch(e){}',
+            __html: `try{var t=localStorage.getItem("daily-tape-theme")==="ink"?"ink":"paper";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="ink"?"#080808":"#f3f0e7";var i=document.createElement("link");i.id="site-favicon";i.rel="icon";i.type="image/svg+xml";i.href=new URL(t==="ink"?"favicon-dark.svg":"favicon-light.svg",${JSON.stringify(siteUrl)}).href;document.head.appendChild(i)}catch(e){}`,
           }}
         />
       </head>
