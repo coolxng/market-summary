@@ -91,6 +91,8 @@ class CalendarProviderTests(unittest.TestCase):
         self.assertEqual(richmond["time"], "9:00 AM CT")
         self.assertEqual(richmond["consensus"], "2")
         self.assertEqual(richmond["previous"], "4")
+        compact = data_providers._parse_fair_economy_datetime("2026-09-22T08:30:00-0400")
+        self.assertEqual(compact.utcoffset(), datetime.timedelta(hours=-4))
 
     def test_event_classification(self):
         cases = {
