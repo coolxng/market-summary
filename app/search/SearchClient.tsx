@@ -1,6 +1,7 @@
 "use client";
 
 import SiteHeader from "../components/SiteHeader";
+import Breadcrumbs from "../components/Breadcrumbs";
 import { useMemo, useState } from "react";
 import styles from "./search.module.css";
 
@@ -37,6 +38,7 @@ export default function SearchClient({
 
       <div className={styles.page}>
         <section className={styles.hero}>
+          <Breadcrumbs items={[{ label: "Close Tape", href: "../" }, { label: "Search" }]} />
           <p>POWER SEARCH</p>
           <h1>Find the tape.</h1>
           <span>Search tracked assets, sectors, rates, commodities, crypto, and archived sessions without leaving the Daily Tape.</span>

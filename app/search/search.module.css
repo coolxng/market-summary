@@ -1,5 +1,6 @@
 .page { width: min(1280px, 92vw); margin: 0 auto; }
-.hero { padding: 82px 0 60px; border-bottom: 1px solid var(--line); }
+.hero { padding: 32px 0 60px; border-bottom: 1px solid var(--line); }
+.hero > nav { margin-bottom: 52px; }
 .hero > p { margin: 0 0 16px; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
 .hero h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(52px, 7vw, 92px); line-height: .92; letter-spacing: -.055em; font-weight: 500; }
 .hero > span { display: block; max-width: 720px; margin-top: 20px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 18px; line-height: 1.55; }
@@ -22,7 +23,8 @@
 @media (max-width: 900px) { .results { grid-template-columns: 1fr; } }
 @media (max-width: 650px) {
   .page { width: min(100% - 32px, 1280px); }
-  .hero { padding-top: 48px; }
+  .hero { padding-top: 24px; }
+  .hero > nav { margin-bottom: 36px; }
   .list a { grid-template-columns: 90px 1fr auto; gap: 10px; }
   .list a > b { font-size: 0; }
   .list a > b::after { content: "→"; font-size: 15px; }
