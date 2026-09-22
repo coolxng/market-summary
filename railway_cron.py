@@ -20,6 +20,12 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
 BASE_ARTIFACTS = (Path("report_snapshot.json"),)
 CENTRAL_TZ = ZoneInfo("America/Chicago")
+PUBLISH_RETRY_START = datetime.time(15, 25)
+PUBLISH_RETRY_END = datetime.time(16, 29, 59)
+
+
+def truthy_env(name):
+    return os.environ.get(name, "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def require_environment():
@@ -104,6 +110,38 @@ def remote_blob_sha(path):
     encoded_branch = urllib.parse.quote(BRANCH, safe="")
     result = api_request("GET", f"/contents/{encoded_path}?ref={encoded_branch}")
     return result["sha"]
+
+
+def remote_snapshot():
+    encoded_branch = urllib.parse.quote(BRANCH, safe="")
+    result = api_request("GET", f"/contents/report_snapshot.json?ref={encoded_branch}")
+    content = result.get("content", "").replace("\n", "")
+    if not content:
+        raise RuntimeError("Remote report_snapshot.json did not include file content.")
+    return json.loads(base64.b64decode(content).decode("utf-8"))
+
+
+def already_published_for_local_date(now=None):
+    if truthy_env("MARKET_SUMMARY_REGENERATE"):
+        return False
+
+    current = now or datetime.datetime.now(datetime.timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=datetime.timezone.utc)
+    expected_date = current.astimezone(CENTRAL_TZ).date().isoformat()
+
+    try:
+        snapshot = remote_snapshot()
+    except Exception as exc:
+        print(
+            f"Close Tape preflight could not read the remote snapshot ({exc.__class__.__name__}); continuing with generation."
+        )
+        return False
+
+    if str(snapshot.get("session_date")) == expected_date:
+        print(f"Close Tape already published {expected_date}; retry exits without API or market-data work.")
+        return True
+    return False
 
 
 def create_blob(content):
@@ -204,25 +242,31 @@ def send_failure_notification(error):
 
 
 def should_publish_now(now=None):
-    if os.environ.get("MARKET_SUMMARY_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if truthy_env("MARKET_SUMMARY_FORCE"):
         return True
     current = now or datetime.datetime.now(datetime.timezone.utc)
     if current.tzinfo is None:
         current = current.replace(tzinfo=datetime.timezone.utc)
     local = current.astimezone(CENTRAL_TZ)
-    return local.weekday() < 5 and local.hour == 15
+    local_time = local.time().replace(tzinfo=None)
+    return (
+        local.weekday() < 5
+        and PUBLISH_RETRY_START <= local_time <= PUBLISH_RETRY_END
+    )
 
 
 def main():
-    if os.environ.get("MARKET_SUMMARY_PAUSED", "").strip().lower() in {"1", "true", "yes", "on"}:
+    if truthy_env("MARKET_SUMMARY_PAUSED"):
         print("Market Summary is paused via MARKET_SUMMARY_PAUSED; exiting without API usage.")
         return
     if not should_publish_now():
-        print("Close Tape DST guard: this UTC slot is not 3 PM America/Chicago; exiting.")
+        print("Close Tape retry guard: outside the 3:25-4:29 PM America/Chicago publish window; exiting.")
         return
 
     try:
         require_environment()
+        if already_published_for_local_date():
+            return
         run([sys.executable, "generate_report.py"])
         run([sys.executable, "-m", "unittest", "-v"], env=test_environment())
         snapshot = validate_artifacts()
