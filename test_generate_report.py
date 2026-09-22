@@ -382,6 +382,7 @@ class GenerateReportTests(unittest.TestCase):
             archive_root = Path(temp_dir) / "reports"
             snapshot_path.write_text(json.dumps({"report_type": "daily_market_close", "session_date": session.isoformat()}), encoding="utf-8")
             with (
+                mock.patch.dict(os.environ, {"MARKET_SUMMARY_REGENERATE": ""}),
                 mock.patch.object(generate_report, "resolve_completed_sessions", return_value=(session, previous)),
                 mock.patch.object(generate_report, "fetch_daily_data") as fetch_mock,
             ):
@@ -389,6 +390,28 @@ class GenerateReportTests(unittest.TestCase):
             self.assertFalse(changed)
             fetch_mock.assert_not_called()
             self.assertFalse(archive_root.exists())
+
+    def test_regenerate_flag_bypasses_same_session_guard(self):
+        session = datetime.date(2026, 7, 14)
+        previous = datetime.date(2026, 7, 13)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            snapshot_path = Path(temp_dir) / "report_snapshot.json"
+            snapshot_path.write_text(
+                json.dumps({"report_type": "daily_market_close", "session_date": session.isoformat()}),
+                encoding="utf-8",
+            )
+            with (
+                mock.patch.dict(os.environ, {"MARKET_SUMMARY_REGENERATE": "1"}),
+                mock.patch.object(generate_report, "resolve_completed_sessions", return_value=(session, previous)),
+                mock.patch.object(
+                    generate_report,
+                    "fetch_daily_data",
+                    side_effect=RuntimeError("regeneration started"),
+                ) as fetch_mock,
+            ):
+                with self.assertRaisesRegex(RuntimeError, "regeneration started"):
+                    generate_report.generate_html(snapshot_path=snapshot_path, archive_root=Path(temp_dir) / "reports")
+            fetch_mock.assert_called_once()
 
 
 
