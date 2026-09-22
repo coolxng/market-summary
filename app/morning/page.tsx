@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import snapshot from "../../morning_snapshot.json";
-import MorningClient, { type MorningSnapshot } from "./MorningClient";
+import MorningTape, { type MorningSnapshot } from "./MorningTape";
 
 export const metadata: Metadata = {
   title: "Morning Tape | The Daily Tape",
-  description: "Premarket futures, cross-asset moves, global markets, calendar events, earnings, and source-linked headlines before the U.S. session.",
+  description: "Premarket futures, overnight global markets, the official Treasury curve, today's calendar and source-linked catalysts before the U.S. session.",
   alternates: { canonical: "./morning/" },
   openGraph: {
     title: "Morning Tape | The Daily Tape",
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function MorningPage() {
-  return <MorningClient snapshot={snapshot as MorningSnapshot} />;
+  return <MorningTape snapshot={snapshot as unknown as MorningSnapshot} />;
 }

@@ -6,33 +6,18 @@
   "data_quality": {
     "valid": 0,
     "total": 0,
-    "coverage_pct": 0
+    "coverage_pct": 0,
+    "delayed": [],
+    "feeds": []
   },
   "futures": {},
   "cross_asset": {},
   "global_markets": {},
-  "market_calendar": {
-    "economic": {
-      "items": [],
-      "source": "Nasdaq Economic Calendar",
-      "as_of": null,
-      "error": "Awaiting first Morning Tape generation."
-    },
-    "earnings": {
-      "items": [],
-      "source": "Yahoo Finance company calendar",
-      "as_of": null,
-      "error": "Awaiting first Morning Tape generation."
-    }
-  },
-  "market_headlines": {
-    "items": [],
-    "source": "Yahoo Finance search/news",
-    "as_of": null,
-    "label": "Source-linked headlines; not claimed causes of market moves.",
-    "error": "Awaiting first Morning Tape generation."
-  },
+  "treasury_rates": null,
+  "market_calendar": null,
+  "verified_catalysts": null,
+  "what_matters_today": [],
   "notes": [
-    "The Morning Tape will populate after its first scheduled pre-market generation."
+    "The Morning Tape populates after its first scheduled pre-market generation."
   ]
 }

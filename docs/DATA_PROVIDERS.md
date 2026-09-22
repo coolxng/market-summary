@@ -57,11 +57,20 @@ Window: from 4:00 PM ET on the previous session to generation time (close report
 
 Official items are listed first. At most six items are published. "Tagged by source" tickers come from the publisher's own metadata; The Daily Tape does not infer affected assets.
 
+## Official rates and credit (`official_rates.py`)
+
+| Feed id | Source | Notes |
+| --- | --- | --- |
+| `treasury_curve` | U.S. Treasury daily par yield curve and real yield curve CSV | Latest row on or before the anchor date, the prior row for day-over-day changes, and 2s10s, 3M–10Y and 5s30s spreads in basis points. Treasury publishes once a day in the late afternoon, so the close report often shows the prior day's curve. The page always prints the curve's own date. |
+| `fred_credit` | FRED `fredgraph.csv` for ICE BofA US High Yield OAS (`BAMLH0A0HYM2`) and US Corporate OAS (`BAMLC0A0CM`) | Actual option-adjusted credit spreads, converted to basis points. FRED's ICE series lag by about a day and are labeled with their own date. |
+
+The Morning Tape uses the Treasury curve as its official 2-year and 10-year reference. The CBOT 2-year yield futures quote is shown separately and labeled as a proxy.
+
 ## Configuration
 
 | Variable | Purpose |
 | --- | --- |
-| `DAILY_TAPE_DISABLED_FEEDS` | Comma-separated feed ids to skip, for example `yahoo_news,bls_releases`. Disabled feeds are reported as disabled, not unavailable. |
+| `DAILY_TAPE_DISABLED_FEEDS` | Comma-separated feed ids to skip, for example `yahoo_news,bls_releases,treasury_curve,fred_credit`. Disabled feeds are reported as disabled, not unavailable. |
 
 No API keys are required for the current providers. None are committed.
 

@@ -808,6 +808,8 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 .feed-health__dot--unavailable { background: var(--down); }
 .method-note small { color: var(--ink-soft); font-size: 9px; }
 .local-session { display: block; margin-top: 3px; color: var(--ink-soft); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 8px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.edition-warning { margin: 14px 0 0; padding: 12px 16px; border: 1px solid var(--accent); border-left-width: 3px; color: var(--ink); background: color-mix(in srgb, var(--accent) 7%, transparent); font-size: 12px; line-height: 1.5; }
+.edition-warning strong { color: var(--accent); }
 .ahead-watch { margin: 0 0 30px; padding-left: 18px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 15px; line-height: 1.6; }
 
 @media (max-width: 760px) {
