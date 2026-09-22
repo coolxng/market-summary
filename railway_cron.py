@@ -32,9 +32,17 @@ def require_environment():
         raise RuntimeError(f"Missing required Railway variables: {', '.join(missing)}")
 
 
-def run(command):
+def run(command, env=None):
     print(f"$ {' '.join(command)}", flush=True)
-    subprocess.run(command, check=True)
+    subprocess.run(command, check=True, env=env)
+
+
+def test_environment():
+    """Keep Railway manual-run controls from changing unit-test behavior."""
+    env = os.environ.copy()
+    for name in ("MARKET_SUMMARY_FORCE", "MARKET_SUMMARY_REGENERATE", "MARKET_SUMMARY_PAUSED"):
+        env.pop(name, None)
+    return env
 
 
 def artifact_paths(snapshot):
@@ -216,7 +224,7 @@ def main():
     try:
         require_environment()
         run([sys.executable, "generate_report.py"])
-        run([sys.executable, "-m", "unittest", "-v"])
+        run([sys.executable, "-m", "unittest", "-v"], env=test_environment())
         snapshot = validate_artifacts()
         publish_result = commit_artifacts(snapshot)
         send_success_notification(snapshot, publish_result)
