@@ -7,6 +7,18 @@ import railway_cron
 
 
 class CloseScheduleTests(unittest.TestCase):
+    def setUp(self):
+        self.env_patch = mock.patch.dict(
+            os.environ,
+            {
+                "MARKET_SUMMARY_FORCE": "",
+                "MARKET_SUMMARY_REGENERATE": "",
+                "MARKET_SUMMARY_PAUSED": "",
+            },
+        )
+        self.env_patch.start()
+        self.addCleanup(self.env_patch.stop)
+
     def test_daylight_saving_slot_runs_at_330_central(self):
         now = datetime.datetime(2026, 9, 21, 20, 30, tzinfo=datetime.timezone.utc)
         self.assertTrue(railway_cron.should_publish_now(now))
