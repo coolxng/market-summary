@@ -290,6 +290,24 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 .footer-meta span { font-family: inherit; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
 
 
+.archive-session-nav {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 18px;
+  align-items: center;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.archive-session-nav > span:last-child { justify-self: end; }
+.archive-session-nav > a { color: var(--accent); }
+.archive-session-nav a:hover { color: var(--ink); }
+.archive-session-nav i { font-style: normal; opacity: .55; }
+
 .asset-card-link {
   display: inline-block;
   margin-top: 12px;
@@ -623,6 +641,9 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 }
 
 @media (max-width: 700px) {
+  .archive-session-nav { grid-template-columns: 1fr 1fr; }
+  .archive-session-nav > a { grid-column: 1 / -1; grid-row: 1; justify-self: center; }
+  .archive-session-nav > span:last-child { justify-self: end; }
   .watchlist-controls { display: grid; grid-template-columns: 1fr; }
   .watchlist-controls select { min-width: 0; width: 100%; }
   .watchlist-grid,
