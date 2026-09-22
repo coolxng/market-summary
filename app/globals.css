@@ -128,6 +128,20 @@ button { font: inherit; }
 .tag.up { color: var(--up); }
 .tag.down { color: var(--down); }
 .tag.neutral { color: var(--ink-soft); }
+.share-card-button {
+  padding: 8px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  background: transparent;
+  cursor: pointer;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.share-card-button:hover { color: var(--paper); background: var(--accent); }
+.share-card-button:disabled { opacity: .55; cursor: wait; }
 
 .regime-card { align-self: end; padding: 8px 24px; background: var(--ink); color: var(--paper); box-shadow: var(--shadow); }
 :root[data-theme="ink"] .regime-card { background: var(--paper); color: var(--ink); border: 1px solid var(--line); box-shadow: none; }
