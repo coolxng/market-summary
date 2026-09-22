@@ -533,7 +533,7 @@ class EditorialTests(unittest.TestCase):
     def test_generation_uses_one_request_preserves_raw_data_and_records_real_status(self):
         session=self.session;previous=self.previous
         def fetch(symbol,*args):return valid_dataset(symbol,session,previous)
-        def chart(symbol,day,fallback_data=None):
+        def chart(symbol,day,fallback_data=None,**kwargs):
             return {'source':'daily_ohlc_fallback','session_date':session.isoformat(),
                     'closes':[fallback_data['session_open'],fallback_data['end_price']],
                     'times':['9:30 AM','4:00 PM'],'error':None}
