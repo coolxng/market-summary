@@ -63,6 +63,7 @@ The close and morning publications are intentionally separate Railway cron servi
 - `railway.toml` runs the Close Tape in both possible UTC slots and `railway_cron.py` keeps only the **3 PM America/Chicago** slot. This handles daylight-saving changes automatically.
 - `railway.morning.toml` runs the Morning Tape in both possible UTC slots and `morning_cron.py` keeps only the **7 AM America/Chicago** slot.
 - Manual runs can bypass the local-time guards with `MARKET_SUMMARY_FORCE=1` or `MORNING_TAPE_FORCE=1`.
+- For a deliberate live-provider validation of an already-published Close Tape session, temporarily pair `MARKET_SUMMARY_FORCE=1` with `MARKET_SUMMARY_REGENERATE=1`. Remove the regeneration flag after the test.
 - Both publishers commit generated JSON artifacts back to the configured `GITHUB_BRANCH`.
 
 ## Historical report archive
@@ -138,6 +139,7 @@ Next.js static export → live dashboard
 | `GITHUB_BRANCH` | Railway | Branch the crons commit to (default `main`) |
 | `DISCORD_WEBHOOK_URL` | Railway | Optional delivery channel |
 | `DAILY_TAPE_DISABLED_FEEDS` | Railway | Optional comma-separated feed ids to skip |
+| `MARKET_SUMMARY_REGENERATE` | Railway | Manual-only override to rebuild the latest completed Close Tape session; remove after validation |
 | `PLAUSIBLE_DOMAIN` | GitHub repository variable | Optional, cookieless analytics |
 
 No keys are needed for the calendar, catalyst, Treasury or FRED feeds.
