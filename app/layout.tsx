@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import PWARegister from "./components/PWARegister";
 import AnalyticsEvents from "./components/AnalyticsEvents";
 import { THEME_COLORS, THEME_STORAGE_KEY } from "./lib/theme";
+
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
 const appleTouchIconUrl = new URL("apple-touch-icon.png", siteUrl).toString();
@@ -52,7 +55,7 @@ const websiteSchema = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content={THEME_COLORS.paper} />
         <script
