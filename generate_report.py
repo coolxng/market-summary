@@ -994,6 +994,22 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
                 else None
             )
 
+    tracked_breadth_symbols = list(dict.fromkeys([*sectors.values(), *megacaps.keys(), "SPY", "RSP", "QQQ", "IWM"]))
+    tracked_highs = 0
+    tracked_lows = 0
+    tracked_valid = 0
+    for symbol in tracked_breadth_symbols:
+        closes = asset_history.get(symbol, {}).get("closes", [])
+        if len(closes) < 20:
+            continue
+        window = closes[-20:]
+        current_close = window[-1]
+        tracked_valid += 1
+        if current_close >= max(window):
+            tracked_highs += 1
+        if current_close <= min(window):
+            tracked_lows += 1
+
     market_internals = {
         "trend_participation": {
             "above_20d": participation("20d"),
@@ -1001,9 +1017,15 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
             "above_200d": participation("200d"),
             "universe": "11 S&P sector ETFs",
         },
+        "tracked_high_low": {
+            "new_20d_highs": tracked_highs,
+            "new_20d_lows": tracked_lows,
+            "valid": tracked_valid,
+            "universe": "11 sector ETFs + tracked mega-caps + SPY/RSP/QQQ/IWM",
+        },
         "sector_relative_strength_vs_spy": relative_strength,
         "benchmark_returns": spy_returns,
-        "limitation": "Trend participation uses the 11 sector ETFs as a market-internals proxy, not NYSE/Nasdaq constituent breadth.",
+        "limitation": "Trend participation and new-high/new-low counts use transparent tracked universes, not full NYSE/Nasdaq constituent breadth.",
     }
 
     rates_credit = {
