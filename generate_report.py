@@ -5,6 +5,7 @@ import json
 import math
 import os
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -721,10 +722,25 @@ def default_editorial_plan(cards):
 
 
 def editorial_schema(cards):
-    selection_properties = {
-        key: {'type': 'array', 'items': {'type': 'string', 'enum': ids or ['unavailable']}}
-        for key, ids in editorial_choices(cards).items()
-    }
+    selection_properties = {}
+    for key, ids in editorial_choices(cards).items():
+        limit = 3 if key == 'watchlist' else 2 if key == 'opening_summary' else 1
+        if ids:
+            selection_properties[key] = {
+                'type': 'array',
+                'items': {'type': 'string', 'enum': ids},
+                'minItems': 1,
+                'maxItems': limit,
+                'uniqueItems': True,
+            }
+        else:
+            # Keep the structured-output contract aligned with parse_editorial_plan:
+            # unavailable sections must be represented by an empty selection.
+            selection_properties[key] = {
+                'type': 'array',
+                'items': {'type': 'string'},
+                'maxItems': 0,
+            }
     interpretation_properties = {
         key: {'type': 'string'} for key in AI_INTERPRETATION_SECTIONS
     }
@@ -878,7 +894,11 @@ def generate_editorial(context,cards):
         try:
             payload = {
                 'model': ANTHROPIC_MODEL,
-                'max_tokens': 1200,
+                'max_tokens': 1600,
+                # Sonnet 5 enables adaptive thinking by default. This request is a
+                # bounded selection/rewriting task, so disable thinking to keep the
+                # token budget available for the structured JSON response.
+                'thinking': {'type': 'disabled'},
                 'system': (
                     'You are the editor of a concise institutional market-close note. '
                     'First select the most material evidence-backed angles from the supplied catalog. '
@@ -900,7 +920,10 @@ def generate_editorial(context,cards):
                         separators=(',', ':'),
                     ),
                 }],
-                'output_config': {'format': {'type': 'json_schema', 'schema': editorial_schema(cards)}},
+                'output_config': {
+                    'effort': 'low',
+                    'format': {'type': 'json_schema', 'schema': editorial_schema(cards)},
+                },
             }
             request = urllib.request.Request(
                 ANTHROPIC_API_URL,
@@ -924,10 +947,20 @@ def generate_editorial(context,cards):
                 cards,
             )
             status = 'validated'
-        except Exception:
-            # Never echo response bodies, exception text or credentials into logs/artifacts.
-            print('Claude editorial request unavailable or invalid; using grounded fallback.')
-            status = 'request_or_validation_failed'
+        except urllib.error.HTTPError as exc:
+            # Status code is safe operational metadata. Never log response bodies,
+            # request payloads, exception text, or credentials.
+            print(f'Claude editorial HTTP {exc.code}; using grounded fallback.')
+            status = f'http_{exc.code}'
+        except TimeoutError:
+            print('Claude editorial timed out; using grounded fallback.')
+            status = 'timeout'
+        except (json.JSONDecodeError, ValueError, TypeError):
+            print('Claude editorial response failed validation; using grounded fallback.')
+            status = 'validation_failed'
+        except Exception as exc:
+            print(f'Claude editorial request failed ({exc.__class__.__name__}); using grounded fallback.')
+            status = 'request_failed'
 
     def render(key, field):
         if field == 'observed':
