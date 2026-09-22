@@ -228,6 +228,21 @@ class CatalystProviderTests(unittest.TestCase):
         self.assertGreaterEqual(len(calls), 2)
         self.assertTrue(any(url.endswith("/cpi.rss") for url in calls))
 
+    def test_bls_403_stops_without_retrying_more_bls_paths(self):
+        bls = next(feed for feed in data_providers.OFFICIAL_FEEDS if feed["id"] == "bls_releases")
+        calls = []
+
+        def get(url, **kwargs):
+            calls.append(url)
+            raise data_providers.urllib.error.HTTPError(url, 403, "Forbidden", hdrs=None, fp=None)
+
+        with mock.patch.object(data_providers, "http_get", side_effect=get):
+            feed = data_providers.official_catalysts(bls, self.start, self.end)
+        self.assertEqual(feed["status"], "unavailable")
+        self.assertEqual(feed["items"], [])
+        self.assertEqual(len(calls), 1)
+        self.assertIn("PermissionError", feed["error"])
+
 
 if __name__ == "__main__":
     unittest.main()
