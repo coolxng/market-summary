@@ -631,7 +631,7 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 
 .internals-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   border: solid var(--line);
   border-width: 1px 0 0 1px;
 }
