@@ -196,10 +196,37 @@ class CatalystProviderTests(unittest.TestCase):
 
     def test_nasdaq_http_payload_round_trip(self):
         payload = json.dumps({"data": {"rows": [{"eventName": "Initial Jobless Claims", "gmt": "12:30", "country": "United States"}]}})
-        with mock.patch.object(data_providers, "http_get", return_value=payload):
+        with mock.patch.object(data_providers, "http_get", return_value=payload) as get:
             feed = data_providers.nasdaq_economic_calendar([datetime.date(2026, 9, 24)])
         self.assertEqual(feed["status"], "ok")
         self.assertEqual(feed["items"][0]["category"], "Employment")
+        kwargs = get.call_args.kwargs
+        self.assertEqual(kwargs["extra_headers"]["Origin"], "https://www.nasdaq.com")
+        self.assertIn("Mozilla/5.0", kwargs["extra_headers"]["User-Agent"])
+        self.assertEqual(kwargs["attempts"], 2)
+
+    def test_bls_aggregate_feed_falls_back_to_specific_release_feeds(self):
+        bls = next(feed for feed in data_providers.OFFICIAL_FEEDS if feed["id"] == "bls_releases")
+        fallback_rss = """<?xml version="1.0"?>
+        <rss version="2.0"><channel>
+        <item><title>Consumer Price Index</title>
+        <link>https://www.bls.gov/news.release/cpi.nr0.htm</link>
+        <pubDate>Wed, 16 Sep 2026 18:00:00 GMT</pubDate></item>
+        </channel></rss>"""
+        calls = []
+
+        def get(url, **kwargs):
+            calls.append(url)
+            if url == bls["url"]:
+                raise OSError("aggregate blocked")
+            return fallback_rss
+
+        with mock.patch.object(data_providers, "http_get", side_effect=get):
+            feed = data_providers.official_catalysts(bls, self.start, self.end)
+        self.assertEqual(feed["status"], "ok")
+        self.assertEqual([item["title"] for item in feed["items"]], ["Consumer Price Index"])
+        self.assertGreaterEqual(len(calls), 2)
+        self.assertTrue(any(url.endswith("/cpi.rss") for url in calls))
 
 
 if __name__ == "__main__":
