@@ -289,6 +289,72 @@ button { font: inherit; }
 .macro-reference strong { font-size: 16px; font-variant-numeric: tabular-nums; }
 .macro-reference small { font-size: 9px; font-weight: 900; }
 
+.delivery-panel {
+  padding-top: 72px;
+}
+
+.delivery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: solid var(--line);
+  border-width: 1px 0 0 1px;
+}
+
+.delivery-card {
+  min-height: 220px;
+  padding: 28px;
+  border: solid var(--line);
+  border-width: 0 1px 1px 0;
+  background: var(--panel);
+}
+
+.delivery-card > span {
+  display: block;
+  color: var(--accent);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+
+.delivery-card > strong {
+  display: block;
+  margin-top: 20px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(25px, 2.4vw, 36px);
+  font-weight: 500;
+  letter-spacing: -.03em;
+}
+
+.delivery-card > p {
+  max-width: 560px;
+  margin: 14px 0 24px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.delivery-card > b,
+.delivery-card > button {
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.delivery-card > button {
+  padding: 10px 13px;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+}
+
+.delivery-card > button:hover,
+.delivery-card > a:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
 .method-note { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(360px, 1.8fr) auto; align-items: center; gap: 36px; margin-bottom: 72px; padding: 24px 0; border: solid var(--ink); border-width: 1px 0; }
 .method-note > div { display: flex; flex-direction: column; gap: 7px; }
 .method-note span { color: var(--accent); font-size: 8px; font-weight: 900; letter-spacing: .15em; }
@@ -656,6 +722,8 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 }
 
 @media (max-width: 700px) {
+  .delivery-grid { grid-template-columns: 1fr; }
+
   .archive-session-nav { grid-template-columns: 1fr 1fr; }
   .archive-session-nav > a { grid-column: 1 / -1; grid-row: 1; justify-self: center; }
   .archive-session-nav > span:last-child { justify-self: end; }
