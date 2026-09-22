@@ -99,10 +99,13 @@ export default function AssetClient({
   const [watched, setWatched] = useState(false);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("daily-tape-theme");
-    if (saved === "ink") setTheme("ink");
-    const watchlist = JSON.parse(window.localStorage.getItem("daily-tape-watchlist") || "[]") as string[];
-    setWatched(watchlist.includes(asset.slug));
+    const frame = window.requestAnimationFrame(() => {
+      const saved = window.localStorage.getItem("daily-tape-theme");
+      if (saved === "ink") setTheme("ink");
+      const watchlist = JSON.parse(window.localStorage.getItem("daily-tape-watchlist") || "[]") as string[];
+      setWatched(watchlist.includes(asset.slug));
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [asset.slug]);
 
   const toggleTheme = () => {
