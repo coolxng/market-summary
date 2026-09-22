@@ -62,6 +62,7 @@ jobs:
           test -f out/search/index.html
           test -f out/assets/spx/index.html
           test -f out/assets/nvda/index.html
+          test -f out/assets/move/index.html
           test -f out/manifest.webmanifest
           test -f out/sw.js
           test -f out/feed.xml
