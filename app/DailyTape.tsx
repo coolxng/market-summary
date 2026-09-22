@@ -424,15 +424,6 @@ function countdownValue(now: Date, target: Date) {
   return `${hours}H ${String(remainder).padStart(2, "0")}M`;
 }
 
-function publicationDateLabel(target: Date) {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone: CENTRAL_TIME_ZONE,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  }).format(target).toUpperCase();
-}
-
 function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Date): PublicationIndicator {
   const today = centralCalendarDate(now);
   const todayKey = calendarKey(today);
@@ -448,27 +439,27 @@ function getPublicationIndicator(now: Date, sessionDate: string, generatedAt: Da
     const nextTarget = nextPublication(now);
     return {
       mode: "published",
-      label: "LATEST TAPE LIVE",
+      label: "JUST PUBLISHED",
       value: minutesSincePublished < 1 ? "UPDATED NOW" : `UPDATED ${minutesSincePublished}M AGO`,
-      meta: `NEXT TAPE ${relativePublicationName(now, nextTarget)} · 3:30 PM CT`,
+      meta: `Next issue ${relativePublicationName(now, nextTarget).toLowerCase()} · 30 min after U.S. market close`,
     };
   }
 
   if (todayTarget && now.getTime() >= todayTarget.getTime() && !publishedToday) {
     return {
       mode: "building",
-      label: "BUILDING TODAY'S TAPE",
-      value: "PUBLISHING",
-      meta: "AUTOMATED UPDATE IN PROGRESS",
+      label: "PREPARING TODAY'S ISSUE",
+      value: "IN PROGRESS",
+      meta: "Publishing now",
     };
   }
 
   const nextTarget = nextPublication(now);
   return {
     mode: "countdown",
-    label: "NEXT TAPE",
+    label: "NEXT ISSUE IN",
     value: countdownValue(now, nextTarget),
-    meta: `EXPECTED ${publicationDateLabel(nextTarget)} · 3:30 PM CT`,
+    meta: "30 min after U.S. market close",
   };
 }
 
@@ -662,7 +653,7 @@ export default function DailyTape({
   const generatedLabel = generatedAt.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" });
   const publicationStatus = archived ? null : now
     ? getPublicationIndicator(now, dailyReport.session_date, generatedAt)
-    : { mode: "countdown", label: "NEXT TAPE", value: "SCHEDULED", meta: "EXPECTED 3:30 PM CT" } satisfies PublicationIndicator;
+    : { mode: "countdown", label: "NEXT ISSUE IN", value: "SCHEDULED", meta: "30 min after U.S. market close" } satisfies PublicationIndicator;
   const sectorTotal = sectorEntries.length;
   const breadthTone = breadth.positive_sector_share >= 60 ? "Broad" : breadth.positive_sector_share >= 45 ? "Mixed" : "Narrow";
   const riskSignal = dailyReport.derived_metrics?.risk_confirmation?.signal;
@@ -752,10 +743,17 @@ export default function DailyTape({
             </div>
           )}
           {publicationStatus && (
-            <div className={`publication-status ${publicationStatus.mode}`} aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}>
-              <span className="publication-status__label"><i className="publication-status__dot" aria-hidden="true" />{publicationStatus.label}</span>
-              <strong className="publication-status__value">{publicationStatus.value}</strong>
-              <span className="publication-status__meta">{publicationStatus.meta}</span>
+            <div
+              className={`publication-banner publication-banner--${publicationStatus.mode}`}
+              aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}
+            >
+              <span className="publication-banner__status">
+                <i className="publication-banner__dot" aria-hidden="true" />
+                <span className="publication-banner__label">{publicationStatus.label}</span>
+                <strong className="publication-banner__value">{publicationStatus.value}</strong>
+              </span>
+              <span className="publication-banner__divider" aria-hidden="true" />
+              <span className="publication-banner__meta">{publicationStatus.meta}</span>
             </div>
           )}
           <div className="hero-grid">
@@ -1038,7 +1036,9 @@ export default function DailyTape({
             <div className="global-row table-head" role="row"><span>MARKET</span><span>REGION</span><span>CLOSE</span><span>1D</span><span>PATH</span></div>
             {globalMarkets.filter(([symbol]) => hasVerifiedClose(market[symbol])).map(([symbol, name, region]) => {
               const item = market[symbol];
-              return <div className="global-row" role="row" key={symbol}><strong>{name}</strong><span>{region}</span><span>{formatNumber(item.end_price)}</span><strong className={item.pct_change >= 0 ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong><div className="global-spark"><Sparkline values={item.closes} positive={item.pct_change >= 0} /></div></div>;
+              const chart = dailyReport.session_charts[symbol];
+              const chartValues = chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
+              return <div className="global-row" role="row" key={symbol}><strong>{name}</strong><span>{region}</span><span>{formatNumber(item.end_price)}</span><strong className={item.pct_change >= 0 ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong><div className="global-spark"><Sparkline values={chartValues} positive={item.pct_change >= 0} /></div></div>;
             })}
           </div>
         </section>
@@ -1048,9 +1048,11 @@ export default function DailyTape({
           <div className="digital-grid">
             {cryptoMarkets.map(([symbol, name, ticker, narrativeKey]) => {
               const item = market[symbol];
+              const chart = dailyReport.session_charts[symbol];
+              const chartValues = chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
               const positive = item.pct_change >= 0;
               const asset = assetBySymbol[symbol];
-              return <article className="digital-card" key={symbol}><div className="digital-head"><span>{ticker}</span><strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong></div><div className="digital-price">${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}</div><span className="digital-name">{name}</span>{asset && <a className="asset-card-link" href={`${assetBaseHref}${asset.slug}/`}>Open asset →</a>}<Sparkline values={item.closes} positive={positive} /><p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey])}</p></article>;
+              return <article className="digital-card" key={symbol}><div className="digital-head"><span>{ticker}</span><strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong></div><div className="digital-price">${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}</div><span className="digital-name">{name}</span>{asset && <a className="asset-card-link" href={`${assetBaseHref}${asset.slug}/`}>Open asset →</a>}<div className="digital-chart"><div className="digital-chart-meta"><span>VERIFIED PATH</span><small>{chart?.source === "intraday_5m" ? "5 MIN" : chart?.source === "daily_5d_fallback" ? "5 DAY" : "UNAVAILABLE"}</small></div><Sparkline values={chartValues} positive={positive} /></div><p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey])}</p></article>;
             })}
           </div>
         </section>
