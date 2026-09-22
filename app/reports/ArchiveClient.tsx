@@ -13,6 +13,7 @@ export type ArchiveReport = {
   nasdaq: number | null;
   vix: number | null;
   breadth: number | null;
+  regime: string;
 };
 
 function formatPct(value: number | null) {
@@ -47,6 +48,7 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
         <nav aria-label="Archive navigation">
           <a href="../">Current report</a>
           <a href="./" aria-current="page">Archive</a>
+          <a href="../search/">Search</a>
         </nav>
         <button
           className="theme-toggle"
@@ -75,6 +77,32 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
             </p>
           </div>
         </section>
+
+        {reports.length > 0 && (
+          <section className={styles.regimeSection}>
+            <div className={styles.sectionHeading}>
+              <div><p className={styles.kicker}>REGIME HISTORY</p><h2>How the tape changed</h2></div>
+              <p>Each marker uses the archived report’s rules-based risk confirmation signal. It is a historical classification, not a forecast.</p>
+            </div>
+            <div className={styles.regimeTimeline} aria-label="Archived market regime history">
+              {reports.slice(0, 30).reverse().map((report) => (
+                <a
+                  href={`./${report.date}/`}
+                  className={styles[`regime_${report.regime}`] ?? styles.regime_mixed}
+                  title={`${report.displayDate}: ${report.regime.replaceAll("_", " ")}`}
+                  key={report.date}
+                >
+                  <span>{report.date.slice(5)}</span>
+                </a>
+              ))}
+            </div>
+            <div className={styles.regimeLegend}>
+              <span><i className={styles.regime_risk_on_confirmed} />Constructive</span>
+              <span><i className={styles.regime_mixed} />Mixed</span>
+              <span><i className={styles.regime_risk_off_confirmed} />Defensive</span>
+            </div>
+          </section>
+        )}
 
         <section className={styles.listSection}>
           <div className={styles.sectionHeading}>
