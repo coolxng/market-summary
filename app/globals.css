@@ -659,8 +659,7 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
   border-width: 0 1px 1px 0;
   background: var(--panel);
 }
-.internals-grid span,
-.rates-grid span {
+.internals-grid span {
   color: var(--ink-soft);
   font-size: 8px;
   font-weight: 900;
@@ -691,34 +690,6 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 }
 .relative-row > strong { text-align: right; font-size: 10px; }
 .relative-row a:hover { color: var(--accent); }
-
-.rates-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  border: solid var(--line);
-  border-width: 1px 0 0 1px;
-}
-.rates-grid > a,
-.rates-grid > article {
-  min-height: 135px;
-  padding: 20px;
-  border: solid var(--line);
-  border-width: 0 1px 1px 0;
-  background: var(--panel);
-}
-.rates-grid > a:hover { background: var(--panel-solid); }
-.rates-grid strong {
-  display: block;
-  margin-top: 18px;
-  font-size: 25px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.rates-grid b {
-  display: block;
-  margin-top: 8px;
-  font-size: 9px;
-}
 
 .quality-badge {
   min-width: 180px;
@@ -860,6 +831,48 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
   .price-chart__caption { flex-direction: column; align-items: flex-start; }
 }
 
+
+/* ── Market internals ──────────────────────── */
+.internals-grid--today { grid-template-columns: repeat(4, 1fr); }
+.internals-grid strong small { color: var(--ink-soft); font-size: 15px; font-weight: 600; }
+.internals-grid strong i { color: var(--line); font-style: normal; font-weight: 400; }
+.internals-grid__line { grid-column: span 1; }
+.internals-grid__line p { font-family: Georgia, serif; font-size: 12px; }
+.ad-line { margin: 0; }
+.ad-line figcaption span { display: block; color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.ad-line figcaption strong { display: inline-block; margin-top: 8px; font-size: 22px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ad-line figcaption small { display: block; color: var(--ink-soft); font-size: 8px; line-height: 1.4; }
+.ad-line svg { display: block; width: 100%; height: 54px; margin-top: 10px; }
+.ad-line__zero { stroke: var(--line); stroke-width: 1; }
+.ad-line__up { fill: var(--up); }
+.ad-line__down { fill: var(--down); }
+.ad-line__flat { fill: var(--ink-soft); }
+.ad-line__axis { display: flex; justify-content: space-between; color: var(--ink-soft); font-size: 7px; font-weight: 800; }
+.internals-note { max-width: 980px; margin: 18px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.6; }
+
+/* ── Rates & credit ────────────────────────── */
+.rates-board { display: grid; gap: 38px; }
+.rates-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.rates-table th, .rates-table td { padding: 13px 12px; border-bottom: 1px solid var(--line); text-align: right; font-size: 13px; }
+.rates-table thead th { color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.rates-table th[scope="row"], .rates-table thead th:first-child { text-align: left; }
+.rates-table th[scope="row"] { font-family: Georgia, serif; font-size: 15px; font-weight: 500; }
+.rates-table th[scope="row"] a:hover { color: var(--accent); }
+.rates-foot { margin: 12px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
+.rates-foot a { color: var(--accent); font-weight: 800; }
+.rates-asof { color: var(--ink-soft); font-size: inherit; font-weight: 700; }
+.rates-asof--lag { color: var(--accent); }
+.rates-cells { display: grid; grid-template-columns: repeat(4, 1fr); border-left: 1px solid var(--line); }
+.rates-cells > .subsection-head { grid-column: 1 / -1; margin-left: -1px; padding-left: 0; border-top: 1px solid var(--ink); background: var(--paper); }
+.rates-cells > article, .rates-cells > a { min-height: 140px; padding: 18px; border: solid var(--line); border-width: 0 1px 1px 0; background: var(--panel); }
+.rates-cells > a:hover { background: var(--panel-solid); }
+.rates-cells > :is(article, a) span { display: block; color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.rates-cells > :is(article, a) strong { display: block; margin-top: 14px; font-size: 24px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.rates-cells > :is(article, a) b { display: block; margin-top: 6px; font-size: 9px; }
+.rates-cells > :is(article, a) small { display: block; margin-top: 10px; color: var(--ink-soft); font-size: 9px; line-height: 1.45; }
+.rates-cells > :is(article, a) small a { color: var(--accent); }
+.proxy-tag { margin-left: 5px; padding: 1px 4px; border: 1px solid var(--line); color: var(--ink-soft); font-size: 7px; font-style: normal; letter-spacing: .08em; }
+
 @media (max-width: 760px) {
   .issue-line { grid-template-columns: 1fr; gap: 8px; }
   .issue-line > span:last-child { justify-self: start; }
@@ -878,8 +891,8 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
 
 @media (max-width: 1180px) {
   .watchlist-grid,
-  .internals-grid,
-  .rates-grid { grid-template-columns: repeat(2, 1fr); }
+  .internals-grid { grid-template-columns: repeat(2, 1fr); }
+  .rates-cells { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 1080px) {
@@ -918,8 +931,11 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
   .watchlist-controls { display: grid; grid-template-columns: 1fr; }
   .watchlist-controls select { min-width: 0; width: 100%; }
   .watchlist-grid,
-  .internals-grid,
-  .rates-grid { grid-template-columns: 1fr; }
+  .internals-grid { grid-template-columns: 1fr; }
+  .rates-cells { grid-template-columns: 1fr 1fr; }
+  .rates-cells > article, .rates-cells > a { min-height: 0; padding: 14px 12px; }
+  .rates-cells > :is(article, a) strong { font-size: 19px; }
+  .rates-table th, .rates-table td { padding: 10px 6px; font-size: 11px; }
   .relative-row { grid-template-columns: 1.35fr repeat(3, .5fr); gap: 8px; }
   .method-note .quality-badge { width: 100%; }
   .data-status { grid-template-columns: 1fr; gap: 6px; }

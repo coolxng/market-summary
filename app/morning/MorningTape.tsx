@@ -4,7 +4,7 @@ import CatalystList from "../components/CatalystList";
 import EditionFreshness from "../components/EditionFreshness";
 import { FeedHealthList } from "../components/DataStatus";
 import { assetBySymbol } from "../lib/assets";
-import { calendarOf, catalystsOf, type CatalystSet, type DailyReport, type FeedStatus } from "../lib/report";
+import { calendarOf, catalystsOf, type CatalystSet, type DailyReport, type FeedStatus, type TreasuryRates } from "../lib/report";
 import { formatBps, formatCentralDateTime, formatNumber, formatPct, formatSessionDate, toneClass } from "../lib/format";
 import styles from "./morning.module.css";
 
@@ -24,14 +24,6 @@ type Quote = {
   delayed?: boolean;
   source: string;
   error: string | null;
-};
-
-type CurvePoint = { value: number; change_bp: number | null };
-type TreasuryRates = FeedStatus & {
-  curve: { as_of: string; previous_date: string | null; tenors: Record<string, CurvePoint> } | null;
-  spreads: Record<string, { value_bp: number; change_bp: number | null } | null>;
-  real: { as_of: string; tenors: Record<string, CurvePoint> } | null;
-  real_source_url?: string;
 };
 
 export type MorningSnapshot = {

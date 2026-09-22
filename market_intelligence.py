@@ -81,6 +81,13 @@ def fetch_history_snapshot(symbol, session_date, lookback_days=400):
 
         dates = [day.isoformat() for _, day in rows[-260:]]
         closes = [round(float(hist["Close"].iloc[position]), 4) for position, _ in rows[-260:]]
+        # Sparse {date: cash dividend} so daily moves can be computed as total returns.
+        dividends = {}
+        if "Dividends" in getattr(hist, "columns", ()):
+            for position, day in rows[-260:]:
+                amount = _safe_float(hist["Dividends"].iloc[position])
+                if amount:
+                    dividends[day.isoformat()] = round(amount, 6)
         current = closes[-1]
 
         year_start_index = next(
@@ -103,6 +110,7 @@ def fetch_history_snapshot(symbol, session_date, lookback_days=400):
             "symbol": symbol,
             "dates": dates,
             "closes": closes,
+            "dividends": dividends,
             "returns": {
                 "5d": _period_return(closes, 5),
                 "1m": _period_return(closes, 21),

@@ -5,6 +5,8 @@ import SiteHeader from "./components/SiteHeader";
 import PublicationBanner from "./components/PublicationBanner";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import PriceChart from "./components/PriceChart";
+import MarketInternals from "./components/MarketInternals";
+import RatesCredit from "./components/RatesCredit";
 import { sessionPoints } from "./lib/chart";
 import MarketCalendarList from "./components/MarketCalendarList";
 import CatalystList from "./components/CatalystList";
@@ -17,8 +19,6 @@ import {
   type DailyReport,
   type MarketDatum,
   type SessionChart,
-  type TrendParticipation,
-  type VerifiedDatum,
 } from "./lib/report";
 import { decodeText, formatBpsFromPoints, formatNumber, formatPct, formatPp, formatSessionDate, toneClass } from "./lib/format";
 import { classifyRegime, REGIME_LABEL } from "./lib/regime";
@@ -265,23 +265,6 @@ export default function DailyTape({
   const quality = dailyReport.data_quality;
   const allFeeds = [...(calendar?.feeds ?? []), ...(catalysts?.feeds ?? [])];
 
-  const rateDatum = (key: string) => {
-    const value = dailyReport.rates_credit?.[key];
-    return value && typeof value === "object" && "end_price" in value ? verified(value as MarketDatum) : null;
-  };
-  const rateCards: Array<[string, VerifiedDatum | null, string]> = [
-    ["3M", rateDatum("3m") ?? tBill, "us-3m"],
-    ["5Y", rateDatum("5y"), "us-5y"],
-    ["10Y", rateDatum("10y") ?? tenYear, "us-10y"],
-    ["30Y", rateDatum("30y"), "us-30y"],
-    ["HYG", rateDatum("hyg"), "hyg"],
-    ["LQD", rateDatum("lqd"), "lqd"],
-    ["TIP", rateDatum("tip"), "tip"],
-    ["MOVE", rateDatum("move"), "move"],
-  ];
-  const curve5s10s = typeof dailyReport.rates_credit?.["5s10s_bp"] === "number" ? dailyReport.rates_credit["5s10s_bp"] as number : null;
-  const internals = dailyReport.market_internals?.trend_participation;
-  const trackedHighLow = dailyReport.market_internals?.tracked_high_low;
   const tenYearChange = tenYear?.abs_change ?? null;
 
   return (
@@ -446,40 +429,13 @@ export default function DailyTape({
 
         <section className="section-block internals-section" id="internals" aria-labelledby="internals-title">
           <SectionHeading id="internals" number="04" kicker="MARKET INTERNALS" title="Is the move holding underneath?">
-            Trend participation uses the 11 sector ETFs as a transparent proxy. It is intentionally not labeled as NYSE or Nasdaq constituent breadth.
+            Participation measured across stated, tracked universes. None of these is presented as NYSE or Nasdaq constituent breadth.
           </SectionHeading>
-          <div className="internals-grid">
-            {([
-              ["ABOVE 20D", internals?.above_20d],
-              ["ABOVE 50D", internals?.above_50d],
-              ["ABOVE 200D", internals?.above_200d],
-            ] as Array<[string, TrendParticipation | null | undefined]>).map(([label, metric]) => (
-              <article key={label}>
-                <span>{label}</span>
-                <strong>{metric ? `${metric.share_pct.toFixed(1)}%` : "—"}</strong>
-                <p>{metric ? `${metric.above} of ${metric.valid} sector ETFs above trend` : "Not recorded for this issue."}</p>
-              </article>
-            ))}
-            <article>
-              <span>CAP VS EQUAL WEIGHT</span>
-              <strong>{formatPp(equalWeightGap)}</strong>
-              <p>{equalWeightGap == null ? "Comparison unavailable." : equalWeightGap > 0 ? "Equal weight led cap weight." : equalWeightGap < 0 ? "Cap weight led equal weight." : "Equal and cap weighting matched."}</p>
-            </article>
-            <article>
-              <span>AT 20-SESSION HIGH</span>
-              <strong>{trackedHighLow ? trackedHighLow.new_20d_highs : "—"}</strong>
-              <p>{trackedHighLow ? `of ${trackedHighLow.valid} tracked instruments closed at a 20-session closing high` : "Not recorded for this issue."}</p>
-            </article>
-            <article>
-              <span>AT 20-SESSION LOW</span>
-              <strong>{trackedHighLow ? trackedHighLow.new_20d_lows : "—"}</strong>
-              <p>{trackedHighLow?.universe ?? "Tracked-universe proxy, not exchange-wide breadth."}</p>
-            </article>
-          </div>
-          {dailyReport.market_internals?.sector_relative_strength_vs_spy && (
+          <MarketInternals report={dailyReport} />
+          {Object.keys(dailyReport.market_internals?.sector_relative_strength_vs_spy ?? {}).length > 0 && (
             <div className="relative-strength">
               <div className="subsection-head"><span>SECTOR RELATIVE STRENGTH VS SPY</span><small>5D / 1M / 3M · PERCENTAGE POINTS</small></div>
-              {Object.entries(dailyReport.market_internals.sector_relative_strength_vs_spy)
+              {Object.entries(dailyReport.market_internals!.sector_relative_strength_vs_spy)
                 .sort((a, b) => (b[1]["1m"] ?? -Infinity) - (a[1]["1m"] ?? -Infinity))
                 .map(([name, windows]) => {
                   const symbol = sectorSymbol(name);
@@ -554,22 +510,9 @@ export default function DailyTape({
 
         <section className="section-block rates-section" id="rates" aria-labelledby="rates-title">
           <SectionHeading id="rates" number="07" kicker="RATES & CREDIT" title="The cost-of-capital board">
-            Treasury yield indexes plus high-yield, investment-grade and TIPS bond ETFs. ETF rows are price proxies, not credit spreads.
+            Session yields, the official Treasury curve, actual credit spreads and bond ETF proxies, each labeled with its source and date.
           </SectionHeading>
-          <div className="rates-grid">
-            {rateCards.map(([label, item, slug]) => (
-              <a href={`${assetBaseHref}${slug}/`} key={label}>
-                <span>{label}</span>
-                <strong>{item ? `${formatNumber(item.end_price)}${label.endsWith("Y") || label === "3M" ? "%" : ""}` : "—"}</strong>
-                <b className={item ? toneClass(item.pct_change) : "muted"}>{item ? formatPct(item.pct_change) : "NOT RECORDED"}</b>
-              </a>
-            ))}
-            <article>
-              <span>5s10s CURVE</span>
-              <strong>{curve5s10s == null ? "—" : `${curve5s10s >= 0 ? "+" : ""}${curve5s10s.toFixed(1)} bps`}</strong>
-              <b className="muted">5Y → 10Y</b>
-            </article>
-          </div>
+          <RatesCredit report={dailyReport} assetBaseHref={assetBaseHref} />
         </section>
 
         <section className="section-block decision-section" aria-labelledby="decision-title">

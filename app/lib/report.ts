@@ -123,6 +123,18 @@ export type DataQuality = {
   local_sessions?: Record<string, string>;
 };
 
+export type CurvePoint = { value: number; change_bp: number | null };
+export type TreasuryRates = FeedStatus & {
+  curve: { as_of: string; previous_date: string | null; tenors: Record<string, CurvePoint> } | null;
+  spreads: Record<string, { value_bp: number; change_bp: number | null } | null>;
+  real: { as_of: string; previous_date?: string | null; tenors: Record<string, CurvePoint> } | null;
+  real_source_url?: string;
+};
+export type CreditSpreads = FeedStatus & {
+  series: Record<string, { name: string; series_id: string; value_bp: number; change_bp: number | null; as_of: string; source_url: string }>;
+};
+export type SectorAdLine = { dates: string[]; net_advancing: number[]; cumulative: number[]; universe: string; basis: string };
+
 export type TrendParticipation = { above: number; valid: number; share_pct: number };
 
 export type AssetHistory = {
@@ -150,7 +162,7 @@ export type DailyReport = {
   market_calendar?: MarketCalendar | { economic: LegacyFeed<CalendarItem>; earnings: LegacyFeed<CalendarItem>; note?: string };
   verified_catalysts?: CatalystSet;
   market_headlines?: LegacyFeed<Catalyst> & { label?: string };
-  rates_credit?: Record<string, MarketDatum | number | null>;
+  rates_credit?: Record<string, MarketDatum | number | null> & { official_curve?: TreasuryRates; credit_spreads?: CreditSpreads };
   market_internals?: {
     trend_participation: {
       above_20d: TrendParticipation | null;
@@ -161,6 +173,9 @@ export type DailyReport = {
     tracked_high_low?: { new_20d_highs: number; new_20d_lows: number; valid: number; universe: string };
     sector_relative_strength_vs_spy: Record<string, Record<string, number | null>>;
     benchmark_returns: Record<string, number | null>;
+    equal_weight_vs_cap_weight_pp?: Record<"1d" | "5d" | "1m", number | null>;
+    sector_ad_line?: SectorAdLine | null;
+    not_covered?: string[];
     limitation: string;
   };
   asset_history?: Record<string, AssetHistory>;

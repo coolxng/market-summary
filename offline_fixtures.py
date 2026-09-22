@@ -66,6 +66,12 @@ def offline_catalysts(start, end, **_kwargs):
     )
 
 
+def offline_rates(name):
+    feed_id = "treasury_curve" if name == "fetch_treasury_rates" else "fred_credit"
+    base = data_providers.feed_result(feed_id, feed_id, "https://example.invalid/", status="disabled", error="Offline test run.")
+    return {**base, "curve": None, "spreads": {}, "real": None} if feed_id == "treasury_curve" else {**base, "series": {}}
+
+
 @contextlib.contextmanager
 def offline_generation(module, price_lookup=None):
     """Patch every networked feed the report generator uses."""
@@ -79,6 +85,9 @@ def offline_generation(module, price_lookup=None):
         mock.patch.object(module, "build_market_calendar", side_effect=offline_market_calendar),
         mock.patch.object(module, "build_verified_catalysts", side_effect=offline_catalysts),
     ]
+    for name in ("fetch_treasury_rates", "fetch_credit_spreads"):
+        if hasattr(module, name):
+            patches.append(mock.patch.object(module, name, side_effect=lambda *_args, _name=name: offline_rates(_name)))
     with contextlib.ExitStack() as stack:
         for patch in patches:
             stack.enter_context(patch)

@@ -13,7 +13,9 @@ from zoneinfo import ZoneInfo
 import yfinance as yf
 
 from data_providers import build_market_calendar, build_verified_catalysts
+from breadth import relative_return, sector_ad_line
 from market_intelligence import build_data_quality, fetch_history_bundle
+from official_rates import fetch_credit_spreads, fetch_treasury_rates
 
 
 # ─────────────────────────────────────────────
@@ -1166,6 +1168,17 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         },
         "sector_relative_strength_vs_spy": relative_strength,
         "benchmark_returns": spy_returns,
+        "equal_weight_vs_cap_weight_pp": {
+            "1d": round(rsp["pct_change"] - spy["pct_change"], 2) if not rsp.get("error") and not spy.get("error") else None,
+            "5d": relative_return(asset_history.get("RSP", {}), spy_history, 5),
+            "1m": relative_return(asset_history.get("RSP", {}), spy_history, 21),
+        },
+        "sector_ad_line": sector_ad_line([asset_history.get(ticker, {}) for ticker in sectors.values()]),
+        "not_covered": [
+            "NYSE and Nasdaq advance/decline counts",
+            "Exchange-wide new highs and new lows",
+            "Share of index constituents above moving averages",
+        ],
         "limitation": "Trend participation and new-high/new-low counts use transparent tracked universes, not full NYSE/Nasdaq constituent breadth.",
     }
 
@@ -1183,6 +1196,12 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         rates_credit["5s10s_bp"] = round((datasets["^TNX"]["end_price"] - datasets["^FVX"]["end_price"]) * 100, 1)
     else:
         rates_credit["5s10s_bp"] = None
+    # Official, dated sources. Treasury posts the day's curve late in the
+    # afternoon and FRED's ICE spreads trail by a day; each carries its as_of.
+    treasury_rates = fetch_treasury_rates(session_date)
+    credit_spreads = fetch_credit_spreads(session_date)
+    rates_credit["official_curve"] = treasury_rates
+    rates_credit["credit_spreads"] = credit_spreads
 
     market_calendar = build_market_calendar(session_date, megacaps.keys())
     previous_close = datetime.datetime.combine(previous_session_date, datetime.time(16, 0), tzinfo=NY_TZ)
@@ -1199,7 +1218,11 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
             **{ticker: sector_results[name] for name, ticker in sectors.items()},
         },
         session_date,
-        feed_groups=(market_calendar["feeds"], verified_catalysts["feeds"]),
+        feed_groups=(
+            market_calendar["feeds"],
+            verified_catalysts["feeds"],
+            [{key: source[key] for key in ("id", "name", "source_url", "status", "as_of", "error")} for source in (treasury_rates, credit_spreads)],
+        ),
         local_calendar_symbols=FULL_DAY_CHART_TICKERS,
         previous_session=previous_session_date,
     )
