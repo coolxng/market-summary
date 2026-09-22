@@ -444,3 +444,4 @@ footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12
   *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
   .publication-banner--building .publication-banner__dot { animation: none !important; }
 }
+
