@@ -297,6 +297,9 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
             print(f"  Exception fetching {ticker_used}: {exc}")
 
     stooq_symbol = STOOQ_SYMBOLS.get(ticker_symbol)
+    if not stooq_symbol and re.fullmatch(r"[A-Z]{1,5}", ticker_symbol):
+        # Stooq exposes most U.S. equities and ETFs as lower-case symbols with a .us suffix.
+        stooq_symbol = f"{ticker_symbol.lower()}.us"
     if stooq_symbol:
         try:
             start_date = session_date - datetime.timedelta(days=SESSION_LOOKBACK_DAYS)
