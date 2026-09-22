@@ -27,7 +27,7 @@ type MarketDatum = {
 type SessionChart = {
   times: string[];
   closes: number[];
-  source: "intraday_5m" | "daily_ohlc_fallback";
+  source: "intraday_5m" | "daily_ohlc_fallback" | "daily_5d_fallback";
   session_date: string;
   error: string | null;
 };
