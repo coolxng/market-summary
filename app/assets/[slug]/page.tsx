@@ -79,7 +79,6 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
       session={session}
       history={history}
       headlines={headlines}
-      archiveHref="../../reports/"
     />
   );
 }

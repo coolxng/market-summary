@@ -1,6 +1,4 @@
-"use client";
-
-import { useEffect, useState } from "react";
+import SiteHeader from "../components/SiteHeader";
 import styles from "./morning.module.css";
 
 type Quote = {
@@ -100,25 +98,6 @@ function QuoteGrid({ items, label }: { items: Record<string, Quote>; label: stri
 }
 
 export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot }) {
-  const [theme, setTheme] = useState<"paper" | "ink">("paper");
-
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => {
-      if (window.localStorage.getItem("daily-tape-theme") === "ink") setTheme("ink");
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "paper" ? "ink" : "paper";
-    document.documentElement.dataset.theme = next;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "ink" ? "#080808" : "#f3f0e7");
-    const favicon = document.getElementById("site-favicon") as HTMLLinkElement | null;
-    if (favicon) favicon.href = new URL(next === "ink" ? "favicon-dark.svg" : "favicon-light.svg", favicon.href).href;
-    window.localStorage.setItem("daily-tape-theme", next);
-    setTheme(next);
-  };
-
   const events = [
     ...(snapshot.market_calendar?.economic.items ?? []),
     ...(snapshot.market_calendar?.earnings.items ?? []),
@@ -129,23 +108,8 @@ export default function MorningClient({ snapshot }: { snapshot: MorningSnapshot 
     : "Awaiting first run";
 
   return (
-    <main>
-      <header className="site-header">
-        <a className="brand" href="../" aria-label="The Daily Tape home">
-          <span className="brand-mark" style={{ backgroundImage: 'url("https://coolxng.github.io/market-summary/logo.png")' }} />
-          <span>THE DAILY TAPE</span>
-        </a>
-        <nav aria-label="Morning Tape navigation">
-          <a href="../">Close</a>
-          <a href="./" aria-current="page">Morning</a>
-          <a href="../reports/">Archive</a>
-          <a href="../search/">Search</a>
-        </nav>
-        <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-          <span className="theme-toggle__icon" aria-hidden="true">{theme === "paper" ? "◐" : "◑"}</span>
-          <span className="theme-toggle__label">{theme === "paper" ? "Ink" : "Paper"}</span>
-        </button>
-      </header>
+    <main id="main">
+      <SiteHeader root="../" current="morning" />
 
       <div className={styles.page}>
         <section className={styles.hero}>

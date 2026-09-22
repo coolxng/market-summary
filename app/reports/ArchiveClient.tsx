@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import SiteHeader from "../components/SiteHeader";
 import styles from "./reports.module.css";
-
-const logoSrc = "https://coolxng.github.io/market-summary/logo.png";
 
 export type ArchiveReport = {
   date: string;
@@ -22,46 +20,9 @@ function formatPct(value: number | null) {
 }
 
 export default function ArchiveClient({ reports }: { reports: ArchiveReport[] }) {
-  const [theme, setTheme] = useState<"paper" | "ink">("paper");
-
-  useEffect(() => {
-    const saved = window.localStorage.getItem("daily-tape-theme");
-    if (saved !== "ink") return;
-    const frame = window.requestAnimationFrame(() => setTheme("ink"));
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
-
-  const toggleTheme = () => {
-    const next = theme === "paper" ? "ink" : "paper";
-    document.documentElement.dataset.theme = next;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "ink" ? "#080808" : "#f3f0e7");
-    const favicon = document.getElementById("site-favicon") as HTMLLinkElement | null;
-    if (favicon) favicon.href = new URL(next === "ink" ? "favicon-dark.svg" : "favicon-light.svg", favicon.href).href;
-    window.localStorage.setItem("daily-tape-theme", next);
-    setTheme(next);
-  };
-
   return (
-    <main>
-      <header className="site-header">
-        <a className="brand" href="../" aria-label="The Daily Tape home">
-          <span className="brand-mark" style={{ backgroundImage: `url("${logoSrc}")` }} />
-          <span>THE DAILY TAPE</span>
-        </a>
-        <nav aria-label="Archive navigation">
-          <a href="../">Current report</a>
-          <a href="../morning/">Morning</a>
-          <a href="./" aria-current="page">Archive</a>
-          <a href="../search/">Search</a>
-        </nav>
-        <button
-          className="theme-toggle"
-          onClick={toggleTheme}
-          aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}
-        >
-          <span>{theme === "paper" ? "◐" : "◑"}</span>{theme === "paper" ? "Ink" : "Paper"}
-        </button>
-      </header>
+    <main id="main">
+      <SiteHeader root="../" current="reports" />
 
       <div className={styles.page}>
         <section className={styles.hero}>

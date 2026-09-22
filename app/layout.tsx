@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import PWARegister from "./components/PWARegister";
+import { THEME_COLORS, THEME_STORAGE_KEY } from "./lib/theme";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
 const appleTouchIconUrl = new URL("apple-touch-icon.png", siteUrl).toString();
@@ -52,14 +53,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <meta name="theme-color" content="#f3f0e7" />
+        <meta name="theme-color" content={THEME_COLORS.paper} />
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("daily-tape-theme")==="ink"?"ink":"paper";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="ink"?"#080808":"#f3f0e7";var i=document.createElement("link");i.id="site-favicon";i.rel="icon";i.type="image/svg+xml";i.href=new URL(t==="ink"?"favicon-dark.svg":"favicon-light.svg",${JSON.stringify(siteUrl)}).href;document.head.appendChild(i)}catch(e){}`,
+            __html: `try{var t=localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)})==="ink"?"ink":"paper";document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="ink"?${JSON.stringify(THEME_COLORS.ink)}:${JSON.stringify(THEME_COLORS.paper)};var i=document.createElement("link");i.id="site-favicon";i.rel="icon";i.type="image/svg+xml";i.href=new URL(t==="ink"?"favicon-dark.svg":"favicon-light.svg",${JSON.stringify(siteUrl)}).href;document.head.appendChild(i)}catch(e){}`,
           }}
         />
       </head>
       <body>
+        <a className="skip-link" href="#main">Skip to content</a>
         <PWARegister />
         {analyticsDomain && (
           <script defer data-domain={analyticsDomain} src={analyticsSrc} />

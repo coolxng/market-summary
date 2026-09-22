@@ -1,5 +1,6 @@
 "use client";
 
+import SiteHeader from "../../components/SiteHeader";
 import { useEffect, useMemo, useState } from "react";
 import type { AssetDefinition } from "../../lib/assets";
 import styles from "./asset.module.css";
@@ -163,38 +164,23 @@ export default function AssetClient({
   session,
   history,
   headlines,
-  archiveHref,
 }: {
   asset: AssetDefinition;
   current: { end_price: number; pct_change: number; day_high?: number; day_low?: number; prev_close?: number } | null;
   session: SessionSeries | null;
   history: History | null;
   headlines: Headline[];
-  archiveHref: string;
 }) {
-  const [theme, setTheme] = useState<"paper" | "ink">("paper");
   const [range, setRange] = useState<Range>("1D");
   const [watched, setWatched] = useState(false);
 
   useEffect(() => {
     const frame = window.requestAnimationFrame(() => {
-      const saved = window.localStorage.getItem("daily-tape-theme");
-      if (saved === "ink") setTheme("ink");
       const watchlist = JSON.parse(window.localStorage.getItem("daily-tape-watchlist") || "[]") as string[];
       setWatched(watchlist.includes(asset.slug));
     });
     return () => window.cancelAnimationFrame(frame);
   }, [asset.slug]);
-
-  const toggleTheme = () => {
-    const next = theme === "paper" ? "ink" : "paper";
-    document.documentElement.dataset.theme = next;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "ink" ? "#080808" : "#f3f0e7");
-    const favicon = document.getElementById("site-favicon") as HTMLLinkElement | null;
-    if (favicon) favicon.href = new URL(next === "ink" ? "favicon-dark.svg" : "favicon-light.svg", favicon.href).href;
-    window.localStorage.setItem("daily-tape-theme", next);
-    setTheme(next);
-  };
 
   const toggleWatch = () => {
     const currentList = JSON.parse(window.localStorage.getItem("daily-tape-watchlist") || "[]") as string[];
@@ -224,23 +210,8 @@ export default function AssetClient({
   const positive = (rangeReturn ?? current?.pct_change ?? 0) >= 0;
 
   return (
-    <main>
-      <header className="site-header">
-        <a className="brand" href="../../" aria-label="The Daily Tape home">
-          <span className="brand-mark" style={{ backgroundImage: 'url("https://coolxng.github.io/market-summary/logo.png")' }} />
-          <span>THE DAILY TAPE</span>
-        </a>
-        <nav aria-label="Asset navigation">
-          <a href="../../">Current report</a>
-          <a href="../../morning/">Morning</a>
-          <a href={archiveHref}>Archive</a>
-          <a href="../../search/">Search</a>
-        </nav>
-        <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-          <span className="theme-toggle__icon" aria-hidden="true">{theme === "paper" ? "◐" : "◑"}</span>
-          <span className="theme-toggle__label">{theme === "paper" ? "Ink" : "Paper"}</span>
-        </button>
-      </header>
+    <main id="main">
+      <SiteHeader root="../../" current="asset" />
 
       <div className={styles.page}>
         <section className={styles.hero}>

@@ -161,7 +161,6 @@ export default async function ArchivedReportPage({ params }: { params: Promise<{
       report={report}
       archived
       archiveHref="../"
-      homeHref="../../"
       assetBaseHref="../../assets/"
       previousReportHref={previousDate ? `../${previousDate}/` : undefined}
       nextReportHref={nextDate ? `../${nextDate}/` : undefined}
