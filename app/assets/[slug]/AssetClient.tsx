@@ -149,6 +149,7 @@ export default function AssetClient({
         </a>
         <nav aria-label="Asset navigation">
           <a href="../../">Current report</a>
+          <a href="../../morning/">Morning</a>
           <a href={archiveHref}>Archive</a>
           <a href="../../search/">Search</a>
         </nav>
