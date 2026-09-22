@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { MetadataRoute } from "next";
+import { assetCatalog } from "./lib/assets";
 
 export const dynamic = "force-static";
 
@@ -27,6 +28,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  const assets: MetadataRoute.Sitemap = assetCatalog.map((asset) => ({
+    url: `${siteUrl}/assets/${asset.slug}/`,
+    changeFrequency: "daily",
+    priority: 0.6,
+  }));
+
   return [
     {
       url: `${siteUrl}/`,
@@ -34,10 +41,21 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
+      url: `${siteUrl}/morning/`,
+      changeFrequency: "daily",
+      priority: 0.9,
+    },
+    {
       url: `${siteUrl}/reports/`,
       changeFrequency: "daily",
       priority: 0.8,
     },
+    {
+      url: `${siteUrl}/search/`,
+      changeFrequency: "weekly",
+      priority: 0.5,
+    },
+    ...assets,
     ...reports,
   ];
 }
