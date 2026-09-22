@@ -124,6 +124,12 @@ export type DailyReport = {
       above_200d: TrendParticipation | null;
       universe: string;
     };
+    tracked_high_low?: {
+      new_20d_highs: number;
+      new_20d_lows: number;
+      valid: number;
+      universe: string;
+    };
     sector_relative_strength_vs_spy: Record<string, Record<string, number | null>>;
     benchmark_returns: Record<string, number | null>;
     limitation: string;
@@ -921,6 +927,16 @@ export default function DailyTape({
               <span>CAP VS EQUAL WEIGHT</span>
               <strong>{equalWeightGap == null ? "—" : `${equalWeightGap >= 0 ? "+" : ""}${equalWeightGap.toFixed(2)} pp`}</strong>
               <p>{equalWeightGap == null ? "Comparison unavailable." : equalWeightGap > 0 ? "Equal weight led cap weight." : equalWeightGap < 0 ? "Cap weight led equal weight." : "Equal and cap weighting matched."}</p>
+            </article>
+            <article>
+              <span>NEW 20D HIGHS</span>
+              <strong>{dailyReport.market_internals?.tracked_high_low ? dailyReport.market_internals.tracked_high_low.new_20d_highs : "—"}</strong>
+              <p>{dailyReport.market_internals?.tracked_high_low ? `${dailyReport.market_internals.tracked_high_low.valid} tracked risk assets checked` : "Available after the next enriched report refresh."}</p>
+            </article>
+            <article>
+              <span>NEW 20D LOWS</span>
+              <strong>{dailyReport.market_internals?.tracked_high_low ? dailyReport.market_internals.tracked_high_low.new_20d_lows : "—"}</strong>
+              <p>{dailyReport.market_internals?.tracked_high_low?.universe ?? "Transparent tracked-universe proxy, not exchange-wide breadth."}</p>
             </article>
           </div>
           {dailyReport.market_internals?.sector_relative_strength_vs_spy && (
