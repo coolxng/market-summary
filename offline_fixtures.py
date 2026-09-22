@@ -54,7 +54,7 @@ def offline_market_calendar(anchor, _tickers, **_kwargs):
     return data_providers.build_market_calendar(
         anchor,
         (),
-        providers=(lambda days: empty_feed("nasdaq_economic", "Nasdaq Economic Calendar"),),
+        providers=(lambda days: empty_feed("fair_economy_economic", "Forex Factory Economic Calendar"),),
     )
 
 

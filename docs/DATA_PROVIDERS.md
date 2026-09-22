@@ -16,9 +16,9 @@ Every calendar and catalyst provider in `data_providers.py` returns a normalized
 
 ```json
 {
-  "id": "nasdaq_economic",
-  "name": "Nasdaq Economic Calendar",
-  "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
+  "id": "fair_economy_economic",
+  "name": "Forex Factory Economic Calendar",
+  "source_url": "https://www.forexfactory.com/calendar",
   "status": "ok | empty | unavailable | disabled",
   "as_of": "2026-09-22T20:31:04+00:00",
   "items": [],
@@ -36,7 +36,7 @@ Window: the current trading session (if the anchor date trades) plus the next NY
 
 | Feed id | Source | Notes |
 | --- | --- | --- |
-| `nasdaq_economic` | Nasdaq economic calendar JSON | U.S. rows only. Requests use browser-compatible headers plus one bounded retry for transient failures. The `gmt` field is treated as GMT and converted to Central Time; the source time is stored alongside for audit. Actual, consensus and previous are copied as published. Nasdaq does not publish an importance rating, so none is shown. |
+| `fair_economy_economic` | Forex Factory / Fair Economy weekly JSON | USD rows only. The provider reads the explicit ISO-8601 timestamp and UTC offset from each event, converts that timestamp to Central Time, and derives the displayed date from the converted timestamp. This avoids guessing a timezone from a clock-only field or stamping rows onto the requested date. This-week and next-week feeds are merged and deduplicated; source impact, forecast and previous values are copied as published. |
 | `treasury_auctions` | U.S. Treasury Fiscal Data `upcoming_auctions` | Auction date, term, type, offering size and CUSIP. The dataset has no auction close time, so the time is shown as not published. |
 | `yahoo_earnings` | Yahoo Finance company calendar | Tracked mega-cap and semiconductor names only. A two-date answer is labeled as an estimated window. |
 | `market_structure` | `trading_calendar.py` rules | NYSE holidays, 1:00 PM ET early closes and third-Friday options expiration. Items are labeled "Rule-based" because rules cannot anticipate unscheduled closures. |

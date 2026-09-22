@@ -41,8 +41,11 @@ BROWSER_USER_AGENT = (
 )
 MAX_RESPONSE_BYTES = 3_000_000
 
-NASDAQ_CALENDAR_URL = "https://api.nasdaq.com/api/calendar/economicevents"
-NASDAQ_CALENDAR_PAGE = "https://www.nasdaq.com/market-activity/economic-calendar"
+FAIR_ECONOMY_CALENDAR_URLS = (
+    "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
+    "https://nfs.faireconomy.media/ff_calendar_nextweek.json",
+)
+FOREX_FACTORY_CALENDAR_PAGE = "https://www.forexfactory.com/calendar"
 TREASURY_AUCTIONS_URL = "https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v1/accounting/od/upcoming_auctions"
 TREASURY_AUCTIONS_PAGE = "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/"
 YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
@@ -210,94 +213,110 @@ def _run(feed_id, name, source_url, fetcher):
 # ─────────────────────────────────────────────
 # Calendar providers
 # ─────────────────────────────────────────────
-def _nasdaq_time_fields(row, day):
-    raw = str(row.get("gmt") or row.get("time") or "").strip()
-    lowered = raw.lower()
-    if not raw:
-        return {"time": None, "time_status": "tbd", "source_time": None, "source_time_zone": None, "sort_key": "99:99"}
-    if "all day" in lowered:
-        return {"time": None, "time_status": "all_day", "source_time": raw, "source_time_zone": None, "sort_key": "00:00"}
-    if "tentative" in lowered:
-        return {"time": None, "time_status": "tentative", "source_time": raw, "source_time_zone": None, "sort_key": "99:98"}
-    for fmt in ("%H:%M:%S", "%H:%M", "%I:%M %p"):
-        try:
-            clock = datetime.datetime.strptime(raw, fmt).time()
-        except ValueError:
-            continue
-        moment = datetime.datetime.combine(day, clock, tzinfo=datetime.timezone.utc)
-        local = moment.astimezone(CENTRAL_TZ)
-        return {
-            "time": _central_label(moment),
-            "time_status": "scheduled",
-            "starts_at": local.isoformat(),
-            "source_time": raw,
-            "source_time_zone": "GMT",
-            "sort_key": local.strftime("%H:%M"),
-        }
-    return {"time": None, "time_status": "tbd", "source_time": raw, "source_time_zone": None, "sort_key": "99:99"}
+def _parse_fair_economy_datetime(raw):
+    text = str(raw or "").strip()
+    if not text:
+        return None
+    # The feed normally uses ISO-8601 offsets such as -04:00. Accept the
+    # compact -0400 form too so a harmless formatting change does not break it.
+    text = re.sub(r"([+-]\\d{2})(\\d{2})$", r"\\1:\\2", text)
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        moment = datetime.datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=NY_TZ)
+    return moment
 
 
-def parse_nasdaq_rows(rows, day, countries=("United States",)):
+def parse_fair_economy_rows(rows, days, countries=("USD",)):
+    """Normalize Fair Economy rows using each row's explicit timestamp.
+
+    The old Nasdaq feed exposed only a clock field whose date/timezone proved
+    unreliable in production. This feed supplies a full ISO-8601 timestamp
+    with an explicit UTC offset, so the Central date and time come from that
+    timestamp instead of being inferred from the requested date.
+    """
+    wanted = {day.isoformat() for day in days}
+    allowed = {country.upper() for country in countries}
     items = []
-    allowed = {country.lower() for country in countries}
     for row in rows:
         if not isinstance(row, dict):
             continue
-        title = clean_value(row.get("eventName") or row.get("event") or row.get("name"))
-        if not title:
+        country = str(row.get("country") or "").strip().upper()
+        if allowed and country not in allowed:
             continue
-        country = clean_value(row.get("country")) or ""
-        if allowed and country.lower() not in allowed:
+        impact = clean_value(row.get("impact"))
+        if str(impact or "").lower() == "holiday":
             continue
-        importance = clean_value(row.get("importance") or row.get("impact"))
+        title = clean_value(row.get("title") or row.get("event") or row.get("name"))
+        moment = _parse_fair_economy_datetime(row.get("date"))
+        if not title or moment is None:
+            continue
+        local = moment.astimezone(CENTRAL_TZ)
+        local_date = local.date().isoformat()
+        if local_date not in wanted:
+            continue
+        source_local = moment.astimezone(NY_TZ)
         items.append({
-            "date": day.isoformat(),
-            **_nasdaq_time_fields(row, day),
+            "date": local_date,
+            "time": _central_label(moment),
+            "time_status": "scheduled",
+            "starts_at": local.isoformat(),
+            "source_time": source_local.strftime("%-I:%M %p"),
+            "source_time_zone": "ET",
+            "sort_key": local.strftime("%H:%M"),
             "title": title,
             "category": classify_economic_event(title),
             "kind": "economic",
-            "country": country,
-            "importance": importance,
+            "country": "United States",
+            "importance": impact,
             "actual": clean_value(row.get("actual")),
-            "consensus": clean_value(row.get("consensus") or row.get("forecast")),
+            "consensus": clean_value(row.get("forecast") or row.get("consensus")),
             "previous": clean_value(row.get("previous")),
-            "source": "Nasdaq Economic Calendar",
-            "source_url": NASDAQ_CALENDAR_PAGE,
+            "source": "Forex Factory Economic Calendar",
+            "source_url": FOREX_FACTORY_CALENDAR_PAGE,
         })
     return items
 
 
-def nasdaq_economic_calendar(days):
+def fair_economy_economic_calendar(days):
     def fetch():
-        items = []
-        failures = 0
-        for day in days:
+        items = {}
+        successes = 0
+        last_error = None
+        for url in FAIR_ECONOMY_CALENDAR_URLS:
             try:
                 payload = json.loads(http_get(
-                    f"{NASDAQ_CALENDAR_URL}?{urllib.parse.urlencode({'date': day.isoformat()})}",
+                    url,
                     accept="application/json, text/plain, */*",
                     timeout=12,
                     attempts=2,
                     extra_headers={
                         "User-Agent": BROWSER_USER_AGENT,
-                        "Referer": NASDAQ_CALENDAR_PAGE,
-                        "Origin": "https://www.nasdaq.com",
-                        "Sec-Fetch-Dest": "empty",
-                        "Sec-Fetch-Mode": "cors",
-                        "Sec-Fetch-Site": "same-site",
+                        "Referer": FOREX_FACTORY_CALENDAR_PAGE,
                     },
                 ))
-            except Exception:
-                failures += 1
+                if not isinstance(payload, list):
+                    raise ValueError("unexpected response shape")
+            except Exception as exc:
+                last_error = exc
                 continue
-            data = payload.get("data") if isinstance(payload, dict) else None
-            rows = (data or {}).get("rows") or []
-            items.extend(parse_nasdaq_rows(rows if isinstance(rows, list) else [], day))
-        if failures == len(days):
-            raise ConnectionError("no calendar day could be fetched")
-        return items
+            successes += 1
+            for item in parse_fair_economy_rows(payload, days):
+                items[(item["starts_at"], item["title"])] = item
+        if not successes:
+            raise last_error or ConnectionError("no economic-calendar week could be fetched")
+        return list(items.values())
 
-    return _run("nasdaq_economic", "Nasdaq Economic Calendar", NASDAQ_CALENDAR_PAGE, fetch)
+    return _run(
+        "fair_economy_economic",
+        "Forex Factory Economic Calendar",
+        FOREX_FACTORY_CALENDAR_PAGE,
+        fetch,
+    )
 
 
 def _format_offering(amount):
@@ -451,7 +470,7 @@ def build_market_calendar(anchor, earnings_tickers, providers=None):
     days = trading_calendar.session_window(anchor)
     if providers is None:
         providers = (
-            lambda d: nasdaq_economic_calendar(d),
+            lambda d: fair_economy_economic_calendar(d),
             lambda d: treasury_auction_calendar(d),
             lambda d: yahoo_earnings_calendar(earnings_tickers, d),
             lambda d: market_structure_calendar(d),

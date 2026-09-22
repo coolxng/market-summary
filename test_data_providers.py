@@ -63,25 +63,34 @@ class TradingCalendarTests(unittest.TestCase):
 
 
 class CalendarProviderTests(unittest.TestCase):
-    def test_nasdaq_rows_filter_country_and_convert_gmt_to_central(self):
+    def test_fair_economy_rows_use_embedded_timestamp_for_date_and_time(self):
         rows = [
-            {"eventName": "CPI (YoY)", "gmt": "12:30", "country": "United States",
-             "actual": "&nbsp;", "consensus": "2.8%", "previous": "2.9%"},
-            {"eventName": "ECB Rate Decision", "gmt": "12:15", "country": "Euro Zone"},
-            {"eventName": "Crude Oil Inventories", "gmt": "Tentative", "country": "United States"},
-            {"eventName": "", "gmt": "12:30", "country": "United States"},
+            {"title": "FOMC Member Goolsbee Speaks", "country": "USD",
+             "date": "2026-09-21T06:30:00-04:00", "impact": "Low", "forecast": "", "previous": ""},
+            {"title": "Richmond Manufacturing Index", "country": "USD",
+             "date": "2026-09-22T10:00:00-04:00", "impact": "Low", "forecast": "2", "previous": "4"},
+            {"title": "ECB Rate Decision", "country": "EUR",
+             "date": "2026-09-22T08:15:00-04:00", "impact": "High"},
+            {"title": "Bank Holiday", "country": "USD",
+             "date": "2026-09-22T19:00:00-04:00", "impact": "Holiday"},
         ]
-        items = data_providers.parse_nasdaq_rows(rows, datetime.date(2026, 9, 22))
-        self.assertEqual([item["title"] for item in items], ["CPI (YoY)", "Crude Oil Inventories"])
-        cpi = items[0]
-        self.assertEqual(cpi["time"], "7:30 AM CT")
-        self.assertEqual(cpi["source_time_zone"], "GMT")
-        self.assertEqual(cpi["category"], "Inflation")
-        self.assertIsNone(cpi["actual"])  # blank stays blank, never zero
-        self.assertEqual(cpi["consensus"], "2.8%")
-        self.assertIsNone(cpi["importance"])  # not supplied, not invented
-        self.assertEqual(items[1]["time_status"], "tentative")
-        self.assertIsNone(items[1]["time"])
+        days = [datetime.date(2026, 9, 21), datetime.date(2026, 9, 22)]
+        items = data_providers.parse_fair_economy_rows(rows, days)
+        self.assertEqual([item["title"] for item in items],
+                         ["FOMC Member Goolsbee Speaks", "Richmond Manufacturing Index"])
+        goolsbee = items[0]
+        self.assertEqual(goolsbee["date"], "2026-09-21")
+        self.assertEqual(goolsbee["time"], "5:30 AM CT")
+        self.assertEqual(goolsbee["source_time"], "6:30 AM")
+        self.assertEqual(goolsbee["source_time_zone"], "ET")
+        self.assertEqual(goolsbee["category"], "Central bank")
+        self.assertEqual(goolsbee["importance"], "Low")
+        self.assertIsNone(goolsbee["actual"])
+        richmond = items[1]
+        self.assertEqual(richmond["date"], "2026-09-22")
+        self.assertEqual(richmond["time"], "9:00 AM CT")
+        self.assertEqual(richmond["consensus"], "2")
+        self.assertEqual(richmond["previous"], "4")
 
     def test_event_classification(self):
         cases = {
@@ -124,10 +133,10 @@ class CalendarProviderTests(unittest.TestCase):
             calendar = data_providers.build_market_calendar(
                 datetime.date(2026, 9, 17),
                 (),
-                providers=(data_providers.nasdaq_economic_calendar, data_providers.market_structure_calendar),
+                providers=(data_providers.fair_economy_economic_calendar, data_providers.market_structure_calendar),
             )
         statuses = {feed["id"]: feed["status"] for feed in calendar["feeds"]}
-        self.assertEqual(statuses["nasdaq_economic"], "unavailable")
+        self.assertEqual(statuses["fair_economy_economic"], "unavailable")
         self.assertEqual(statuses["market_structure"], "ok")
         self.assertEqual(calendar["window"], {
             "current_session": "2026-09-17", "next_session": "2026-09-18", "display_time_zone": "America/Chicago"})
@@ -135,9 +144,9 @@ class CalendarProviderTests(unittest.TestCase):
         self.assertNotIn("sort_key", calendar["items"][0])
 
     def test_disabled_feed_env(self):
-        with mock.patch.dict(os.environ, {"DAILY_TAPE_DISABLED_FEEDS": "nasdaq_economic"}), \
+        with mock.patch.dict(os.environ, {"DAILY_TAPE_DISABLED_FEEDS": "fair_economy_economic"}), \
                 mock.patch.object(data_providers, "http_get") as get:
-            feed = data_providers.nasdaq_economic_calendar([datetime.date(2026, 9, 22)])
+            feed = data_providers.fair_economy_economic_calendar([datetime.date(2026, 9, 22)])
         get.assert_not_called()
         self.assertEqual(feed["status"], "disabled")
 
@@ -194,14 +203,25 @@ class CatalystProviderTests(unittest.TestCase):
         self.assertEqual(feed["status"], "unavailable")
         self.assertEqual(feed["items"], [])
 
-    def test_nasdaq_http_payload_round_trip(self):
-        payload = json.dumps({"data": {"rows": [{"eventName": "Initial Jobless Claims", "gmt": "12:30", "country": "United States"}]}})
+    def test_fair_economy_http_payload_round_trip_and_deduplicates_weeks(self):
+        payload = json.dumps([{
+            "title": "Unemployment Claims",
+            "country": "USD",
+            "date": "2026-09-24T08:30:00-04:00",
+            "impact": "Medium",
+            "forecast": "201K",
+            "previous": "196K",
+        }])
         with mock.patch.object(data_providers, "http_get", return_value=payload) as get:
-            feed = data_providers.nasdaq_economic_calendar([datetime.date(2026, 9, 24)])
+            feed = data_providers.fair_economy_economic_calendar([datetime.date(2026, 9, 24)])
         self.assertEqual(feed["status"], "ok")
+        self.assertEqual(len(feed["items"]), 1)
         self.assertEqual(feed["items"][0]["category"], "Employment")
+        self.assertEqual(feed["items"][0]["time"], "7:30 AM CT")
+        self.assertEqual(feed["items"][0]["consensus"], "201K")
+        self.assertEqual(get.call_count, 2)
         kwargs = get.call_args.kwargs
-        self.assertEqual(kwargs["extra_headers"]["Origin"], "https://www.nasdaq.com")
+        self.assertEqual(kwargs["extra_headers"]["Referer"], data_providers.FOREX_FACTORY_CALENDAR_PAGE)
         self.assertIn("Mozilla/5.0", kwargs["extra_headers"]["User-Agent"])
         self.assertEqual(kwargs["attempts"], 2)
 
