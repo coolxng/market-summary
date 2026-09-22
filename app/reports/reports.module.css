@@ -29,11 +29,13 @@
 .issueLine > span:nth-child(2),
 .issueLine > span:last-child {
   font-size: 11px;
+  font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
 
 .issueLine > span:last-child {
   justify-self: end;
+  font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
 
@@ -165,6 +167,7 @@
   color: var(--ink-soft);
   font-size: 10px;
   font-weight: 800;
+  font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
 
@@ -294,6 +297,7 @@
 .stat strong {
   font-size: 13px;
   font-weight: 900;
+  font-family: var(--font-data);
   font-variant-numeric: tabular-nums;
 }
 

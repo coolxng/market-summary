@@ -11,7 +11,7 @@
 .dek { max-width: 780px; margin: 26px 0 0; color: var(--ink-soft); font-family: Georgia, serif; font-size: clamp(17px, 1.45vw, 22px); line-height: 1.55; }
 .health { padding: 22px; border: 1px solid var(--line); background: var(--panel); }
 .health > span { color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .13em; }
-.health > strong { display: block; margin-top: 12px; font-size: 42px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.health > strong { display: block; margin-top: 12px; font-size: 42px; font-weight: 650; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .health p { margin: 7px 0 16px; color: var(--ink-soft); font-size: 10px; line-height: 1.5; }
 .health b { font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
 .ready { color: var(--up); }
@@ -23,7 +23,7 @@
 .quoteGrid { display: grid; grid-template-columns: repeat(4, 1fr); border: solid var(--line); border-width: 1px 0 0 1px; }
 .quoteGrid article { min-width: 0; padding: 20px; border: solid var(--line); border-width: 0 1px 1px 0; background: var(--panel); }
 .quoteGrid article > div { display: flex; justify-content: space-between; gap: 12px; font-size: 9px; font-weight: 900; letter-spacing: .08em; }
-.quoteGrid article > strong { display: block; margin-top: 25px; font-size: clamp(27px, 2.6vw, 40px); font-weight: 650; letter-spacing: -.035em; font-variant-numeric: tabular-nums; }
+.quoteGrid article > strong { display: block; margin-top: 25px; font-size: clamp(27px, 2.6vw, 40px); font-weight: 650; letter-spacing: -.035em; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .quoteGrid article p { margin: 5px 0 18px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 12px; }
 .quoteGrid article small { color: var(--ink-soft); font-size: 8px; }
 .empty { padding: 28px 0; color: var(--ink-soft); font-family: Georgia, serif; font-size: 14px; line-height: 1.55; }
@@ -59,7 +59,7 @@
 .ratesGrid { display: grid; grid-template-columns: repeat(4, 1fr); border: solid var(--line); border-width: 1px 0 0 1px; }
 .ratesGrid > div { padding: 20px; border: solid var(--line); border-width: 0 1px 1px 0; background: var(--panel); }
 .ratesGrid span { display: block; color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
-.ratesGrid strong { display: block; margin-top: 14px; font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.ratesGrid strong { display: block; margin-top: 14px; font-size: 26px; font-weight: 650; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .ratesGrid b { display: block; margin-top: 6px; font-size: 9px; }
 .sourceLine { margin: 16px 0 0; color: var(--ink-soft); font-size: 10px; }
 .sourceLine a { color: var(--accent); font-weight: 800; }
