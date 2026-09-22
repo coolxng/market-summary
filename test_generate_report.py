@@ -653,7 +653,9 @@ class EditorialTests(unittest.TestCase):
         self.assertEqual(generate_report.parse_editorial_plan(json.dumps(plan),cards),plan)
         schema=generate_report.editorial_schema(cards)
         empty_rule=schema['properties']['selection']['properties']['megacap_leadership']
-        self.assertEqual(empty_rule['maxItems'],0)
+        self.assertNotIn('maxItems',empty_rule)
+        self.assertNotIn('uniqueItems',empty_rule)
+        self.assertIn('empty array',empty_rule['description'])
         plan['megacap_leadership']=['unavailable']
         with self.assertRaises(ValueError):generate_report.parse_editorial_plan(json.dumps(plan),cards)
 
