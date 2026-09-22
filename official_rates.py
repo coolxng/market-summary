@@ -1,6 +1,6 @@
 """Official U.S. rates and credit-spread series.
 
-- U.S. Treasury daily par yield curve and real yield curve (Treasury.gov CSV).
+- U.S. Treasury daily par yield curve and real yield curve (official XML feed with CSV fallback).
 - ICE BofA option-adjusted spreads published on FRED (no API key needed for
   the public fredgraph CSV endpoint).
 
@@ -15,9 +15,11 @@ import datetime
 import io
 import re
 import urllib.parse
+import xml.etree.ElementTree as ET
 
 from data_providers import clean_value, disabled_feeds, feed_result, http_get
 
+TREASURY_XML_URL = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/pages/xml"
 TREASURY_CSV_URL = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/daily-treasury-rates.csv/{year}/all"
 TREASURY_PAGE = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve"
 TREASURY_REAL_PAGE = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_real_yield_curve"
@@ -81,11 +83,73 @@ def parse_treasury_csv(text):
     return rows
 
 
-def _treasury_rows(curve_type, anchor, fetch=http_get):
+def _xml_local_name(tag):
+    return str(tag or "").rsplit("}", 1)[-1]
+
+
+def _xml_tenor_key(field_name, prefix):
+    if not field_name.startswith(prefix):
+        return None
+    raw = field_name[len(prefix):]
+    match = re.fullmatch(r"(\d+)(MONTH|YEAR)", raw, re.I)
+    if not match:
+        return None
+    unit = "m" if match.group(2).upper() == "MONTH" else "y"
+    return f"{int(match.group(1))}{unit}"
+
+
+def parse_treasury_xml(text, prefix="BC_"):
+    """Parse Treasury's documented Atom/XML feed into dated tenor rows."""
+    root = ET.fromstring(text)
     rows = []
-    for year in sorted({anchor.year - 1, anchor.year} if anchor.month == 1 else {anchor.year}):
-        query = urllib.parse.urlencode({"type": curve_type, "field_tdr_date_value": str(year), "page": "", "_format": "csv"})
-        rows.extend(parse_treasury_csv(fetch(f"{TREASURY_CSV_URL.format(year=year)}?{query}", accept="text/csv")))
+    for properties in root.iter():
+        if _xml_local_name(properties.tag) != "properties":
+            continue
+        day = None
+        values = {}
+        for child in properties:
+            name = _xml_local_name(child.tag)
+            if name == "NEW_DATE":
+                day = _parse_date((child.text or "")[:10])
+                continue
+            key = _xml_tenor_key(name, prefix)
+            value = _number(child.text)
+            if key and value is not None:
+                values[key] = value
+        if day and values:
+            rows.append((day, values))
+    rows.sort(key=lambda item: item[0])
+    return rows
+
+
+def _treasury_rows(curve_type, anchor, fetch=http_get):
+    """Use Treasury's documented XML feed first; retain CSV as a fallback."""
+    rows = []
+    prefix = "TC_" if curve_type == "daily_treasury_real_yield_curve" else "BC_"
+    years = sorted({anchor.year - 1, anchor.year} if anchor.month == 1 else {anchor.year})
+    for year in years:
+        xml_query = urllib.parse.urlencode({"data": curve_type, "field_tdr_date_value": str(year)})
+        try:
+            xml_rows = parse_treasury_xml(
+                fetch(f"{TREASURY_XML_URL}?{xml_query}", accept="application/xml, text/xml, */*"),
+                prefix=prefix,
+            )
+            if not xml_rows:
+                raise ValueError("Treasury XML returned no usable rows")
+            rows.extend(xml_rows)
+            continue
+        except Exception as xml_exc:
+            print(f"  Treasury XML {curve_type} fallback: {xml_exc.__class__.__name__}")
+
+        csv_query = urllib.parse.urlencode({
+            "type": curve_type,
+            "field_tdr_date_value": str(year),
+            "page": "",
+            "_format": "csv",
+        })
+        rows.extend(parse_treasury_csv(
+            fetch(f"{TREASURY_CSV_URL.format(year=year)}?{csv_query}", accept="text/csv")
+        ))
     rows.sort(key=lambda item: item[0])
     return [row for row in rows if row[0] <= anchor]
 
