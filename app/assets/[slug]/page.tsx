@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import SiteHeader from "../../components/SiteHeader";
 import CatalystList from "../../components/CatalystList";
 import WatchToggle from "../../components/WatchToggle";
+import KeyboardShortcuts from "../../components/KeyboardShortcuts";
 import AssetRangeChart, { type RangeKey } from "./AssetRangeChart";
 import { assetBySlug, assetCatalog, type AssetDefinition } from "../../lib/assets";
 import { archivedReports } from "../../lib/archive";
@@ -242,6 +243,15 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
             {historyUsable?.as_of ? `HISTORY THROUGH ${formatSessionDate(historyUsable.as_of, { month: "short", day: "numeric", year: "numeric" }).toUpperCase()}${historyStale ? " · OLDER THAN REPORT SESSION" : ""}` : "LONGER-RANGE HISTORY NOT STORED YET"}
           </span>
         </aside>
+        <footer className={styles.footer}>
+          <div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span></div>
+          <KeyboardShortcuts bindings={{
+            "/": { kind: "href", href: "../../search/", label: "Search assets and archive" },
+            h: { kind: "href", href: "../../", label: "Latest Close Tape" },
+            a: { kind: "href", href: "../../reports/", label: "Report archive" },
+            m: { kind: "href", href: "../../morning/", label: "Morning Tape" },
+          }} />
+        </footer>
       </div>
     </main>
   );

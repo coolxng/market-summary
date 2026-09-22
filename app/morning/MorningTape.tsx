@@ -2,6 +2,7 @@ import SiteHeader from "../components/SiteHeader";
 import MarketCalendarList from "../components/MarketCalendarList";
 import CatalystList from "../components/CatalystList";
 import EditionFreshness from "../components/EditionFreshness";
+import KeyboardShortcuts from "../components/KeyboardShortcuts";
 import { FeedHealthList } from "../components/DataStatus";
 import { assetBySymbol } from "../lib/assets";
 import { calendarOf, catalystsOf, type CatalystSet, type DailyReport, type FeedStatus, type TreasuryRates } from "../lib/report";
@@ -242,7 +243,15 @@ export default function MorningTape({ snapshot }: { snapshot: MorningSnapshot })
 
         <footer className={styles.footer}>
           <div><strong>THE DAILY TAPE</strong><span>Morning orientation. Close intelligence.</span></div>
-          <div><a href="../">Close Tape →</a><a href="../reports/">Archive →</a><a href="../feed.xml">RSS →</a></div>
+          <div>
+            <a href="../">Close Tape →</a><a href="../reports/">Archive →</a><a href="../feed.xml">RSS →</a>
+            <KeyboardShortcuts bindings={{
+              "/": { kind: "href", href: "../search/", label: "Search assets and archive" },
+              h: { kind: "href", href: "../", label: "Latest Close Tape" },
+              a: { kind: "href", href: "../reports/", label: "Report archive" },
+              c: { kind: "anchor", id: "calendar", label: "Today's calendar" },
+            }} />
+          </div>
         </footer>
       </div>
     </main>

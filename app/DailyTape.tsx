@@ -290,15 +290,6 @@ export default function DailyTape({
   return (
     <main id="main">
       <SiteHeader root={siteRoot} current={archived ? "reports" : "close"} sectionLinks={sections} />
-      <KeyboardShortcuts
-        bindings={{
-          "/": { kind: "href", href: searchHref },
-          a: { kind: "href", href: archiveHref },
-          m: { kind: "anchor", id: "macro" },
-          s: { kind: "anchor", id: "scorecard" },
-          w: { kind: "anchor", id: "watchlist" },
-        }}
-      />
 
       <div className="page" id="top">
         <section className="hero" id="brief">
@@ -617,7 +608,19 @@ export default function DailyTape({
           </div>
         </aside>
 
-        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href={archiveHref}>Report archive</a><small className="shortcut-hint">SHORTCUTS · / SEARCH · A ARCHIVE · S SCORECARD · M MACRO · W WATCHLIST</small></div><div className="footer-meta"><span>DATA: YAHOO FINANCE + LISTED SOURCES</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
+        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href={archiveHref}>Report archive</a><KeyboardShortcuts
+          bindings={{
+            "/": { kind: "href", href: searchHref, label: "Search assets and archive" },
+            a: { kind: "href", href: archiveHref, label: "Report archive" },
+            h: { kind: "anchor", id: "top", label: "Top of the report" },
+            s: { kind: "anchor", id: "sectors", label: "Sector leadership" },
+            m: { kind: "anchor", id: "macro", label: "Macro pulse" },
+            c: { kind: "anchor", id: "calendar", label: "Market calendar" },
+            ...(archived ? {} : { w: { kind: "anchor" as const, id: "watchlist", label: "Your watchlist" } }),
+            ...(previousReportHref ? { ArrowLeft: { kind: "href" as const, href: previousReportHref, label: "Previous archived session" } } : {}),
+            ...(nextReportHref ? { ArrowRight: { kind: "href" as const, href: nextReportHref, label: "Next archived session" } } : {}),
+          }}
+        /></div><div className="footer-meta"><span>DATA: YAHOO FINANCE + LISTED SOURCES</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
       </div>
     </main>
   );

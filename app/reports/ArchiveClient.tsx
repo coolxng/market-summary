@@ -68,7 +68,6 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
   return (
     <main id="main">
       <SiteHeader root="../" current="reports" />
-      <KeyboardShortcuts bindings={{ "/": { kind: "focus", id: "archive-search" }, h: { kind: "href", href: "../" } }} />
 
       <div className={styles.page}>
         <section className={styles.hero}>
@@ -165,7 +164,14 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
 
         <footer className={styles.footer}>
           <div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span></div>
-          <div><span>{reports.length} ARCHIVED SESSION{reports.length === 1 ? "" : "S"}</span><span>PERMANENT DAILY SNAPSHOTS</span><a href="../feed.xml">RSS FEED</a></div>
+          <div>
+            <span>{reports.length} ARCHIVED SESSION{reports.length === 1 ? "" : "S"}</span><span>PERMANENT DAILY SNAPSHOTS</span><a href="../feed.xml">RSS FEED</a>
+            <KeyboardShortcuts bindings={{
+              "/": { kind: "focus", id: "archive-search", label: "Search the archive" },
+              h: { kind: "href", href: "../", label: "Latest Close Tape" },
+              m: { kind: "href", href: "../morning/", label: "Morning Tape" },
+            }} />
+          </div>
         </footer>
       </div>
     </main>

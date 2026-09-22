@@ -1,20 +1,34 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export type ShortcutTarget =
   | { kind: "href"; href: string }
   | { kind: "anchor"; id: string }
   | { kind: "focus"; id: string };
 
-// Single-key shortcuts that never fire while typing, with modifier keys held,
-// or when an interactive widget (chart, select, button) has focus.
-export default function KeyboardShortcuts({ bindings }: { bindings: Record<string, ShortcutTarget> }) {
+export type Shortcut = ShortcutTarget & { label: string };
+
+const KEY_LABEL: Record<string, string> = { ArrowLeft: "←", ArrowRight: "→", "/": "/" };
+
+/**
+ * Single-key shortcuts plus a "?" help dialog. Keys never fire while typing,
+ * with Ctrl/Cmd/Alt held, or while a chart, dialog or form control has focus,
+ * so browser and assistive-technology shortcuts keep working.
+ */
+export default function KeyboardShortcuts({ bindings }: { bindings: Record<string, Shortcut> }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, select, [contenteditable='true'], [role='group'], [role='dialog']")) return;
+      if (target?.closest("input, textarea, select, [contenteditable='true'], [role='group'], dialog")) return;
+      if (event.key === "?") {
+        event.preventDefault();
+        dialog.current?.showModal();
+        return;
+      }
 
       const binding = bindings[event.key.length === 1 ? event.key.toLowerCase() : event.key];
       if (!binding) return;
@@ -38,5 +52,24 @@ export default function KeyboardShortcuts({ bindings }: { bindings: Record<strin
     return () => window.removeEventListener("keydown", onKey);
   }, [bindings]);
 
-  return null;
+  return (
+    <>
+      <button type="button" className="shortcut-button" onClick={() => dialog.current?.showModal()} aria-haspopup="dialog">
+        Keyboard shortcuts <kbd>?</kbd>
+      </button>
+      <dialog ref={dialog} className="shortcut-dialog" aria-labelledby="shortcut-title" onClick={(event) => { if (event.target === dialog.current) dialog.current?.close(); }}>
+        <div>
+          <p className="section-kicker" id="shortcut-title">KEYBOARD SHORTCUTS</p>
+          <dl>
+            {Object.entries(bindings).map(([key, binding]) => (
+              <div key={key}><dt><kbd>{KEY_LABEL[key] ?? key.toUpperCase()}</kbd></dt><dd>{binding.label}</dd></div>
+            ))}
+            <div><dt><kbd>?</kbd></dt><dd>Show this list</dd></div>
+          </dl>
+          <p>Shortcuts pause while you type in a field or while a chart is focused. Charts use ← → to step through points.</p>
+          <form method="dialog"><button type="submit">Close</button></form>
+        </div>
+      </dialog>
+    </>
+  );
 }
