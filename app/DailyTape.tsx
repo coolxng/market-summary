@@ -5,6 +5,7 @@ import SiteHeader from "./components/SiteHeader";
 import PublicationBanner from "./components/PublicationBanner";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import PriceChart from "./components/PriceChart";
+import SectionShare from "./components/SectionShare";
 import MarketInternals from "./components/MarketInternals";
 import RatesCredit from "./components/RatesCredit";
 import RegimeStrip from "./components/RegimeStrip";
@@ -148,11 +149,13 @@ function Signal({ label, value, note, tone }: { label: string; value: string; no
   );
 }
 
-function SectionHeading({ id, number, kicker, title, children }: { id?: string; number: string; kicker: string; title: React.ReactNode; children?: React.ReactNode }) {
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/").replace(/\/$/, "");
+
+function SectionHeading({ id, number, kicker, title, children, share }: { id?: string; number: string; kicker: string; title: React.ReactNode; children?: React.ReactNode; share?: { url: string; title: string } }) {
   return (
     <div className="section-heading">
       <div><p className="section-kicker">{number} / {kicker}</p><h2 id={id ? `${id}-title` : undefined}>{title}</h2></div>
-      {children && <p>{children}</p>}
+      {(children || share) && <div className="section-heading__aside">{children && <p>{children}</p>}{share && <SectionShare url={share.url} title={share.title} />}</div>}
     </div>
   );
 }
@@ -286,6 +289,9 @@ export default function DailyTape({
   });
 
   const tenYearChange = tenYear?.abs_change ?? null;
+  const permalink = `${SITE_URL}/reports/${dailyReport.session_date}/`;
+  const shareDate = formatSessionDate(dailyReport.session_date, { month: "short", day: "numeric", year: "numeric" });
+  const shareFor = (anchor: string, section: string) => ({ url: `${permalink}#${anchor}`, title: `The Daily Tape · ${shareDate} · ${section}` });
 
   return (
     <main id="main">
@@ -315,6 +321,7 @@ export default function DailyTape({
                 <span className={`tag ${sp && sp.pct_change >= 0 ? "up" : "down"}`}>S&amp;P {formatPct(sp?.pct_change)}</span>
                 <span className="tag neutral">Breadth {breadth.advances}/{sectorTotal}</span>
                 <span className={`tag ${vix && vix.pct_change <= 0 ? "up" : "down"}`}>VIX {formatPct(vix?.pct_change)}</span>
+                <SectionShare {...shareFor("brief", "The one-line read")} label="Copy link" />
                 <ShareSummaryButton
                   headline={headline}
                   session={dateRange}
@@ -327,8 +334,8 @@ export default function DailyTape({
                 />
               </div>
             </div>
-            <aside className="regime-card" aria-label="Market regime signals">
-              <div className="regime-heading"><span>REGIME MONITOR</span><span className="live-dot">SESSION CLOSED</span></div>
+            <aside className="regime-card" id="regime-monitor" aria-label="Market regime signals">
+              <div className="regime-heading"><span>REGIME MONITOR</span><span className="regime-heading__tools"><span className="live-dot">SESSION CLOSED</span><SectionShare {...shareFor("regime-monitor", "Regime monitor")} /></span></div>
               <Signal label="Risk appetite" value={riskTone} note={`S&P ${formatPct(sp?.pct_change)} · VIX ${formatNumber(vix?.end_price)}`} tone={regime.regime === "constructive" ? "good" : regime.regime === "unavailable" ? "neutral" : "warn"} />
               <Signal label="Participation" value={breadthTone} note={`${breadth.advances} of ${sectorTotal} sectors advanced`} tone={breadthTone === "Broad" ? "good" : "warn"} />
               <Signal
@@ -400,7 +407,7 @@ export default function DailyTape({
         )}
 
         <section className="scorecard section-block" id="scorecard" aria-labelledby="scorecard-title">
-          <SectionHeading id="scorecard" number="01" kicker="SCORECARD" title="The tape, at a glance">Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
+          <SectionHeading id="scorecard" number="01" kicker="SCORECARD" title="The tape, at a glance" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
           <div className="index-grid">
             <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" slug="spx" assetBaseHref={assetBaseHref} />
             <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" slug="nasdaq" assetBaseHref={assetBaseHref} />
@@ -429,7 +436,7 @@ export default function DailyTape({
         </section>
 
         <section className="section-block" id="sectors" aria-labelledby="sectors-title">
-          <SectionHeading id="sectors" number="03" kicker="LEADERSHIP" title="Where the tape actually moved">All 11 sector ETFs ranked by session return, with weighting and participation checks.</SectionHeading>
+          <SectionHeading id="sectors" number="03" kicker="LEADERSHIP" title="Where the tape actually moved" share={shareFor("sectors", "Sector leadership")}>All 11 sector ETFs ranked by session return, with weighting and participation checks.</SectionHeading>
           <div className="comparison-strip" aria-label="Market breadth comparison">
             <div><span>CAP-WEIGHTED (SPY)</span><strong className={toneClass(breadth.spy_pct_change)}>{breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)}</strong></div>
             <div><span>EQUAL-WEIGHT (RSP)</span><strong className={toneClass(breadth.rsp_pct_change)}>{breadth.rsp_pct_change == null ? "Unavailable" : formatPct(breadth.rsp_pct_change)}</strong></div>
@@ -455,7 +462,7 @@ export default function DailyTape({
         </section>
 
         <section className="section-block internals-section" id="internals" aria-labelledby="internals-title">
-          <SectionHeading id="internals" number="04" kicker="MARKET INTERNALS" title="Is the move holding underneath?">
+          <SectionHeading id="internals" number="04" kicker="MARKET INTERNALS" title="Is the move holding underneath?" share={shareFor("internals", "Market internals")}>
             Participation measured across stated, tracked universes. None of these is presented as NYSE or Nasdaq constituent breadth.
           </SectionHeading>
           <MarketInternals report={dailyReport} />

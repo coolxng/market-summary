@@ -254,7 +254,16 @@ button { font: inherit; }
 .section-block { padding: 92px 0; border-top: 1px solid var(--line); scroll-margin-top: 68px; }
 .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 40px; margin-bottom: 38px; }
 .section-heading h2, .macro-copy h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(36px, 4vw, 62px); line-height: .98; letter-spacing: -.045em; font-weight: 500; }
-.section-heading > p { max-width: 360px; margin: 0 0 5px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.section-heading > p, .section-heading__aside > p { max-width: 360px; margin: 0 0 5px; color: var(--ink-soft); font-size: 12px; line-height: 1.5; }
+.section-heading__aside { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; max-width: 360px; }
+.section-share { display: inline-flex; align-items: center; gap: 8px; }
+.section-share button { padding: 0; border: 0; color: var(--accent); background: transparent; cursor: pointer; font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.section-share button:hover { text-decoration: underline; }
+.section-share input { width: 220px; padding: 4px 6px; border: 1px solid var(--line); color: var(--ink); background: var(--panel); font-size: 10px; }
+.hero-tags .section-share button { padding: 8px 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); }
+.regime-heading__tools { display: inline-flex; align-items: center; gap: 14px; }
+.regime-heading .section-share button { color: inherit; font-size: 9px; opacity: .7; }
+.regime-heading .section-share button:hover { opacity: 1; }
 .section-heading .section-kicker { margin-bottom: 12px; }
 
 .archive-context {
@@ -960,7 +969,7 @@ kbd { display: inline-block; min-width: 18px; margin-left: 4px; padding: 1px 5px
   .dek { font-size: 18px; }
   .section-block { padding: 68px 0; }
   .section-heading { display: block; }
-  .section-heading > p { margin-top: 16px; }
+  .section-heading > p, .section-heading__aside { margin-top: 16px; }
   .index-grid { grid-template-columns: 1fr; }
   .index-card { border-right: 0; border-bottom: 0; border-top: 1px solid var(--line); }
   .index-card:first-child { border-top: 0; }
