@@ -1,0 +1,29 @@
+.page { width: min(1280px, 92vw); margin: 0 auto; }
+.hero { padding: 82px 0 60px; border-bottom: 1px solid var(--line); }
+.hero > p { margin: 0 0 16px; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
+.hero h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(52px, 7vw, 92px); line-height: .92; letter-spacing: -.055em; font-weight: 500; }
+.hero > span { display: block; max-width: 720px; margin-top: 20px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 18px; line-height: 1.55; }
+.searchBox { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; max-width: 900px; margin-top: 38px; padding: 0 16px; border: 1px solid var(--ink); background: var(--panel); }
+.searchBox > span { color: var(--accent); font-size: 20px; font-weight: 900; }
+.searchBox input { min-height: 56px; width: 100%; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: 16px; }
+.searchBox input::placeholder { color: var(--ink-soft); }
+.searchBox kbd { padding: 4px 7px; border: 1px solid var(--line); color: var(--ink-soft); font-size: 8px; }
+.results { display: grid; grid-template-columns: 1fr 1fr; gap: 52px; padding: 64px 0 90px; }
+.heading { display: flex; justify-content: space-between; gap: 20px; padding: 0 0 12px; border-bottom: 1px solid var(--ink); color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
+.heading small { font: inherit; }
+.list a { display: grid; grid-template-columns: 120px 1fr 60px; align-items: center; gap: 18px; min-height: 78px; padding: 13px 0; border-bottom: 1px solid var(--line); }
+.list a:hover { color: var(--accent); }
+.list a > div strong, .list a > div span { display: block; }
+.list a > div strong { font-size: 11px; }
+.list a > div span { margin-top: 4px; color: var(--ink-soft); font-size: 8px; }
+.list a p { margin: 0; color: var(--ink); font-family: Georgia, serif; font-size: 15px; line-height: 1.4; }
+.list a > b { justify-self: end; font-size: 8px; text-transform: uppercase; }
+.empty { color: var(--ink-soft); font-family: Georgia, serif; }
+@media (max-width: 900px) { .results { grid-template-columns: 1fr; } }
+@media (max-width: 650px) {
+  .page { width: min(100% - 32px, 1280px); }
+  .hero { padding-top: 48px; }
+  .list a { grid-template-columns: 90px 1fr auto; gap: 10px; }
+  .list a > b { font-size: 0; }
+  .list a > b::after { content: "→"; font-size: 15px; }
+}
