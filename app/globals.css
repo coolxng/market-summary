@@ -319,7 +319,7 @@ button { font: inherit; }
 .positive { color: var(--up) !important; }
 .negative { color: var(--down) !important; }
 .muted { color: var(--ink-soft) !important; }
-.index-value { margin-top: 28px; font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: clamp(31px, 3.05vw, 48px); line-height: 1.02; letter-spacing: -.03em; font-weight: 650; font-variant-numeric: tabular-nums; }
+.index-value { margin-top: 28px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: clamp(31px, 3.05vw, 48px); line-height: 1.02; letter-spacing: -.03em; font-weight: 650; font-variant-numeric: tabular-nums; }
 .index-name { margin-top: 7px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 14px; }
 .sparkline { display: block; width: calc(100% + 48px); height: 72px; margin: 25px -24px 0; }
 .spark-empty { padding: 25px 0; color: var(--ink-soft); font-size: 10px; }
