@@ -331,6 +331,40 @@ class GenerateReportTests(unittest.TestCase):
             self.assertEqual(archived_snapshot, generate_report.archive_snapshot(snapshot))
             self.assertEqual(snapshot["sector_data"]["XLK"]["session_date"], "2026-07-14")
 
+    def test_stale_session_rows_never_enter_breadth_or_megacaps(self):
+        session = datetime.date(2026, 9, 21)
+        previous = datetime.date(2026, 9, 18)
+        stale = {"XLK", "XLF", "NVDA", "SPY"}
+
+        def fake_fetch(symbol, session_date, previous_session_date=None):
+            if symbol in stale:
+                return valid_dataset(symbol, previous, datetime.date(2026, 9, 17))
+            return valid_dataset(symbol, session_date, previous)
+
+        def fake_chart(symbol, session_date, fallback_data=None, **kwargs):
+            return {"times": [], "closes": [], "source": "daily_ohlc_fallback", "session_date": session_date.isoformat(), "error": "none"}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            snapshot_path = Path(temp_dir) / "report_snapshot.json"
+            with (
+                mock.patch.object(generate_report, "resolve_completed_sessions", return_value=(session, previous)),
+                mock.patch.object(generate_report, "fetch_daily_data", side_effect=fake_fetch),
+                mock.patch.object(generate_report, "fetch_daily_chart_data", side_effect=fake_chart),
+                mock.patch.object(generate_report, "should_use_ai", return_value=False),
+                offline_fixtures.offline_generation(generate_report),
+            ):
+                generate_report.generate_html(snapshot_path=snapshot_path, archive_root=Path(temp_dir) / "reports")
+            snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+
+        self.assertNotIn("Technology (XLK)", snapshot["daily_sector_performance"])
+        self.assertEqual(len(snapshot["daily_sector_performance"]), 9)
+        self.assertEqual(snapshot["sector_data"]["XLK"]["error"], "stale session 2026-09-18")
+        self.assertIsNone(snapshot["sector_data"]["XLK"]["end_price"])
+        self.assertIsNone(snapshot["mega_cap_data"]["NVDA"]["result"]["pct_change"])
+        self.assertIsNone(snapshot["daily_market_breadth"]["spy_pct_change"])
+        self.assertIn("NVDA: unavailable", snapshot["data_quality"]["issues"])
+        self.assertEqual(snapshot["derived_metrics"]["risk_confirmation"]["signal"], "mixed")
+
     def test_same_session_does_not_overwrite_artifacts(self):
         session = datetime.date(2026, 7, 14)
         previous = datetime.date(2026, 7, 13)

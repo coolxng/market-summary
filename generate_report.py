@@ -352,6 +352,10 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
             print(f"  Exception fetching Stooq fallback for {ticker_symbol}: {exc}")
 
     print(f"  All fetch attempts failed for {ticker_symbol}. Marking it unavailable.")
+    return unavailable_dataset(ticker_symbol, f"Data unavailable for {ticker_symbol}")
+
+
+def unavailable_dataset(ticker_symbol, error):
     # Unavailable rows keep null values so no consumer can mistake them for a flat session.
     return {
         "dates": [],
@@ -366,8 +370,22 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
         "session_date": None,
         "previous_session_date": None,
         "ticker_used": ticker_symbol,
-        "error": f"Data unavailable for {ticker_symbol}",
+        "error": error,
     }
+
+
+def enforce_session(row, ticker_symbol, session_date):
+    """Reject a U.S.-calendar row that belongs to a different session.
+
+    Upstream feeds occasionally return the prior session's bar after the close.
+    Such a row would silently mix two sessions into breadth, regime and
+    narrative figures, so it becomes an explicit unavailable row instead.
+    """
+    if row.get("error") or row.get("session_date") == session_date.isoformat():
+        return row
+    stale = row.get("session_date") or "unknown"
+    print(f"  {ticker_symbol} returned session {stale}, not {session_date.isoformat()}; marking it unavailable.")
+    return {**unavailable_dataset(ticker_symbol, f"stale session {stale}"), "stale_session_date": stale}
 
 
 def source_datetime(value):
@@ -966,6 +984,10 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         symbol: fetch_daily_data(symbol, session_date, previous_session_date)
         for symbol in ticker_symbols
     }
+    datasets = {
+        symbol: row if symbol in FULL_DAY_CHART_TICKERS else enforce_session(row, symbol, session_date)
+        for symbol, row in datasets.items()
+    }
     validate_core_datasets(
         datasets,
         expected_session_date=session_date,
@@ -991,7 +1013,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "Comm. Services (XLC)": "XLC",
     }
     sector_results = {
-        name: fetch_daily_data(ticker, session_date, previous_session_date)
+        name: enforce_session(fetch_daily_data(ticker, session_date, previous_session_date), ticker, session_date)
         for name, ticker in sectors.items()
     }
     sector_perf = {
@@ -1030,7 +1052,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     }
     megacap_data = {}
     for ticker, company in megacaps.items():
-        result = fetch_daily_data(ticker, session_date, previous_session_date)
+        result = enforce_session(fetch_daily_data(ticker, session_date, previous_session_date), ticker, session_date)
         megacap_data[ticker] = {
             "name": company,
             "result": result,
@@ -1040,8 +1062,8 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
                 fallback_data=result,
             ),
         }
-    spy = fetch_daily_data("SPY", session_date, previous_session_date)
-    rsp = fetch_daily_data("RSP", session_date, previous_session_date)
+    spy = enforce_session(fetch_daily_data("SPY", session_date, previous_session_date), "SPY", session_date)
+    rsp = enforce_session(fetch_daily_data("RSP", session_date, previous_session_date), "RSP", session_date)
 
     asset_catalog = [
         {"slug": "spx", "symbol": "^GSPC", "name": "S&P 500", "category": "Index"},
