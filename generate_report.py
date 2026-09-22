@@ -208,6 +208,16 @@ def has_new_session(session_date, snapshot_path="report_snapshot.json"):
     return existing_session is None or session_date > existing_session
 
 
+def regenerate_existing_session():
+    """Manual-only override for rebuilding the latest completed session."""
+    return os.environ.get("MARKET_SUMMARY_REGENERATE", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def validate_dataset(dataset, label, allow_zero=False):
     if dataset.get("error"):
         raise ValueError(f"{label} data unavailable: {dataset['error']}")
@@ -972,8 +982,13 @@ def fmt_date(dt, include_day=True):
 def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="public/reports"):
     session_date, previous_session_date = resolve_completed_sessions(now)
     if not has_new_session(session_date, snapshot_path):
-        print(f"No new completed trading session after {session_date.isoformat()}; leaving artifacts unchanged.")
-        return False
+        if not regenerate_existing_session():
+            print(f"No new completed trading session after {session_date.isoformat()}; leaving artifacts unchanged.")
+            return False
+        print(
+            "MARKET_SUMMARY_REGENERATE enabled; "
+            f"rebuilding completed session {session_date.isoformat()} for manual validation."
+        )
 
     print(f"Fetching market data for completed session {session_date.isoformat()}...")
 
