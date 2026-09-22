@@ -7,6 +7,8 @@ import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import PriceChart from "./components/PriceChart";
 import MarketInternals from "./components/MarketInternals";
 import RatesCredit from "./components/RatesCredit";
+import RegimeStrip from "./components/RegimeStrip";
+import RelativeStrength from "./components/RelativeStrength";
 import { sessionPoints } from "./lib/chart";
 import MarketCalendarList from "./components/MarketCalendarList";
 import CatalystList from "./components/CatalystList";
@@ -21,7 +23,7 @@ import {
   type SessionChart,
 } from "./lib/report";
 import { decodeText, formatBpsFromPoints, formatNumber, formatPct, formatPp, formatSessionDate, toneClass } from "./lib/format";
-import { classifyRegime, REGIME_LABEL } from "./lib/regime";
+import { classifyRegime, REGIME_LABEL, type RegimeEntry } from "./lib/regime";
 
 export type { DailyReport } from "./lib/report";
 
@@ -172,6 +174,8 @@ export default function DailyTape({
   previousReportHref,
   nextReportHref,
   archiveComparison,
+  regimeTimeline = [],
+  regimeHrefBase,
 }: {
   report: DailyReport;
   archived?: boolean;
@@ -180,6 +184,8 @@ export default function DailyTape({
   previousReportHref?: string;
   nextReportHref?: string;
   archiveComparison?: ArchiveComparison;
+  regimeTimeline?: RegimeEntry[];
+  regimeHrefBase?: string;
 }) {
   const dailyReport = report;
   const market = dailyReport.market_data;
@@ -342,6 +348,16 @@ export default function DailyTape({
           <article><span>03 / INTERNALS</span><strong>{breadthTone} breadth</strong><p>{capWeightMessage}</p></article>
         </section>
 
+        {regimeTimeline.length > 0 && (
+          <section className="regime-history" id="regime" aria-labelledby="regime-title">
+            <div className="regime-history__head">
+              <p className="section-kicker">REGIME HISTORY</p>
+              <h2 id="regime-title">How the tape has read</h2>
+            </div>
+            <RegimeStrip entries={regimeTimeline} hrefBase={regimeHrefBase} rule={dailyReport.regime_history?.rule} />
+          </section>
+        )}
+
         {archived && archiveComparison && archiveComparison.sampleSize > 0 && (
           <section className="archive-context section-block" aria-labelledby="context-title">
             <div className="section-heading">
@@ -425,6 +441,7 @@ export default function DailyTape({
               );
             })}
           </div>
+          <RelativeStrength rows={dailyReport.relative_strength?.rows} assetBaseHref={assetBaseHref} />
         </section>
 
         <section className="section-block internals-section" id="internals" aria-labelledby="internals-title">
@@ -432,25 +449,6 @@ export default function DailyTape({
             Participation measured across stated, tracked universes. None of these is presented as NYSE or Nasdaq constituent breadth.
           </SectionHeading>
           <MarketInternals report={dailyReport} />
-          {Object.keys(dailyReport.market_internals?.sector_relative_strength_vs_spy ?? {}).length > 0 && (
-            <div className="relative-strength">
-              <div className="subsection-head"><span>SECTOR RELATIVE STRENGTH VS SPY</span><small>5D / 1M / 3M · PERCENTAGE POINTS</small></div>
-              {Object.entries(dailyReport.market_internals!.sector_relative_strength_vs_spy)
-                .sort((a, b) => (b[1]["1m"] ?? -Infinity) - (a[1]["1m"] ?? -Infinity))
-                .map(([name, windows]) => {
-                  const symbol = sectorSymbol(name);
-                  const asset = symbol ? assetBySymbol[symbol] : undefined;
-                  return (
-                    <div className="relative-row" key={name}>
-                      <span>{asset ? <a href={`${assetBaseHref}${asset.slug}/`}>{sectorLabel(name)}</a> : sectorLabel(name)}</span>
-                      {(["5d", "1m", "3m"] as const).map((window) => (
-                        <strong key={window} className={toneClass(windows[window])}>{formatPp(windows[window])}</strong>
-                      ))}
-                    </div>
-                  );
-                })}
-            </div>
-          )}
         </section>
 
         <section className="section-block" id="mega-cap" aria-labelledby="mega-cap-title">

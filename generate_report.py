@@ -13,7 +13,7 @@ from zoneinfo import ZoneInfo
 import yfinance as yf
 
 from data_providers import build_market_calendar, build_verified_catalysts
-from breadth import relative_return, sector_ad_line
+from breadth import REGIME_RULE, regime_history, relative_return, sector_ad_line
 from market_intelligence import build_data_quality, fetch_history_bundle
 from official_rates import fetch_credit_spreads, fetch_treasury_rates
 
@@ -1125,17 +1125,40 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         }
 
     spy_returns = spy_history.get("returns", {})
-    relative_strength = {}
-    for sector_name, row in sector_trend.items():
-        relative_strength[sector_name] = {}
-        for window in ("5d", "1m", "3m", "ytd"):
-            sector_return = row.get("returns", {}).get(window)
-            benchmark_return = spy_returns.get(window)
-            relative_strength[sector_name][window] = (
-                round(sector_return - benchmark_return, 2)
-                if isinstance(sector_return, (int, float)) and isinstance(benchmark_return, (int, float))
-                else None
-            )
+
+    def one_day_spread(row):
+        if row.get("error") or spy.get("error"):
+            return None
+        return round(row["pct_change"] - spy["pct_change"], 2)
+
+    def persistence(windows):
+        values = [windows[key] for key in ("1d", "5d", "1m")]
+        if any(value is None for value in values):
+            return "incomplete"
+        if all(value > 0 for value in values):
+            return "leading"
+        if all(value < 0 for value in values):
+            return "lagging"
+        return "mixed"
+
+    relative_rows = []
+    for group, entries in (
+        ("Sector", [(name.split(" (")[0], ticker, sector_results[name]) for name, ticker in sectors.items()]),
+        ("Large cap", [(company, ticker, megacap_data[ticker]["result"]) for ticker, company in megacaps.items()]),
+    ):
+        for label, ticker, row in entries:
+            windows = {
+                "1d": one_day_spread(row),
+                "5d": relative_return(asset_history.get(ticker, {}), spy_history, 5),
+                "1m": relative_return(asset_history.get(ticker, {}), spy_history, 21),
+            }
+            relative_rows.append({"symbol": ticker, "name": label, "group": group, **windows, "persistence": persistence(windows)})
+    relative_strength = {
+        "benchmark": "SPY",
+        "unit": "percentage points of total return versus SPY",
+        "windows": {"1d": "1 session", "5d": "5 sessions", "1m": "21 sessions"},
+        "rows": relative_rows,
+    }
 
     tracked_breadth_symbols = list(dict.fromkeys([*sectors.values(), *megacaps.keys(), "SPY", "RSP", "QQQ", "IWM"]))
     tracked_highs = 0
@@ -1166,7 +1189,6 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
             "valid": tracked_valid,
             "universe": "11 sector ETFs + tracked mega-caps + SPY/RSP/QQQ/IWM",
         },
-        "sector_relative_strength_vs_spy": relative_strength,
         "benchmark_returns": spy_returns,
         "equal_weight_vs_cap_weight_pp": {
             "1d": round(rsp["pct_change"] - spy["pct_change"], 2) if not rsp.get("error") and not spy.get("error") else None,
@@ -1273,6 +1295,16 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "verified_catalysts": verified_catalysts,
         "rates_credit": rates_credit,
         "market_internals": market_internals,
+        "relative_strength": relative_strength,
+        "regime_history": {
+            "rule": REGIME_RULE,
+            "note": "Reconstructed from daily closes with the published rule; each day uses only that day's moves.",
+            "sessions": regime_history(
+                asset_history.get("^GSPC", {}),
+                asset_history.get("^VIX", {}),
+                [asset_history.get(ticker, {}) for ticker in sectors.values()],
+            ),
+        },
         "asset_catalog": asset_catalog,
         "asset_history": asset_history,
         "market_data": datasets,

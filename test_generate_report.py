@@ -330,6 +330,15 @@ class GenerateReportTests(unittest.TestCase):
             self.assertNotIn("asset_history", archived_snapshot)
             self.assertEqual(archived_snapshot, generate_report.archive_snapshot(snapshot))
             self.assertEqual(snapshot["sector_data"]["XLK"]["session_date"], "2026-07-14")
+            rows = {row["symbol"]: row for row in snapshot["relative_strength"]["rows"]}
+            self.assertEqual(len(rows), 20)
+            self.assertEqual(rows["NVDA"]["group"], "Large cap")
+            self.assertEqual(rows["XLK"]["1d"], 0.0)
+            self.assertIn(rows["XLK"]["persistence"], {"leading", "lagging", "mixed"})
+            regimes = snapshot["regime_history"]["sessions"]
+            self.assertEqual(len(regimes), 60)
+            self.assertEqual(regimes[-1]["date"], "2026-07-14")
+            self.assertTrue(all(row["basis"] == "reconstructed" for row in regimes))
 
     def test_stale_session_rows_never_enter_breadth_or_megacaps(self):
         session = datetime.date(2026, 9, 21)

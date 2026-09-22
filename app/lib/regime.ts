@@ -48,3 +48,70 @@ export function classifyRegime(report: RegimeSource): { regime: RegimeKey; basis
   const regime = applyRegimeRule(row("^GSPC"), row("^VIX"), Object.values(report.daily_sector_performance ?? {}).filter(isFiniteNumber));
   return { regime, basis: regime === "unavailable" ? "unavailable" : "derived" };
 }
+
+export type RegimeEntry = {
+  date: string;
+  regime: RegimeKey;
+  basis: "published" | "reconstructed" | "derived" | "unavailable";
+  sp500: number | null;
+  vix: number | null;
+  positive: number | null;
+  valid: number | null;
+  href?: string;
+};
+
+type TimelineSource = RegimeSource & {
+  session_date: string;
+  regime_history?: { sessions: Array<{ date: string; signal: string; sp500_pct: number | null; vix_pct: number | null; sectors_positive: number; sectors_valid: number }> };
+};
+
+function fromIssue(report: TimelineSource, href?: string): RegimeEntry {
+  const { regime, basis } = classifyRegime(report);
+  const pct = (symbol: string) => {
+    const row = report.market_data?.[symbol];
+    return row && !row.error && isFiniteNumber(row.pct_change) ? row.pct_change : null;
+  };
+  const sectors = Object.values(report.daily_sector_performance ?? {}).filter(isFiniteNumber);
+  return {
+    date: report.session_date,
+    regime,
+    basis,
+    sp500: pct("^GSPC"),
+    vix: pct("^VIX"),
+    positive: sectors.length ? sectors.filter((value) => value > 0).length : null,
+    valid: sectors.length || null,
+    href,
+  };
+}
+
+/**
+ * Up to `sessions` regime classifications ending at `latest.session_date`.
+ * Classifications published in an archived issue (or the latest issue) win;
+ * other days come from the generator's reconstruction with the same rule.
+ * Nothing after the latest issue's own date is used.
+ */
+export function buildRegimeTimeline(
+  latest: TimelineSource,
+  archive: Array<{ report: TimelineSource; href: string }>,
+  sessions = 60,
+): RegimeEntry[] {
+  const byDate = new Map<string, RegimeEntry>();
+  for (const row of latest.regime_history?.sessions ?? []) {
+    if (row.date > latest.session_date) continue;
+    byDate.set(row.date, {
+      date: row.date,
+      regime: SIGNAL_TO_REGIME[row.signal] ?? "unavailable",
+      basis: SIGNAL_TO_REGIME[row.signal] ? "reconstructed" : "unavailable",
+      sp500: row.sp500_pct,
+      vix: row.vix_pct,
+      positive: row.sectors_positive,
+      valid: row.sectors_valid,
+    });
+  }
+  for (const { report, href } of archive) {
+    if (report.session_date > latest.session_date) continue;
+    byDate.set(report.session_date, fromIssue(report, href));
+  }
+  byDate.set(latest.session_date, { ...fromIssue(latest), href: byDate.get(latest.session_date)?.href });
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date)).slice(-sessions);
+}

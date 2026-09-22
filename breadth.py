@@ -85,3 +85,49 @@ def relative_return(history, benchmark, sessions):
     if mine is None or theirs is None:
         return None
     return round(mine - theirs, 2)
+
+
+REGIME_RULE = (
+    "Constructive: S&P 500 up, VIX down, all 11 sector ETFs reporting and at least 60% advancing. "
+    "Defensive: S&P 500 down, VIX up, all 11 reporting and at most 40% advancing. Otherwise mixed."
+)
+
+
+def classify_regime(sp_pct, vix_pct, sector_moves, expected=11):
+    """The generator's published risk-confirmation rule (build_editorial_context)."""
+    if sp_pct is None or vix_pct is None:
+        return "unavailable"
+    full = len(sector_moves) == expected
+    share = (sum(move > 0 for move in sector_moves) / len(sector_moves) * 100) if sector_moves else None
+    if sp_pct > 0 and vix_pct < 0 and full and share is not None and share >= 60:
+        return "risk_on_confirmed"
+    if sp_pct < 0 and vix_pct > 0 and full and share is not None and share <= 40:
+        return "risk_off_confirmed"
+    return "mixed"
+
+
+def regime_history(sp_history, vix_history, sector_histories, sessions=60, expected=11):
+    """Apply the published rule to each of the last `sessions` S&P 500 sessions.
+
+    Each day uses only that day's close-to-close moves, so no later data
+    influences a classification. Days missing S&P or VIX data are marked
+    unavailable rather than guessed.
+    """
+    sp_returns = daily_total_returns(sp_history or {})
+    vix_returns = daily_total_returns(vix_history or {})
+    sector_returns = [daily_total_returns(history or {}) for history in sector_histories]
+    rows = []
+    for date in sorted(sp_returns)[-sessions:]:
+        moves = [returns[date] for returns in sector_returns if date in returns]
+        sp_pct = sp_returns.get(date)
+        vix_pct = vix_returns.get(date)
+        rows.append({
+            "date": date,
+            "signal": classify_regime(sp_pct, vix_pct, moves, expected),
+            "sp500_pct": sp_pct,
+            "vix_pct": vix_pct,
+            "sectors_positive": sum(move > 0 for move in moves),
+            "sectors_valid": len(moves),
+            "basis": "reconstructed",
+        })
+    return rows

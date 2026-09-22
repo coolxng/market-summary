@@ -3,7 +3,7 @@ import path from "node:path";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import DailyTape, { type ArchiveComparison, type DailyReport } from "../../DailyTape";
-import { classifyRegime } from "../../lib/regime";
+import { buildRegimeTimeline, classifyRegime } from "../../lib/regime";
 
 export const dynamic = "force-static";
 export const dynamicParams = false;
@@ -157,6 +157,8 @@ export default async function ArchivedReportPage({ params }: { params: Promise<{
       previousReportHref={previousDate ? `../${previousDate}/` : undefined}
       nextReportHref={nextDate ? `../${nextDate}/` : undefined}
       archiveComparison={archiveComparison}
+      regimeTimeline={buildRegimeTimeline(report, dates.map((item) => ({ report: readReport(item), href: `${item}/` })).filter((entry): entry is { report: DailyReport; href: string } => entry.report !== null))}
+      regimeHrefBase="../"
     />
   );
 }

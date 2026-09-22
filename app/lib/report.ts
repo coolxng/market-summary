@@ -135,6 +135,25 @@ export type CreditSpreads = FeedStatus & {
 };
 export type SectorAdLine = { dates: string[]; net_advancing: number[]; cumulative: number[]; universe: string; basis: string };
 
+export type RelativeStrengthRow = {
+  symbol: string;
+  name: string;
+  group: "Sector" | "Large cap";
+  "1d": number | null;
+  "5d": number | null;
+  "1m": number | null;
+  persistence: "leading" | "lagging" | "mixed" | "incomplete";
+};
+export type RegimeSession = {
+  date: string;
+  signal: "risk_on_confirmed" | "risk_off_confirmed" | "mixed" | "unavailable";
+  sp500_pct: number | null;
+  vix_pct: number | null;
+  sectors_positive: number;
+  sectors_valid: number;
+  basis: "reconstructed";
+};
+
 export type TrendParticipation = { above: number; valid: number; share_pct: number };
 
 export type AssetHistory = {
@@ -179,6 +198,8 @@ export type DailyReport = {
     limitation: string;
   };
   asset_history?: Record<string, AssetHistory>;
+  relative_strength?: { benchmark: string; unit: string; windows: Record<string, string>; rows: RelativeStrengthRow[] };
+  regime_history?: { rule: string; note: string; sessions: RegimeSession[] };
   market_data: Record<string, MarketDatum>;
   session_charts: Record<string, SessionChart>;
   mega_cap_data?: Record<string, MegaCapSnapshot>;

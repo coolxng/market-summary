@@ -37,6 +37,23 @@ class BreadthTests(unittest.TestCase):
         self.assertEqual(breadth.relative_return(rsp, spy, 2), 2.01)
         self.assertIsNone(breadth.relative_return(rsp, spy, 5))
 
+    def test_regime_rule_matches_published_thresholds(self):
+        self.assertEqual(breadth.classify_regime(0.5, -2.0, [1.0] * 7 + [-1.0] * 4), "risk_on_confirmed")
+        self.assertEqual(breadth.classify_regime(0.5, -2.0, [1.0] * 6 + [-1.0] * 5), "mixed")  # 54.5% < 60%
+        self.assertEqual(breadth.classify_regime(0.5, -2.0, [1.0] * 10), "mixed")  # incomplete coverage
+        self.assertEqual(breadth.classify_regime(-0.5, 3.0, [1.0] * 4 + [-1.0] * 7), "risk_off_confirmed")
+        self.assertEqual(breadth.classify_regime(None, 3.0, [1.0] * 11), "unavailable")
+
+    def test_regime_history_uses_same_day_moves_only(self):
+        sp = hist([100.0, 101.0, 100.0, 100.5])
+        vix = hist([20.0, 19.0, 21.0])  # no VIX bar for the last day
+        up = hist([10.0, 10.1, 10.0, 10.2])
+        history = breadth.regime_history(sp, vix, [up] * 11, sessions=60)
+        self.assertEqual([row["signal"] for row in history], ["risk_on_confirmed", "risk_off_confirmed", "unavailable"])
+        self.assertEqual(history[0]["sectors_positive"], 11)
+        self.assertEqual(history[-1]["vix_pct"], None)
+        self.assertTrue(all(row["basis"] == "reconstructed" for row in history))
+
 
 if __name__ == "__main__":
     unittest.main()
