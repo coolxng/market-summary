@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import ShareSummaryButton from "./components/ShareSummaryButton";
+import DeliveryPanel from "./components/DeliveryPanel";
 import WatchlistPanel, { type WatchAsset } from "./components/WatchlistPanel";
 import { assetCatalog, assetBySymbol } from "./lib/assets";
 
@@ -1007,6 +1008,8 @@ export default function DailyTape({
           <div><span>WTI CRUDE</span><strong>${formatNumber(oil.end_price)}</strong><small className={oil.pct_change >= 0 ? "positive" : "negative"}>{formatPct(oil.pct_change)}</small></div>
           <div><span>RUSSELL 2000</span><strong>{formatNumber(russell.end_price)}</strong><small className={russell.pct_change >= 0 ? "positive" : "negative"}>{formatPct(russell.pct_change)}</small></div>
         </section>
+
+        {!archived && <DeliveryPanel feedHref="./feed.xml" />}
 
         <aside className="method-note" aria-label="Data freshness and methodology">
           <div><span>DATA FRESHNESS</span><strong>Through {sessionDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} close</strong></div>
