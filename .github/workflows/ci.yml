@@ -58,5 +58,16 @@ jobs:
           test -f out/sitemap.xml
           test -f out/reports/index.html
           test -f out/reports/2026-09-18/index.html
+          test -f out/morning/index.html
+          test -f out/search/index.html
+          test -f out/assets/spx/index.html
+          test -f out/assets/nvda/index.html
+          test -f out/manifest.webmanifest
+          test -f out/sw.js
+          test -f out/feed.xml
           grep -q 'https://coolxng.github.io/market-summary/' out/sitemap.xml
           grep -q 'reports/2026-09-18' out/sitemap.xml
+          grep -q '/morning/' out/sitemap.xml
+          grep -q '/assets/nvda/' out/sitemap.xml
+          grep -q 'Morning Tape' out/morning/index.html
+          grep -q 'Find the tape' out/search/index.html
