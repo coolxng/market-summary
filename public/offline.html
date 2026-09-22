@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Offline | The Daily Tape</title>
+<style>
+  :root { --paper: #f3f0e7; --ink: #151512; --soft: #515048; --line: #c9c3b5; --accent: #ff5c35; }
+  :root[data-theme="ink"] { --paper: #080808; --ink: #f1eee3; --soft: #aaa7a0; --line: #2b2b2b; --accent: #ff6c47; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 32px 16px; background: var(--paper); color: var(--ink); font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
+  main { max-width: 560px; border-top: 3px solid var(--ink); padding-top: 22px; }
+  p.kicker { margin: 0 0 16px; color: var(--accent); font-size: 10px; font-weight: 900; letter-spacing: .18em; }
+  h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(40px, 9vw, 64px); font-weight: 500; letter-spacing: -.05em; line-height: .95; }
+  p.body { margin: 22px 0 0; color: var(--soft); font-family: Georgia, serif; font-size: 17px; line-height: 1.6; }
+  button { margin-top: 26px; padding: 11px 16px; border: 1px solid var(--line); color: var(--ink); background: transparent; font: inherit; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; cursor: pointer; }
+  button:hover, button:focus-visible { border-color: var(--accent); color: var(--accent); outline: none; }
+</style>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("daily-tape-theme")==="ink"?"ink":"paper"}catch(e){}</script>
+</head>
+<body>
+<main>
+  <p class="kicker">THE DAILY TAPE · OFFLINE</p>
+  <h1>You&rsquo;re offline.</h1>
+  <p class="body">The Daily Tape does not keep copies of past pages on this device, because stored market data would be out of date without saying so. Reconnect to load the latest Close Tape or Morning Tape.</p>
+  <button type="button" onclick="location.reload()">Try again</button>
+</main>
+</body>
+</html>

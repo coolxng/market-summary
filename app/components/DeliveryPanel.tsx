@@ -59,7 +59,7 @@ export default function DeliveryPanel({ feedHref }: { feedHref: string }) {
         <article className="delivery-card">
           <span>INSTALLABLE APP</span>
           <strong>{installed ? "Daily Tape is installed" : "Keep it one click away"}</strong>
-          <p>Install the PWA for a standalone window, home-screen access, and cached recent pages.</p>
+          <p>Install for a standalone window and home-screen access. Market data always loads fresh; nothing is kept offline where it could go stale.</p>
           {installed ? <b>Installed ✓</b> : installPrompt ? <button onClick={install}>Install Daily Tape</button> : <b>Use your browser’s Install / Add to Home Screen option</b>}
         </article>
       </div>
