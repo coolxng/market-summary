@@ -24,6 +24,21 @@ TREASURY_CSV_URL = "https://home.treasury.gov/resource-center/data-chart-center/
 TREASURY_PAGE = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve"
 TREASURY_REAL_PAGE = "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_real_yield_curve"
 FRED_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv"
+FRED_PAGE = "https://fred.stlouisfed.org/"
+
+TREASURY_FRED_SERIES = {
+    "3m": "DGS3MO",
+    "2y": "DGS2",
+    "5y": "DGS5",
+    "10y": "DGS10",
+    "20y": "DGS20",
+    "30y": "DGS30",
+}
+REAL_FRED_SERIES = {
+    "5y": "DFII5",
+    "10y": "DFII10",
+    "30y": "DFII30",
+}
 
 CURVE_TENORS = ("1m", "3m", "6m", "1y", "2y", "5y", "10y", "20y", "30y")
 REAL_TENORS = ("5y", "10y", "30y")
@@ -154,6 +169,22 @@ def _treasury_rows(curve_type, anchor, fetch=http_get):
     return [row for row in rows if row[0] <= anchor]
 
 
+def _fred_curve_rows(anchor, series_map, fetch=http_get):
+    """Build dated Treasury-rate rows from FRED as a network fallback."""
+    start = (anchor - datetime.timedelta(days=21)).isoformat()
+    by_day = {}
+    for tenor, series_id in series_map.items():
+        url = f"{FRED_CSV_URL}?{urllib.parse.urlencode({'id': series_id, 'cosd': start, 'coed': anchor.isoformat()})}"
+        rows = parse_fred_csv(fetch(url, accept="text/csv"))
+        for day, value in rows:
+            if day <= anchor:
+                by_day.setdefault(day, {})[tenor] = value
+    rows = sorted(by_day.items(), key=lambda item: item[0])
+    if not rows:
+        raise ValueError("no FRED Treasury observations")
+    return rows
+
+
 def _change_bp(current, previous):
     if current is None or previous is None:
         return None
@@ -187,30 +218,54 @@ def _spread(latest, prior, long_tenor, short_tenor):
 
 
 def fetch_treasury_rates(anchor, fetch=http_get):
-    """Latest official nominal curve, key spreads and real yields on or before `anchor`."""
+    """Latest Treasury curve; official Treasury first, FRED as network fallback."""
     if "treasury_curve" in disabled_feeds():
         return {**feed_result("treasury_curve", "U.S. Treasury daily par yield curve", TREASURY_PAGE, status="disabled"), "curve": None, "spreads": {}, "real": None}
+
+    source_url = TREASURY_PAGE
+    source_name = "U.S. Treasury daily par yield curve"
+    fallback = None
     try:
         nominal_rows = _treasury_rows("daily_treasury_yield_curve", anchor, fetch)
-        curve = summarize_curve(nominal_rows, CURVE_TENORS)
-        if curve is None:
-            raise ValueError("no curve rows on or before anchor")
-    except Exception as exc:
-        print(f"  Treasury yield curve unavailable: {exc.__class__.__name__}")
+    except Exception as treasury_exc:
+        print(f"  Treasury yield curve primary unavailable: {treasury_exc.__class__.__name__} — trying FRED")
+        try:
+            nominal_rows = _fred_curve_rows(anchor, TREASURY_FRED_SERIES, fetch)
+            source_url = FRED_PAGE
+            source_name = "U.S. Treasury yields via FRED"
+            fallback = "fred"
+        except Exception as fred_exc:
+            print(f"  Treasury yield curve unavailable: {fred_exc.__class__.__name__}")
+            return {
+                **feed_result("treasury_curve", "U.S. Treasury daily par yield curve", TREASURY_PAGE,
+                              error=f"Treasury yield curve unavailable ({fred_exc.__class__.__name__})."),
+                "curve": None, "spreads": {}, "real": None,
+            }
+
+    curve = summarize_curve(nominal_rows, CURVE_TENORS)
+    if curve is None:
         return {
-            **feed_result("treasury_curve", "U.S. Treasury daily par yield curve", TREASURY_PAGE,
-                          error=f"Treasury yield curve unavailable ({exc.__class__.__name__})."),
+            **feed_result("treasury_curve", source_name, source_url, error="Treasury yield curve unavailable (no usable rows)."),
             "curve": None, "spreads": {}, "real": None,
         }
+
     latest = nominal_rows[-1][1]
     prior = nominal_rows[-2][1] if len(nominal_rows) > 1 else {}
     real = None
+    real_source_url = TREASURY_REAL_PAGE
     try:
-        real = summarize_curve(_treasury_rows("daily_treasury_real_yield_curve", anchor, fetch), REAL_TENORS)
-    except Exception as exc:
-        print(f"  Treasury real yield curve unavailable: {exc.__class__.__name__}")
-    return {
-        **feed_result("treasury_curve", "U.S. Treasury daily par yield curve", TREASURY_PAGE, status="ok"),
+        real_rows = _treasury_rows("daily_treasury_real_yield_curve", anchor, fetch)
+        real = summarize_curve(real_rows, REAL_TENORS)
+    except Exception as treasury_real_exc:
+        print(f"  Treasury real yield curve primary unavailable: {treasury_real_exc.__class__.__name__} — trying FRED")
+        try:
+            real = summarize_curve(_fred_curve_rows(anchor, REAL_FRED_SERIES, fetch), REAL_TENORS)
+            real_source_url = FRED_PAGE
+        except Exception as fred_real_exc:
+            print(f"  Treasury real yield curve unavailable: {fred_real_exc.__class__.__name__}")
+
+    result = {
+        **feed_result("treasury_curve", source_name, source_url, status="ok"),
         "curve": curve,
         "spreads": {
             "2s10s": _spread(latest, prior, "10y", "2y"),
@@ -218,8 +273,11 @@ def fetch_treasury_rates(anchor, fetch=http_get):
             "5s30s": _spread(latest, prior, "30y", "5y"),
         },
         "real": real,
-        "real_source_url": TREASURY_REAL_PAGE,
+        "real_source_url": real_source_url,
     }
+    if fallback:
+        result["fallback"] = fallback
+    return result
 
 
 def parse_fred_csv(text):
