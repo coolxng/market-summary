@@ -33,6 +33,9 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
   const toggleTheme = () => {
     const next = theme === "paper" ? "ink" : "paper";
     document.documentElement.dataset.theme = next;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", next === "ink" ? "#080808" : "#f3f0e7");
+    const favicon = document.getElementById("site-favicon") as HTMLLinkElement | null;
+    if (favicon) favicon.href = new URL(next === "ink" ? "favicon-dark.svg" : "favicon-light.svg", favicon.href).href;
     window.localStorage.setItem("daily-tape-theme", next);
     setTheme(next);
   };
