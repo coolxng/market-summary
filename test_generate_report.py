@@ -526,7 +526,9 @@ class EditorialTests(unittest.TestCase):
             brief,provenance=generate_report.generate_editorial(context,cards)
         send.assert_called_once()
         payload=json.loads(send.call_args.args[0].data)
-        self.assertEqual(payload['max_tokens'],1200)
+        self.assertEqual(payload['max_tokens'],1600)
+        self.assertEqual(payload['thinking'], {'type': 'disabled'})
+        self.assertEqual(payload['output_config']['effort'], 'low')
         schema=payload['output_config']['format']
         self.assertEqual(schema['type'],'json_schema')
         self.assertIn('selection',schema['schema']['properties'])
@@ -649,6 +651,9 @@ class EditorialTests(unittest.TestCase):
         plan=generate_report.default_editorial_plan(cards)
         self.assertEqual(plan['megacap_leadership'],[])
         self.assertEqual(generate_report.parse_editorial_plan(json.dumps(plan),cards),plan)
+        schema=generate_report.editorial_schema(cards)
+        empty_rule=schema['properties']['selection']['properties']['megacap_leadership']
+        self.assertEqual(empty_rule['maxItems'],0)
         plan['megacap_leadership']=['unavailable']
         with self.assertRaises(ValueError):generate_report.parse_editorial_plan(json.dumps(plan),cards)
 
