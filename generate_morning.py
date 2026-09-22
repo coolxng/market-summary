@@ -20,6 +20,7 @@ FUTURES = {
 
 CROSS_ASSET = {
     "^VIX": "VIX",
+    "^MOVE": "MOVE Index",
     "^TNX": "10-Year Yield",
     "DX-Y.NYB": "U.S. Dollar Index",
     "GC=F": "Gold",
