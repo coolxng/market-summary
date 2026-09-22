@@ -15,6 +15,11 @@ NASDAQ_CALENDAR_URL = "https://api.nasdaq.com/api/calendar/economicevents"
 YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
 
 
+def _runtime_data_available():
+    # Unit tests install a deliberately minimal yfinance stub with Ticker=None.
+    return callable(getattr(yf, "Ticker", None))
+
+
 def _finite(value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
 
@@ -51,6 +56,18 @@ def _period_return(closes, sessions):
 
 def fetch_history_snapshot(symbol, session_date, lookback_days=400):
     """Fetch compact daily history and common finance-user reference metrics."""
+    if not _runtime_data_available():
+        return {
+            "symbol": symbol,
+            "dates": [],
+            "closes": [],
+            "returns": {"5d": None, "1m": None, "3m": None, "ytd": None, "1y": None},
+            "moving_averages": {"20d": None, "50d": None, "200d": None},
+            "above_moving_average": {"20d": None, "50d": None, "200d": None},
+            "source": "Yahoo Finance via yfinance",
+            "as_of": None,
+            "error": "history unavailable",
+        }
     try:
         hist = yf.Ticker(symbol).history(
             start=(session_date - datetime.timedelta(days=lookback_days)).isoformat(),
@@ -192,6 +209,14 @@ def _yahoo_news_via_http(query, count):
 
 def fetch_market_headlines(session_date, queries=None, max_items=8):
     """Collect source-linked headlines. They are context, never causal attribution."""
+    if not _runtime_data_available():
+        return {
+            "items": [],
+            "source": "Yahoo Finance search/news",
+            "as_of": None,
+            "label": "Source-linked headlines; not claimed causes of market moves.",
+            "error": "No verified headlines returned.",
+        }
     queries = queries or ("stock market", "Federal Reserve", "Treasury yields", "technology stocks")
     collected = {}
     session_close = datetime.datetime.combine(session_date, datetime.time(16, 0), tzinfo=NY_TZ)
@@ -279,6 +304,13 @@ def _calendar_event(row, day):
 
 def fetch_economic_calendar(start_date, days=5, max_items=16):
     """Fetch a small upcoming economic calendar. Failure is non-fatal."""
+    if not _runtime_data_available():
+        return {
+            "items": [],
+            "source": "Nasdaq Economic Calendar",
+            "as_of": None,
+            "error": "Economic calendar unavailable.",
+        }
     events = []
     for offset in range(days):
         day = start_date + datetime.timedelta(days=offset)
@@ -299,6 +331,13 @@ def fetch_economic_calendar(start_date, days=5, max_items=16):
 
 def fetch_tracked_earnings(tickers, start_date, days=10, max_items=12):
     """Fetch upcoming earnings dates for the tracked leadership universe."""
+    if not _runtime_data_available():
+        return {
+            "items": [],
+            "source": "Yahoo Finance company calendar",
+            "as_of": None,
+            "error": "No tracked earnings returned in the window.",
+        }
     end_date = start_date + datetime.timedelta(days=days)
     events = []
     for ticker in dict.fromkeys(tickers):
