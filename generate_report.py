@@ -40,6 +40,7 @@ SANITY_BOUNDS = {
     "^DJI": (5000, 200000),
     "^RUT": (500, 10000),
     "^VIX": (5, 150),
+    "^MOVE": (20, 250),
     "^TNX": (0.1, 20),
     "^FVX": (0.1, 20),
     "^TYX": (0.1, 20),
@@ -846,7 +847,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     print(f"Fetching market data for completed session {session_date.isoformat()}...")
 
     ticker_symbols = (
-        "^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "^FVX", "^TYX", "^IRX", "DX-Y.NYB",
+        "^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^MOVE", "^TNX", "^FVX", "^TYX", "^IRX", "DX-Y.NYB",
         "GC=F", "CL=F", "BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD",
         "^N225", "^STOXX50E", "^FTSE", "^HSI", "HYG", "LQD", "TIP",
     )
@@ -935,6 +936,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         {"slug": "dxy", "symbol": "DX-Y.NYB", "name": "U.S. Dollar Index", "category": "FX"},
         {"slug": "gold", "symbol": "GC=F", "name": "Gold", "category": "Commodity"},
         {"slug": "wti", "symbol": "CL=F", "name": "WTI Crude", "category": "Commodity"},
+        {"slug": "move", "symbol": "^MOVE", "name": "ICE BofA MOVE Index", "category": "Volatility"},
         {"slug": "bitcoin", "symbol": "BTC-USD", "name": "Bitcoin", "category": "Crypto"},
         {"slug": "ethereum", "symbol": "ETH-USD", "name": "Ethereum", "category": "Crypto"},
         {"slug": "solana", "symbol": "SOL-USD", "name": "Solana", "category": "Crypto"},
@@ -1036,6 +1038,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "hyg": datasets.get("HYG"),
         "lqd": datasets.get("LQD"),
         "tip": datasets.get("TIP"),
+        "move": datasets.get("^MOVE"),
     }
     if datasets.get("^TNX") and datasets.get("^FVX") and not datasets["^TNX"].get("error") and not datasets["^FVX"].get("error"):
         rates_credit["5s10s_bp"] = round((datasets["^TNX"]["end_price"] - datasets["^FVX"]["end_price"]) * 100, 1)
