@@ -52,7 +52,7 @@ export default function SearchClient({
           <span className="brand-mark" style={{ backgroundImage: 'url("https://coolxng.github.io/market-summary/logo.png")' }} />
           <span>THE DAILY TAPE</span>
         </a>
-        <nav aria-label="Search navigation"><a href="../">Current report</a><a href="../reports/">Archive</a><a href="./">Search</a></nav>
+        <nav aria-label="Search navigation"><a href="../">Current report</a><a href="../morning/">Morning</a><a href="../reports/">Archive</a><a href="./">Search</a></nav>
         <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
           <span className="theme-toggle__icon" aria-hidden="true">{theme === "paper" ? "◐" : "◑"}</span>
           <span className="theme-toggle__label">{theme === "paper" ? "Ink" : "Paper"}</span>
