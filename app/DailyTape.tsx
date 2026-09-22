@@ -531,7 +531,23 @@ function parseMegaCapFallback(ticker: string, dailyReport: DailyReport): MarketD
   };
 }
 
-export default function DailyTape({ report, archived = false, archiveHref = "./reports/", homeHref = "#top", assetBaseHref = "./assets/" }: { report: DailyReport; archived?: boolean; archiveHref?: string; homeHref?: string; assetBaseHref?: string }) {
+export default function DailyTape({
+  report,
+  archived = false,
+  archiveHref = "./reports/",
+  homeHref = "#top",
+  assetBaseHref = "./assets/",
+  previousReportHref,
+  nextReportHref,
+}: {
+  report: DailyReport;
+  archived?: boolean;
+  archiveHref?: string;
+  homeHref?: string;
+  assetBaseHref?: string;
+  previousReportHref?: string;
+  nextReportHref?: string;
+}) {
   const dailyReport = report;
   const market = dailyReport.market_data;
   const [theme, setTheme] = useState<"paper" | "ink">("paper");
@@ -684,6 +700,13 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
       <div className="page" id="top">
         <section className="hero" id="brief">
           <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
+          {archived && (
+            <div className="archive-session-nav" aria-label="Archived session navigation">
+              <span>{previousReportHref ? <a href={previousReportHref}>← Previous session</a> : <i>Earliest archived session</i>}</span>
+              <a href={archiveHref}>All reports</a>
+              <span>{nextReportHref ? <a href={nextReportHref}>Next session →</a> : <i>Latest archived session</i>}</span>
+            </div>
+          )}
           {publicationStatus && (
             <div className={`publication-status ${publicationStatus.mode}`} aria-label={`${publicationStatus.label}: ${publicationStatus.value}. ${publicationStatus.meta}`}>
               <span className="publication-status__label"><i className="publication-status__dot" aria-hidden="true" />{publicationStatus.label}</span>
