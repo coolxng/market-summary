@@ -735,6 +735,38 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
           </div>
         </section>
 
+        <WatchlistPanel assets={watchAssets} assetBaseHref={assetBaseHref} />
+
+        <section className="section-block catalyst-section" id="catalysts">
+          <div className="section-heading">
+            <div><p className="section-kicker">02 / CATALYSTS &amp; CALENDAR</p><h2>What the market is watching</h2></div>
+            <p>Source-linked headlines and scheduled events are shown as context. They are not automatically treated as explanations for the tape.</p>
+          </div>
+          <div className="catalyst-grid">
+            <div className="headline-list">
+              <div className="subsection-head"><span>HEADLINES TO KNOW</span><small>{dailyReport.market_headlines?.source ?? "SOURCE FEED PENDING"}</small></div>
+              {headlines.length ? headlines.slice(0, 6).map((item) => (
+                <a href={item.url} target="_blank" rel="noreferrer" key={item.url}>
+                  <div><span>{item.publisher}</span><small>{item.published_at ? new Date(item.published_at * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" }) : "TIME N/A"}</small></div>
+                  <strong>{item.title}</strong>
+                  <b>Source ↗</b>
+                </a>
+              )) : <div className="data-empty">No source-linked headlines are stored in this snapshot yet. The next generated tape will populate this feed when upstream data is available.</div>}
+            </div>
+            <div className="calendar-list">
+              <div className="subsection-head"><span>UPCOMING CALENDAR</span><small>ECONOMIC + TRACKED EARNINGS</small></div>
+              {calendarEvents.length ? calendarEvents.slice(0, 8).map((event, index) => (
+                <article key={`${event.date}-${event.title ?? event.ticker}-${index}`}>
+                  <div><span>{new Date(`${event.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span><small>{event.time ?? "TBD"}</small></div>
+                  <strong>{event.title ?? `${event.ticker} earnings`}</strong>
+                  <p>{event.country ? `${event.country} · ` : ""}{event.source}</p>
+                </article>
+              )) : <div className="data-empty">No calendar events are stored in this snapshot yet. Calendar availability is checked during report generation and failures remain visible instead of being guessed.</div>}
+            </div>
+          </div>
+          <p className="data-disclaimer">{dailyReport.market_calendar?.note ?? "Scheduled events and headlines are context only; no causal market claim is inferred."}</p>
+        </section>
+
         <section className="thesis section-block">
           <div className="thesis-label"><span>INTERPRETATION</span><span>3 MIN READ</span></div>
           <blockquote>“{thesisQuote}”</blockquote>
@@ -759,6 +791,50 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="section-block internals-section" id="internals">
+          <div className="section-heading">
+            <div><p className="section-kicker">03 / MARKET INTERNALS</p><h2>Is the move holding underneath?</h2></div>
+            <p>Trend participation uses the 11 sector ETFs as a transparent proxy. It is intentionally not labeled as NYSE or Nasdaq constituent breadth.</p>
+          </div>
+          <div className="internals-grid">
+            {([
+              ["ABOVE 20D", internals?.above_20d],
+              ["ABOVE 50D", internals?.above_50d],
+              ["ABOVE 200D", internals?.above_200d],
+            ] as Array<[string, TrendParticipation | null | undefined]>).map(([label, metric]) => (
+              <article key={label}>
+                <span>{label}</span>
+                <strong>{metric ? `${metric.share_pct.toFixed(1)}%` : "—"}</strong>
+                <p>{metric ? `${metric.above} of ${metric.valid} sector ETFs above trend` : "Available after the next enriched report refresh."}</p>
+              </article>
+            ))}
+            <article>
+              <span>CAP VS EQUAL WEIGHT</span>
+              <strong>{equalWeightGap == null ? "—" : `${equalWeightGap >= 0 ? "+" : ""}${equalWeightGap.toFixed(2)} pp`}</strong>
+              <p>{equalWeightGap == null ? "Comparison unavailable." : equalWeightGap > 0 ? "Equal weight led cap weight." : equalWeightGap < 0 ? "Cap weight led equal weight." : "Equal and cap weighting matched."}</p>
+            </article>
+          </div>
+          {dailyReport.market_internals?.sector_relative_strength_vs_spy && (
+            <div className="relative-strength">
+              <div className="subsection-head"><span>SECTOR RELATIVE STRENGTH VS SPY</span><small>5D / 1M / 3M</small></div>
+              {Object.entries(dailyReport.market_internals.sector_relative_strength_vs_spy)
+                .sort((a, b) => (b[1]["1m"] ?? -999) - (a[1]["1m"] ?? -999))
+                .map(([name, windows]) => {
+                  const symbol = name.match(/\(([A-Z]+)\)$/)?.[1];
+                  const asset = symbol ? assetBySymbol[symbol] : undefined;
+                  return (
+                    <div className="relative-row" key={name}>
+                      <span>{asset ? <a href={`${assetBaseHref}${asset.slug}/`}>{sectorLabel(name)}</a> : sectorLabel(name)}</span>
+                      <strong className={(windows["5d"] ?? 0) >= 0 ? "positive" : "negative"}>{formatPct(windows["5d"] ?? 0)}</strong>
+                      <strong className={(windows["1m"] ?? 0) >= 0 ? "positive" : "negative"}>{formatPct(windows["1m"] ?? 0)}</strong>
+                      <strong className={(windows["3m"] ?? 0) >= 0 ? "positive" : "negative"}>{formatPct(windows["3m"] ?? 0)}</strong>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </section>
 
         <section className="section-block" id="mega-cap">
@@ -805,6 +881,27 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
           </div>
         </section>
 
+        <section className="section-block rates-section" id="rates">
+          <div className="section-heading">
+            <div><p className="section-kicker">05 / RATES &amp; CREDIT</p><h2>The cost-of-capital board</h2></div>
+            <p>Treasury tenors plus high-yield, investment-grade, and inflation-protected bond proxies give the equity tape a broader fixed-income frame.</p>
+          </div>
+          <div className="rates-grid">
+            {rateCards.map(([label, item, slug]) => (
+              <a href={`${assetBaseHref}${slug}/`} key={label}>
+                <span>{label}</span>
+                <strong>{item ? `${formatNumber(item.end_price)}${label.endsWith("Y") || label === "3M" ? "%" : ""}` : "—"}</strong>
+                <b className={item ? (item.pct_change >= 0 ? "positive" : "negative") : "muted"}>{item ? formatPct(item.pct_change) : "PENDING"}</b>
+              </a>
+            ))}
+            <article>
+              <span>5s10s CURVE</span>
+              <strong>{curve5s10s == null ? "—" : `${curve5s10s >= 0 ? "+" : ""}${curve5s10s.toFixed(1)} bps`}</strong>
+              <b className="muted">5Y → 10Y</b>
+            </article>
+          </div>
+        </section>
+
         <section className="section-block decision-section">
           <div className="section-heading"><div><p className="section-kicker">05 / DECISION SUMMARY</p><h2>Three decisions, not another essay</h2></div><p>The move, the cross-asset explanation, and the marker that matters next.</p></div>
           <div className="decision-rows">{decisionSummary.map(([label, body], index) => <article key={label}><span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><p>{body}</p></article>)}</div>
@@ -847,8 +944,12 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
 
         <aside className="method-note" aria-label="Data freshness and methodology">
           <div><span>DATA FRESHNESS</span><strong>Through {sessionDate.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })} close</strong></div>
-          <p>Daily figures compare the latest completed U.S. session with the immediately preceding trading-session close. Market data is sourced from Yahoo Finance and sanity-checked before publication. “Breadth” is the share of the 11 S&amp;P sector ETFs that finished higher.</p>
-          <a href="https://finance.yahoo.com/markets/" target="_blank" rel="noreferrer">View source market data ↗</a>
+          <p>Daily figures compare the latest completed U.S. session with the immediately preceding trading-session close. “Breadth” is the share of the 11 S&amp;P sector ETFs that finished higher. Headlines and calendars are displayed as sourced context, never silently converted into causal claims.</p>
+          <div className={`quality-badge ${dataQuality?.status ?? "legacy"}`}>
+            <span>DATA HEALTH</span>
+            <strong>{dataQuality ? `${dataQuality.status.toUpperCase()} · ${dataQuality.coverage_pct.toFixed(1)}%` : "LEGACY SNAPSHOT"}</strong>
+            <small>{dataQuality?.issues.length ? `${dataQuality.issues.length} issue${dataQuality.issues.length === 1 ? "" : "s"} flagged` : dataQuality ? "No critical issues flagged" : "Health metadata begins with the next report"}</small>
+          </div>
         </aside>
 
         <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href={archiveHref}>Report archive</a></div><div className="footer-meta"><span>DATA: YAHOO FINANCE</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
