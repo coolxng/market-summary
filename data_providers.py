@@ -24,6 +24,7 @@ import html
 import json
 import os
 import re
+import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -33,7 +34,11 @@ import trading_calendar
 
 NY_TZ = ZoneInfo("America/New_York")
 CENTRAL_TZ = ZoneInfo("America/Chicago")
-USER_AGENT = "Mozilla/5.0 (compatible; TheDailyTape/1.0; +https://coolxng.github.io/market-summary/)"
+USER_AGENT = "TheDailyTape/1.0 (+https://github.com/coolxng/market-summary)"
+BROWSER_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
+)
 MAX_RESPONSE_BYTES = 3_000_000
 
 NASDAQ_CALENDAR_URL = "https://api.nasdaq.com/api/calendar/economicevents"
@@ -62,6 +67,12 @@ OFFICIAL_FEEDS = (
         "name": "U.S. Bureau of Labor Statistics releases",
         "publisher": "U.S. Bureau of Labor Statistics",
         "url": "https://www.bls.gov/feed/bls_latest.rss",
+        "fallback_urls": (
+            "https://www.bls.gov/feed/empsit.rss",
+            "https://www.bls.gov/feed/cpi.rss",
+            "https://www.bls.gov/feed/ppi.rss",
+            "https://www.bls.gov/feed/jolts.rss",
+        ),
         "category": "Economic data",
     },
     {
@@ -139,12 +150,27 @@ def feed_meta(feed):
     return {key: value for key, value in feed.items() if key != "items"}
 
 
-def http_get(url, accept="application/json", timeout=15, extra_headers=None):
+def http_get(url, accept="application/json", timeout=15, extra_headers=None, attempts=2):
+    """Small, bounded GET helper with one retry for transient provider failures."""
     headers = {"User-Agent": USER_AGENT, "Accept": accept, "Accept-Language": "en-US,en;q=0.9"}
     headers.update(extra_headers or {})
     request = urllib.request.Request(url, headers=headers)
-    with urllib.request.urlopen(request, timeout=timeout) as response:
-        return response.read(MAX_RESPONSE_BYTES).decode("utf-8", errors="replace")
+    last_error = None
+    for attempt in range(max(1, attempts)):
+        try:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                return response.read(MAX_RESPONSE_BYTES).decode("utf-8", errors="replace")
+        except urllib.error.HTTPError as exc:
+            last_error = exc
+            # Authentication/permission/schema errors are not transient. Retry only
+            # rate limits and upstream/server failures.
+            if exc.code not in {408, 425, 429, 500, 502, 503, 504} or attempt + 1 >= attempts:
+                raise
+        except (TimeoutError, urllib.error.URLError) as exc:
+            last_error = exc
+            if attempt + 1 >= attempts:
+                raise
+    raise last_error
 
 
 def clean_value(value):
@@ -250,7 +276,16 @@ def nasdaq_economic_calendar(days):
                 payload = json.loads(http_get(
                     f"{NASDAQ_CALENDAR_URL}?{urllib.parse.urlencode({'date': day.isoformat()})}",
                     accept="application/json, text/plain, */*",
-                    extra_headers={"Referer": NASDAQ_CALENDAR_PAGE},
+                    timeout=12,
+                    attempts=2,
+                    extra_headers={
+                        "User-Agent": BROWSER_USER_AGENT,
+                        "Referer": NASDAQ_CALENDAR_PAGE,
+                        "Origin": "https://www.nasdaq.com",
+                        "Sec-Fetch-Dest": "empty",
+                        "Sec-Fetch-Mode": "cors",
+                        "Sec-Fetch-Site": "same-site",
+                    },
                 ))
             except Exception:
                 failures += 1
@@ -487,20 +522,43 @@ def parse_feed_xml(text):
 
 def official_catalysts(feed, start, end):
     def fetch():
-        items = []
-        for title, link, timestamp in parse_feed_xml(http_get(feed["url"], accept="application/rss+xml, application/xml, text/xml")):
-            if timestamp is None or not (start.timestamp() <= timestamp <= end.timestamp()):
+        items = {}
+        successes = 0
+        last_error = None
+        urls = (feed["url"], *feed.get("fallback_urls", ()))
+        for url in urls:
+            try:
+                raw = http_get(
+                    url,
+                    accept="application/rss+xml, application/xml, text/xml, */*",
+                    timeout=12,
+                    attempts=2,
+                    extra_headers={"Referer": "https://www.bls.gov/feed/"} if "bls.gov" in url else None,
+                )
+                entries = parse_feed_xml(raw)
+                successes += 1
+            except Exception as exc:
+                last_error = exc
                 continue
-            items.append({
-                "title": title,
-                "url": link,
-                "publisher": feed["publisher"],
-                "published_at": timestamp,
-                "category": feed["category"],
-                "source_type": "official",
-                "related_tickers": [],
-            })
-        return items
+            for title, link, timestamp in entries:
+                if timestamp is None or not (start.timestamp() <= timestamp <= end.timestamp()):
+                    continue
+                items[link] = {
+                    "title": title,
+                    "url": link,
+                    "publisher": feed["publisher"],
+                    "published_at": timestamp,
+                    "category": feed["category"],
+                    "source_type": "official",
+                    "related_tickers": [],
+                }
+            # The aggregate feed is authoritative when it succeeds. Specific BLS
+            # feeds are only fallbacks for hosts that block bls_latest.rss.
+            if url == feed["url"]:
+                break
+        if not successes:
+            raise last_error or ConnectionError("no official feed endpoint succeeded")
+        return list(items.values())
 
     return _run(feed["id"], feed["name"], feed["url"], fetch)
 
