@@ -57,23 +57,61 @@ function sliceRange(series: PointSeries, range: Exclude<Range, "1D">) {
 }
 
 function Chart({ labels, values }: { labels: string[]; values: number[] }) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   if (values.length < 2) return <div className={styles.emptyChart}>Longer-range history will appear after the next data refresh.</div>;
+
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
-  const points = values.map((value, index) => {
-    const x = (index / (values.length - 1)) * 100;
-    const y = 90 - ((value - min) / span) * 78;
-    return `${x},${y}`;
-  }).join(" ");
+  const coordinates = values.map((value, index) => ({
+    x: (index / (values.length - 1)) * 100,
+    y: 90 - ((value - min) / span) * 78,
+  }));
+  const points = coordinates.map(({ x, y }) => `${x},${y}`).join(" ");
   const first = labels[0];
   const middle = labels[Math.floor(labels.length / 2)];
   const last = labels.at(-1);
+  const active = activeIndex == null ? null : {
+    index: activeIndex,
+    value: values[activeIndex],
+    label: labels[activeIndex] ?? "",
+    ...coordinates[activeIndex],
+  };
+
+  const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!rect.width) return;
+    const ratio = Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width));
+    setActiveIndex(Math.round(ratio * (values.length - 1)));
+  };
+
   return (
-    <div className={styles.chartWrap}>
-      <svg className={styles.chart} viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Price chart">
-        <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
-      </svg>
+    <div
+      className={styles.chartWrap}
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => setActiveIndex(null)}
+    >
+      <div className={styles.chartCanvas}>
+        <svg className={styles.chart} viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Interactive price chart">
+          <polyline points={points} fill="none" stroke="var(--accent)" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
+          {active && (
+            <>
+              <line x1={active.x} x2={active.x} y1="5" y2="95" className={styles.crosshair} vectorEffect="non-scaling-stroke" />
+              <circle cx={active.x} cy={active.y} r="1.5" className={styles.hoverDot} vectorEffect="non-scaling-stroke" />
+            </>
+          )}
+        </svg>
+        {active && (
+          <div
+            className={styles.chartTooltip}
+            style={{ left: `${Math.min(92, Math.max(8, active.x))}%` }}
+            aria-live="polite"
+          >
+            <span>{active.label}</span>
+            <strong>{formatNumber(active.value, Math.abs(active.value) < 10 ? 4 : 2)}</strong>
+          </div>
+        )}
+      </div>
       <div className={styles.axis}><span>{first}</span><span>{middle}</span><span>{last}</span></div>
     </div>
   );
