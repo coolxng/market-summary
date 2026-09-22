@@ -47,6 +47,7 @@ export default function ArchiveClient({ reports }: { reports: ArchiveReport[] })
         </a>
         <nav aria-label="Archive navigation">
           <a href="../">Current report</a>
+          <a href="../morning/">Morning</a>
           <a href="./" aria-current="page">Archive</a>
           <a href="../search/">Search</a>
         </nav>
