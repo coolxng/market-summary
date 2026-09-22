@@ -46,7 +46,7 @@ class TreasuryCurveTests(unittest.TestCase):
         self.assertEqual(rows[-1][1]["2y"], 3.55)
         self.assertEqual(rows[-1][1]["10y"], 3.95)
 
-    def test_xml_is_primary_and_csv_is_fallback(self):
+    def test_xml_is_primary_before_csv_fallback(self):
         calls = []
 
         def fetch(url, accept=None):
@@ -55,10 +55,15 @@ class TreasuryCurveTests(unittest.TestCase):
                 return NOMINAL_XML
             raise AssertionError("CSV fallback should not be needed")
 
-        rates = official_rates.fetch_treasury_rates(datetime.date(2026, 9, 22), fetch=fetch)
-        self.assertEqual(rates["status"], "ok")
-        self.assertEqual(rates["curve"]["as_of"], "2026-09-21")
-        self.assertTrue(all("pages/xml" in url for url in calls))
+        rows = official_rates._treasury_rows(
+            "daily_treasury_yield_curve",
+            datetime.date(2026, 9, 22),
+            fetch=fetch,
+        )
+        self.assertEqual(rows[-1][0], datetime.date(2026, 9, 21))
+        self.assertEqual(rows[-1][1]["2y"], 3.55)
+        self.assertEqual(len(calls), 1)
+        self.assertIn("pages/xml", calls[0])
 
     def test_tenor_headers(self):
         self.assertEqual(official_rates.tenor_key("2 Yr"), "2y")
