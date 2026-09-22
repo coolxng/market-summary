@@ -44,6 +44,26 @@ It is built for fast end-of-session review: **what moved, where leadership came 
 - **Verified session paths:** intraday charts are tied to the completed regular-hours session when the underlying data is available.
 - **Historical archive:** every completed trading session gets its own permanent `/reports/YYYY-MM-DD/` page.
 
+## Daily workflow
+
+The roadmap build expands The Daily Tape from a single close report into a repeat-use market workflow:
+
+- **Morning Tape:** futures, overnight/global markets, rates, dollar, commodities, crypto, upcoming economic events, tracked earnings, and source-linked headlines.
+- **Close Tape:** the existing end-of-session report, enriched with catalysts/calendar context, data health, rates and credit, trend participation, relative strength, and a local watchlist.
+- **Asset dashboards:** interactive 1D / 5D / 1M / 3M / YTD / 1Y price paths with hover inspection, moving averages, watchlist controls, and source-linked context.
+- **Search:** fast lookup across tracked assets and archived sessions.
+- **Delivery:** RSS plus installable PWA support so the Tape can live outside a browser tab.
+- **Research archive:** permanent dated reports with previous/next navigation and regime-history context.
+
+### Production services
+
+The close and morning publications are intentionally separate Railway cron services:
+
+- `railway.toml` runs the Close Tape in both possible UTC slots and `railway_cron.py` keeps only the **3 PM America/Chicago** slot. This handles daylight-saving changes automatically.
+- `railway.morning.toml` runs the Morning Tape in both possible UTC slots and `morning_cron.py` keeps only the **7 AM America/Chicago** slot.
+- Manual runs can bypass the local-time guards with `MARKET_SUMMARY_FORCE=1` or `MORNING_TAPE_FORCE=1`.
+- Both publishers commit generated JSON artifacts back to the configured `GITHUB_BRANCH`.
+
 ## Historical report archive
 
 The Daily Tape keeps a permanent archive of completed trading sessions so past reports can be revisited, shared, and referenced later.
