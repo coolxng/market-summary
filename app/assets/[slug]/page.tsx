@@ -69,7 +69,7 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
   const history = dailyReport.asset_history?.[asset.symbol] ?? null;
   const headlines = (dailyReport.market_headlines?.items ?? []).filter((item) => {
     const related = item.related_tickers ?? [];
-    return related.includes(asset.symbol) || related.length === 0;
+    return related.includes(asset.symbol);
   });
 
   return (

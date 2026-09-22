@@ -58,6 +58,7 @@ function sliceRange(series: PointSeries, range: Exclude<Range, "1D">) {
 
 function Chart({ labels, values }: { labels: string[]; values: number[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [showTable, setShowTable] = useState(false);
   if (values.length < 2) return <div className={styles.emptyChart}>Longer-range history will appear after the next data refresh.</div>;
 
   const min = Math.min(...values);
@@ -85,11 +86,31 @@ function Chart({ labels, values }: { labels: string[]; values: number[] }) {
     setActiveIndex(Math.round(ratio * (values.length - 1)));
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    if (event.key === "Home") {
+      setActiveIndex(0);
+      return;
+    }
+    if (event.key === "End") {
+      setActiveIndex(values.length - 1);
+      return;
+    }
+    const current = activeIndex ?? values.length - 1;
+    setActiveIndex(Math.min(values.length - 1, Math.max(0, current + (event.key === "ArrowRight" ? 1 : -1))));
+  };
+
   return (
     <div
       className={styles.chartWrap}
       onPointerMove={handlePointerMove}
       onPointerLeave={() => setActiveIndex(null)}
+      onFocus={() => setActiveIndex((current) => current ?? values.length - 1)}
+      onKeyDown={handleKeyDown}
+      tabIndex={0}
+      role="group"
+      aria-label="Interactive price chart. Use left and right arrow keys to inspect points."
     >
       <div className={styles.chartCanvas}>
         <svg className={styles.chart} viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Interactive price chart">
@@ -113,6 +134,25 @@ function Chart({ labels, values }: { labels: string[]; values: number[] }) {
         )}
       </div>
       <div className={styles.axis}><span>{first}</span><span>{middle}</span><span>{last}</span></div>
+      <button className={styles.dataToggle} type="button" onClick={() => setShowTable((value) => !value)} aria-expanded={showTable}>
+        {showTable ? "Hide chart data" : "View chart data"}
+      </button>
+      {showTable && (
+        <div className={styles.dataTableWrap}>
+          <table className={styles.dataTable}>
+            <caption>Price chart data</caption>
+            <thead><tr><th scope="col">Time / date</th><th scope="col">Value</th></tr></thead>
+            <tbody>
+              {values.map((value, index) => (
+                <tr key={`${labels[index] ?? index}-${index}`}>
+                  <td>{labels[index] ?? "—"}</td>
+                  <td>{formatNumber(value, Math.abs(value) < 10 ? 4 : 2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -176,9 +216,11 @@ export default function AssetClient({
     return { labels: sliced.dates, values: sliced.closes };
   }, [history, range, session]);
 
-  const rangeReturn = chartData.values.length >= 2
-    ? ((chartData.values.at(-1)! - chartData.values[0]) / chartData.values[0]) * 100
-    : range === "1D" ? current?.pct_change : null;
+  const rangeReturn = range === "1D"
+    ? current?.pct_change ?? null
+    : chartData.values.length >= 2
+      ? ((chartData.values.at(-1)! - chartData.values[0]) / chartData.values[0]) * 100
+      : null;
   const positive = (rangeReturn ?? current?.pct_change ?? 0) >= 0;
 
   return (
@@ -227,6 +269,20 @@ export default function AssetClient({
           <Chart labels={chartData.labels} values={chartData.values} />
         </section>
 
+        <section className={styles.performance} aria-label="Multi-period performance">
+          {[
+            ["1D", current?.pct_change ?? null],
+            ["5D", history?.returns?.["5d"] ?? null],
+            ["1M", history?.returns?.["1m"] ?? null],
+            ["3M", history?.returns?.["3m"] ?? null],
+            ["YTD", history?.returns?.["ytd"] ?? null],
+            ["1Y", history?.returns?.["1y"] ?? null],
+          ].map(([label, value]) => {
+            const numeric = typeof value === "number" ? value : null;
+            return <div key={label as string}><span>{label}</span><strong className={numeric == null ? "" : numeric >= 0 ? "positive" : "negative"}>{formatPct(numeric)}</strong></div>;
+          })}
+        </section>
+
         <section className={styles.stats}>
           <div><span>DAY LOW</span><strong>{current?.day_low ? formatNumber(current.day_low, asset.digits ?? 2) : "—"}</strong></div>
           <div><span>DAY HIGH</span><strong>{current?.day_high ? formatNumber(current.day_high, asset.digits ?? 2) : "—"}</strong></div>
@@ -237,8 +293,8 @@ export default function AssetClient({
 
         <section className={styles.context}>
           <div className={styles.sectionHeading}>
-            <div><p className={styles.kicker}>SOURCE-LINKED CONTEXT</p><h2>Headlines to know</h2></div>
-            <p>Headlines are context only. The Daily Tape does not present them as verified causes of price moves unless the source explicitly establishes that connection.</p>
+            <div><p className={styles.kicker}>VERIFIED DEVELOPMENTS</p><h2>Relevant source-linked context</h2></div>
+            <p>Only stored headlines explicitly tagged to this asset are shown. They remain context, not automatic explanations for the price move.</p>
           </div>
           {headlines.length ? (
             <div className={styles.newsList}>
