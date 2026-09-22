@@ -88,6 +88,40 @@ class TreasuryCurveTests(unittest.TestCase):
         self.assertEqual(rates["curve"]["as_of"], "2026-09-18")
         self.assertIsNone(rates["curve"]["tenors"]["2y"]["change_bp"])  # no prior row, no invented change
 
+    def test_fred_fallback_keeps_curve_available_when_treasury_times_out(self):
+        series_values = {
+            "DGS3MO": (4.12, 4.10),
+            "DGS2": (3.60, 3.55),
+            "DGS5": (3.63, 3.60),
+            "DGS10": (3.96, 3.95),
+            "DGS20": (4.41, 4.40),
+            "DGS30": (4.57, 4.55),
+            "DFII5": (1.22, 1.20),
+            "DFII10": (1.56, 1.55),
+            "DFII30": (2.02, 2.00),
+        }
+
+        def fetch(url, accept=None):
+            if "home.treasury.gov" in url:
+                raise TimeoutError("treasury blocked")
+            for series_id, values in series_values.items():
+                if f"id={series_id}" in url:
+                    return (
+                        f"observation_date,{series_id}\n"
+                        f"2026-09-18,{values[0]}\n"
+                        f"2026-09-21,{values[1]}\n"
+                    )
+            raise AssertionError(url)
+
+        rates = official_rates.fetch_treasury_rates(datetime.date(2026, 9, 22), fetch=fetch)
+        self.assertEqual(rates["status"], "ok")
+        self.assertEqual(rates["fallback"], "fred")
+        self.assertEqual(rates["source_url"], official_rates.FRED_PAGE)
+        self.assertEqual(rates["curve"]["tenors"]["2y"], {"value": 3.55, "change_bp": -5.0})
+        self.assertEqual(rates["spreads"]["2s10s"], {"value_bp": 40.0, "change_bp": 4.0})
+        self.assertEqual(rates["real"]["tenors"]["10y"], {"value": 1.55, "change_bp": -1.0})
+        self.assertEqual(rates["real_source_url"], official_rates.FRED_PAGE)
+
     def test_failure_is_unavailable(self):
         def broken(url, accept=None):
             raise OSError("blocked")
