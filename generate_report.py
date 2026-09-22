@@ -459,6 +459,10 @@ def fetch_daily_chart_data(
 
         return {
             "times": [timestamp.strftime("%I:%M %p").lstrip("0") for timestamp in chart_times],
+            # Epoch seconds let the UI render bar times in Central Time; `times`
+            # stays in the exchange's own clock for older consumers.
+            "timestamps": [int(timestamp.timestamp()) for timestamp in chart_times],
+            "time_zone": "America/New_York" if regular_hours else str(chart_times[0].tzinfo),
             "closes": [round(float(hist["Close"].iloc[position]), 2) for position in chart_positions],
             "source": "intraday_5m",
             "session_date": session_date.isoformat(),
@@ -926,6 +930,16 @@ def generate_editorial(context,cards):
     }
 
 
+# One year of daily closes for every tracked asset only serves the live asset
+# pages, so it is kept in report_snapshot.json but left out of the permanent
+# archive copy to keep the repository from growing by ~0.3 MB per session.
+ARCHIVE_EXCLUDED_KEYS = ("asset_history",)
+
+
+def archive_snapshot(snapshot):
+    return {key: value for key, value in snapshot.items() if key not in ARCHIVE_EXCLUDED_KEYS}
+
+
 def fmt_date(dt, include_day=True):
     if include_day:
         return f"{dt.strftime('%b')} {dt.day}"
@@ -1157,7 +1171,11 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     verified_catalysts = build_verified_catalysts(previous_close, catalyst_end)
 
     data_quality = build_data_quality(
-        datasets,
+        {
+            **datasets,
+            **{ticker: entry["result"] for ticker, entry in megacap_data.items()},
+            **{ticker: sector_results[name] for name, ticker in sectors.items()},
+        },
         session_date,
         feed_groups=(market_calendar["feeds"], verified_catalysts["feeds"]),
         local_calendar_symbols=FULL_DAY_CHART_TICKERS,
@@ -1215,6 +1233,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "market_data": datasets,
         "session_charts": session_charts,
         "mega_cap_data": megacap_data,
+        "sector_data": {ticker: sector_results[name] for name, ticker in sectors.items()},
         "daily_sector_performance": sector_perf,
         "all_sectors_ranked": all_sectors_ranked,
         "top_sectors": top_sectors,
@@ -1244,9 +1263,8 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     snapshot_output.parent.mkdir(parents=True, exist_ok=True)
     archive_dir.mkdir(parents=True, exist_ok=True)
 
-    snapshot_json = json.dumps(snapshot, indent=2) + "\n"
-    snapshot_output.write_text(snapshot_json, encoding="utf-8")
-    archive_snapshot_output.write_text(snapshot_json, encoding="utf-8")
+    snapshot_output.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
+    archive_snapshot_output.write_text(json.dumps(archive_snapshot(snapshot), indent=2) + "\n", encoding="utf-8")
     print(
         f"Successfully generated {snapshot_output} and {archive_snapshot_output} "
         f"for {full_date}"

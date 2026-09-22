@@ -4,6 +4,8 @@ import WatchlistPanel, { type WatchAsset } from "./components/WatchlistPanel";
 import SiteHeader from "./components/SiteHeader";
 import PublicationBanner from "./components/PublicationBanner";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
+import PriceChart from "./components/PriceChart";
+import { sessionPoints } from "./lib/chart";
 import MarketCalendarList from "./components/MarketCalendarList";
 import CatalystList from "./components/CatalystList";
 import DataStatus, { FeedHealthList, dataStatusLabel } from "./components/DataStatus";
@@ -230,8 +232,7 @@ export default function DailyTape({
     : `${equalWeightGap > 0 ? "Equal weight" : "Cap weight"} outperformed by ${Math.abs(equalWeightGap).toFixed(2)} percentage points. This is a participation proxy, not an attribution of index contributions.`;
   const thesisQuote = editorial?.regime.interpretation ?? capWeightMessage;
   const spChart = dailyReport.session_charts["^GSPC"];
-  const spValues = sp ? (spChart?.closes?.length ? spChart.closes : sp.closes) : [];
-  const chartAxis = axisLabels(spChart?.times ?? ["9:30 AM", "4:00 PM"]);
+  const spPoints = sp ? sessionPoints(spChart, true).points : [];
   const decisionSummary = [
     ["Observed", decodeText(dailyReport.narrative.daily_takeaway.what_moved)],
     ["Interpretation", decodeText(dailyReport.narrative.daily_takeaway.why)],
@@ -512,6 +513,7 @@ export default function DailyTape({
                 </div>
                 <p>{decodeText(dailyReport.narrative.megacap_descriptions[ticker] ?? "")}</p>
                 <div className="mega-price">{item ? `$${formatNumber(item.end_price)}` : "—"}</div>
+                {item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session local-session--warn">Session {formatSessionDate(item.session_date, { month: "short", day: "numeric" })} · not the report session</small>}
                 <a className="asset-card-link" href={`${assetBaseHref}${ticker.toLowerCase()}/`}>Open asset →</a>
                 <div className="mega-range">
                   <span>DAY LOW <b>{item?.day_low != null ? `$${formatNumber(item.day_low)}` : "—"}</b></span>
@@ -539,8 +541,13 @@ export default function DailyTape({
           </div>
           <div className="chart-panel">
             <div className="chart-header"><span>S&amp;P 500 / REGULAR SESSION</span><strong>{formatNumber(sp?.end_price)}</strong></div>
-            <Sparkline values={spValues} positive={(sp?.pct_change ?? 0) >= 0} label={pathLabel("S&P 500 regular session", spValues)} />
-            <div className="chart-axis" aria-hidden="true">{chartAxis.map((time, index) => <span key={`${time}-${index}`}>{time}</span>)}</div>
+            <PriceChart
+              points={spPoints}
+              name="S&P 500 regular session"
+              format={{ digits: 2 }}
+              stroke={(sp?.pct_change ?? 0) >= 0 ? "var(--up)" : "var(--down)"}
+              size="panel"
+            />
             <div className="chart-stats"><div><span>DAY LOW</span><strong>{formatNumber(sp?.day_low)}</strong></div><div><span>DAY HIGH</span><strong>{formatNumber(sp?.day_high)}</strong></div><div><span>NASDAQ 1D</span><strong className={toneClass(nasdaq?.pct_change)}>{formatPct(nasdaq?.pct_change)}</strong></div></div>
           </div>
         </section>

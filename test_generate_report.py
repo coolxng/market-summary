@@ -233,6 +233,8 @@ class GenerateReportTests(unittest.TestCase):
         self.assertEqual(chart["closes"], [100.0, 102.0, 103.0])
         self.assertEqual(chart["times"], ["9:30 AM", "12:00 PM", "4:00 PM"])
         self.assertEqual(chart["source"], "intraday_5m")
+        self.assertEqual(chart["time_zone"], "America/New_York")
+        self.assertEqual(chart["timestamps"][0], int(datetime.datetime(2026, 7, 14, 9, 30, tzinfo=generate_report.NY_TZ).timestamp()))
 
     def test_full_day_chart_preserves_source_market_timezone(self):
         tokyo = datetime.timezone(datetime.timedelta(hours=9))
@@ -324,7 +326,10 @@ class GenerateReportTests(unittest.TestCase):
                 self.assertEqual(len(snapshot["session_charts"][symbol]["closes"]), 3)
             self.assertNotIn("report_window", snapshot)
             self.assertNotIn("hourly_charts", snapshot)
-            self.assertEqual(archived_snapshot, snapshot)
+            self.assertIn("asset_history", snapshot)
+            self.assertNotIn("asset_history", archived_snapshot)
+            self.assertEqual(archived_snapshot, generate_report.archive_snapshot(snapshot))
+            self.assertEqual(snapshot["sector_data"]["XLK"]["session_date"], "2026-07-14")
 
     def test_same_session_does_not_overwrite_artifacts(self):
         session = datetime.date(2026, 7, 14)
@@ -557,7 +562,7 @@ class EditorialTests(unittest.TestCase):
                 archived=json.loads((archive_root/session.isoformat()/'report.json').read_text())
                 self.assertEqual(snapshot['market_data']['^GSPC'],fetch('^GSPC'))
                 self.assertEqual(snapshot['report_mode'],'ai' if succeeds else 'deterministic_fallback')
-                self.assertEqual(archived,snapshot)
+                self.assertEqual(archived,generate_report.archive_snapshot(snapshot))
                 self.assertNotIn('test-private-key',(Path(tmp)/'snapshot.json').read_text())
                 self.assertNotIn('test-private-key',(archive_root/session.isoformat()/'report.json').read_text())
 

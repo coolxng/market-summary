@@ -30,6 +30,8 @@ export type VerifiedDatum = MarketDatum & {
 
 export type SessionChart = {
   times: string[];
+  timestamps?: number[];
+  time_zone?: string;
   closes: number[];
   source: "intraday_5m" | "daily_ohlc_fallback" | "daily_5d_fallback";
   session_date: string;
@@ -165,6 +167,7 @@ export type DailyReport = {
   market_data: Record<string, MarketDatum>;
   session_charts: Record<string, SessionChart>;
   mega_cap_data?: Record<string, MegaCapSnapshot>;
+  sector_data?: Record<string, MarketDatum>;
   daily_sector_performance: Record<string, number>;
   daily_market_breadth: {
     advances: number;

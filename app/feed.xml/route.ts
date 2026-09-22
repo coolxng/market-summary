@@ -1,10 +1,8 @@
-import fs from "node:fs";
-import path from "node:path";
+import { archivedReports, reportHeadline } from "../lib/archive";
 
 export const dynamic = "force-static";
 
 const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/").replace(/\/$/, "");
-const datePattern = /^\d{4}-\d{2}-\d{2}$/;
 
 function escapeXml(value: string) {
   return value.replace(/[<>&'"]/g, (character) => ({
@@ -17,27 +15,7 @@ function escapeXml(value: string) {
 }
 
 export function GET() {
-  const reportsDir = path.join(process.cwd(), "public", "reports");
-  const items: Array<{ date: string; headline: string }> = [];
-
-  if (fs.existsSync(reportsDir)) {
-    for (const entry of fs.readdirSync(reportsDir, { withFileTypes: true })) {
-      if (!entry.isDirectory() || !datePattern.test(entry.name)) continue;
-      const file = path.join(reportsDir, entry.name, "report.json");
-      if (!fs.existsSync(file)) continue;
-      try {
-        const report = JSON.parse(fs.readFileSync(file, "utf8")) as {
-          narrative?: { editorial?: { headline?: string }; daily_takeaway?: { what_moved?: string } };
-        };
-        items.push({
-          date: entry.name,
-          headline: report.narrative?.editorial?.headline ?? report.narrative?.daily_takeaway?.what_moved ?? "Daily market close",
-        });
-      } catch {
-        // A malformed archive should not prevent the rest of the feed from building.
-      }
-    }
-  }
+  const items = archivedReports().map(({ date, report }) => ({ date, headline: reportHeadline(report) }));
 
   items.sort((a, b) => b.date.localeCompare(a.date));
   const xmlItems = items.slice(0, 30).map((item) => {
