@@ -22,6 +22,7 @@ type StoredReport = {
   session_date?: string;
   market_data?: Record<string, { pct_change?: number; end_price?: number }>;
   daily_market_breadth?: { positive_sector_share?: number };
+  derived_metrics?: { risk_confirmation?: { signal?: string } };
   narrative?: { editorial?: { headline?: string }; daily_takeaway?: { what_moved?: string } };
 };
 
@@ -64,6 +65,7 @@ function getReports(): ArchiveReport[] {
           nasdaq: finiteOrNull(report.market_data?.["^IXIC"]?.pct_change),
           vix: finiteOrNull(report.market_data?.["^VIX"]?.end_price),
           breadth: finiteOrNull(report.daily_market_breadth?.positive_sector_share),
+          regime: report.derived_metrics?.risk_confirmation?.signal ?? "mixed",
         };
       } catch {
         return null;
