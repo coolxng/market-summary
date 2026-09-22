@@ -730,16 +730,19 @@ def editorial_schema(cards):
                 'type': 'array',
                 'items': {'type': 'string', 'enum': ids},
                 'minItems': 1,
-                'maxItems': limit,
-                'uniqueItems': True,
+                'description': (
+                    f"Select at most {limit} distinct evidence id"
+                    f"{'s' if limit != 1 else ''}; the application validates the limit and uniqueness."
+                ),
             }
         else:
-            # Keep the structured-output contract aligned with parse_editorial_plan:
-            # unavailable sections must be represented by an empty selection.
+            # Anthropic structured outputs support minItems 0/1 but not maxItems
+            # or uniqueItems. Keep the wire schema within the supported subset;
+            # parse_editorial_plan remains the final application-side validator.
             selection_properties[key] = {
                 'type': 'array',
                 'items': {'type': 'string'},
-                'maxItems': 0,
+                'description': 'Return an empty array because this section has no eligible evidence.',
             }
     interpretation_properties = {
         key: {'type': 'string'} for key in AI_INTERPRETATION_SECTIONS
