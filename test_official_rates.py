@@ -12,6 +12,26 @@ REAL = '''Date,"5 YR","7 YR","10 YR","20 YR","30 YR"
 09/18/2026,1.22,1.36,1.56,1.86,2.02
 '''
 
+NOMINAL_XML = """<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+      xmlns:d="http://schemas.microsoft.com/ado/2007/08/dataservices">
+  <entry><content type="application/xml"><m:properties>
+    <d:NEW_DATE m:type="Edm.DateTime">2026-09-18T00:00:00</d:NEW_DATE>
+    <d:BC_3MONTH m:type="Edm.Double">4.12</d:BC_3MONTH>
+    <d:BC_2YEAR m:type="Edm.Double">3.60</d:BC_2YEAR>
+    <d:BC_10YEAR m:type="Edm.Double">3.96</d:BC_10YEAR>
+    <d:BC_30YEAR m:type="Edm.Double">4.57</d:BC_30YEAR>
+  </m:properties></content></entry>
+  <entry><content type="application/xml"><m:properties>
+    <d:NEW_DATE m:type="Edm.DateTime">2026-09-21T00:00:00</d:NEW_DATE>
+    <d:BC_3MONTH m:type="Edm.Double">4.10</d:BC_3MONTH>
+    <d:BC_2YEAR m:type="Edm.Double">3.55</d:BC_2YEAR>
+    <d:BC_10YEAR m:type="Edm.Double">3.95</d:BC_10YEAR>
+    <d:BC_30YEAR m:type="Edm.Double">4.55</d:BC_30YEAR>
+  </m:properties></content></entry>
+</feed>"""
+
 
 def fake_fetch(url, accept=None):
     if "real_yield" in url:
@@ -20,6 +40,26 @@ def fake_fetch(url, accept=None):
 
 
 class TreasuryCurveTests(unittest.TestCase):
+    def test_xml_feed_parser(self):
+        rows = official_rates.parse_treasury_xml(NOMINAL_XML, prefix="BC_")
+        self.assertEqual(rows[-1][0], datetime.date(2026, 9, 21))
+        self.assertEqual(rows[-1][1]["2y"], 3.55)
+        self.assertEqual(rows[-1][1]["10y"], 3.95)
+
+    def test_xml_is_primary_and_csv_is_fallback(self):
+        calls = []
+
+        def fetch(url, accept=None):
+            calls.append(url)
+            if "pages/xml" in url:
+                return NOMINAL_XML
+            raise AssertionError("CSV fallback should not be needed")
+
+        rates = official_rates.fetch_treasury_rates(datetime.date(2026, 9, 22), fetch=fetch)
+        self.assertEqual(rates["status"], "ok")
+        self.assertEqual(rates["curve"]["as_of"], "2026-09-21")
+        self.assertTrue(all("pages/xml" in url for url in calls))
+
     def test_tenor_headers(self):
         self.assertEqual(official_rates.tenor_key("2 Yr"), "2y")
         self.assertEqual(official_rates.tenor_key("3 Mo"), "3m")
