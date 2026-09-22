@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.railway"
+watchPatterns = ["/**", "!/report_snapshot.json", "!/public/reports/**/report.json", "!/morning_snapshot.json", "!/public/morning/latest.json"]
+
+[deploy]
+startCommand = "python morning_cron.py"
+# 12:45 UTC = 7:45 AM America/Chicago during daylight saving time.
+# Change to 13:45 UTC during standard time if you want to keep a 7:45 AM CT publish.
+cronSchedule = "45 12 * * 1-5"
+restartPolicyType = "NEVER"
