@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import WatchlistPanel, { type WatchAsset } from "./components/WatchlistPanel";
+import { assetCatalog, assetBySymbol } from "./lib/assets";
 
 type MarketDatum = {
   dates: string[];
@@ -15,6 +17,8 @@ type MarketDatum = {
   session_date: string | null;
   previous_session_date: string | null;
   ticker_used: string;
+  data_source?: string;
+  source_symbol?: string;
   error: string | null;
 };
 
@@ -44,6 +48,44 @@ type EditorialBrief = {
   watchlist: string[];
 };
 
+type MarketHeadline = {
+  title: string;
+  url: string;
+  publisher: string;
+  published_at: number | null;
+  related_tickers: string[];
+};
+
+type CalendarEvent = {
+  date: string;
+  time?: string;
+  title?: string;
+  ticker?: string;
+  country?: string;
+  actual?: unknown;
+  consensus?: unknown;
+  previous?: unknown;
+  source: string;
+};
+
+type TrendParticipation = {
+  above: number;
+  valid: number;
+  share_pct: number;
+};
+
+type AssetHistory = {
+  symbol: string;
+  dates: string[];
+  closes: number[];
+  returns: Record<string, number | null>;
+  moving_averages: Record<string, number | null>;
+  above_moving_average: Record<string, boolean | null>;
+  source: string;
+  as_of: string | null;
+  error: string | null;
+};
+
 export type DailyReport = {
   report_type: "daily_market_close";
   session_date: string;
@@ -51,6 +93,40 @@ export type DailyReport = {
   generated_at: string;
   report_mode: string;
   derived_metrics?: { risk_confirmation?: { signal: string } };
+  data_quality?: {
+    status: "healthy" | "degraded" | "limited";
+    valid: number;
+    total: number;
+    coverage_pct: number;
+    issues: string[];
+    sources: Record<string, number>;
+    checked_session: string;
+  };
+  market_headlines?: {
+    items: MarketHeadline[];
+    source: string;
+    as_of: string | null;
+    label: string;
+    error: string | null;
+  };
+  market_calendar?: {
+    economic: { items: CalendarEvent[]; source: string; as_of: string | null; error: string | null };
+    earnings: { items: CalendarEvent[]; source: string; as_of: string | null; error: string | null };
+    note: string;
+  };
+  rates_credit?: Record<string, MarketDatum | number | null>;
+  market_internals?: {
+    trend_participation: {
+      above_20d: TrendParticipation | null;
+      above_50d: TrendParticipation | null;
+      above_200d: TrendParticipation | null;
+      universe: string;
+    };
+    sector_relative_strength_vs_spy: Record<string, Record<string, number | null>>;
+    benchmark_returns: Record<string, number | null>;
+    limitation: string;
+  };
+  asset_history?: Record<string, AssetHistory>;
   market_data: Record<string, MarketDatum>;
   session_charts: Record<string, SessionChart>;
   mega_cap_data?: Record<string, MegaCapSnapshot>;
@@ -77,6 +153,7 @@ const logoSrc = "https://coolxng.github.io/market-summary/logo.png";
 const sections = [
   ["brief", "The brief"],
   ["scorecard", "Scorecard"],
+  ["catalysts", "Catalysts"],
   ["sectors", "Sectors"],
   ["macro", "Macro"],
   ["ahead", "Ahead"],
