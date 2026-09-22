@@ -2,23 +2,23 @@
   "report_type": "daily_market_close",
   "session_date": "2026-09-21",
   "previous_session_date": "2026-09-18",
-  "generated_at": "2026-09-22T15:43:30.504149-04:00",
-  "report_mode": "deterministic_fallback",
+  "generated_at": "2026-09-22T15:53:35.486971-04:00",
+  "report_mode": "ai",
   "narrative_provenance": {
-    "mode": "deterministic_fallback",
-    "status": "http_400",
+    "mode": "ai",
+    "status": "validated",
     "contract_version": 2,
-    "model": null,
+    "model": "claude-sonnet-5",
     "selection": {
       "headline": [
-        "weighting"
+        "nasdaq_gap"
       ],
       "opening_summary": [
         "index",
-        "sectors"
+        "nasdaq_gap"
       ],
       "regime": [
-        "risk"
+        "weighting"
       ],
       "sector_leadership": [
         "sectors"
@@ -38,8 +38,11 @@
         "megacaps"
       ]
     },
-    "ai_writing": false,
-    "writing_scope": []
+    "ai_writing": true,
+    "writing_scope": [
+      "headline",
+      "interpretations"
+    ]
   },
   "derived_metrics": {
     "nasdaq_gap_pp": 0.77,
@@ -224,7 +227,7 @@
         "name": "Nasdaq Economic Calendar",
         "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
         "status": "ok",
-        "as_of": "2026-09-22T19:43:28.590277+00:00",
+        "as_of": "2026-09-22T19:53:26.489084+00:00",
         "error": null
       },
       {
@@ -232,7 +235,7 @@
         "name": "U.S. Treasury upcoming auctions",
         "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.024987+00:00",
+        "as_of": "2026-09-22T19:53:26.944221+00:00",
         "error": null
       },
       {
@@ -240,7 +243,7 @@
         "name": "Yahoo Finance company calendar (tracked names)",
         "source_url": "https://finance.yahoo.com/calendar/earnings",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.507257+00:00",
+        "as_of": "2026-09-22T19:53:27.585114+00:00",
         "error": null
       },
       {
@@ -248,7 +251,7 @@
         "name": "NYSE and expiration rules",
         "source_url": "https://www.nyse.com/markets/hours-calendars",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.507339+00:00",
+        "as_of": "2026-09-22T19:53:27.585196+00:00",
         "error": null
       },
       {
@@ -256,7 +259,7 @@
         "name": "Federal Reserve press releases (monetary policy)",
         "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.551244+00:00",
+        "as_of": "2026-09-22T19:53:27.622189+00:00",
         "error": null
       },
       {
@@ -264,7 +267,7 @@
         "name": "Federal Reserve speeches",
         "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
         "status": "ok",
-        "as_of": "2026-09-22T19:43:29.581613+00:00",
+        "as_of": "2026-09-22T19:53:27.665027+00:00",
         "error": null
       },
       {
@@ -272,7 +275,7 @@
         "name": "U.S. Bureau of Labor Statistics releases",
         "source_url": "https://www.bls.gov/feed/bls_latest.rss",
         "status": "unavailable",
-        "as_of": "2026-09-22T19:43:29.706526+00:00",
+        "as_of": "2026-09-22T19:53:27.765956+00:00",
         "error": "U.S. Bureau of Labor Statistics releases unavailable (HTTPError)."
       },
       {
@@ -280,37 +283,36 @@
         "name": "U.S. Bureau of Economic Analysis releases",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.789319+00:00",
+        "as_of": "2026-09-22T19:53:27.860821+00:00",
         "error": null
       },
       {
         "id": "yahoo_news",
         "name": "Yahoo Finance news search (allowlisted publishers)",
         "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
-        "status": "ok",
-        "as_of": "2026-09-22T19:43:30.181571+00:00",
+        "status": "empty",
+        "as_of": "2026-09-22T19:53:28.382074+00:00",
         "error": null
       },
       {
         "id": "treasury_curve",
-        "name": "U.S. Treasury daily par yield curve",
-        "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve",
-        "status": "unavailable",
-        "as_of": "2026-09-22T19:43:27.946173+00:00",
-        "error": "Treasury yield curve unavailable (TimeoutError)."
+        "name": "U.S. Treasury yields via FRED",
+        "source_url": "https://fred.stlouisfed.org/",
+        "status": "ok",
+        "as_of": "2026-09-22T19:53:26.330649+00:00",
+        "error": null
       },
       {
         "id": "fred_credit",
         "name": "FRED credit spreads (ICE BofA OAS)",
         "source_url": "https://fred.stlouisfed.org/",
         "status": "ok",
-        "as_of": "2026-09-22T19:43:28.506932+00:00",
+        "as_of": "2026-09-22T19:53:26.411941+00:00",
         "error": null
       }
     ],
     "unavailable_feeds": [
-      "U.S. Bureau of Labor Statistics releases",
-      "U.S. Treasury daily par yield curve"
+      "U.S. Bureau of Labor Statistics releases"
     ]
   },
   "market_calendar": {
@@ -403,7 +405,7 @@
         "name": "Nasdaq Economic Calendar",
         "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
         "status": "ok",
-        "as_of": "2026-09-22T19:43:28.590277+00:00",
+        "as_of": "2026-09-22T19:53:26.489084+00:00",
         "error": null
       },
       {
@@ -411,7 +413,7 @@
         "name": "U.S. Treasury upcoming auctions",
         "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.024987+00:00",
+        "as_of": "2026-09-22T19:53:26.944221+00:00",
         "error": null
       },
       {
@@ -419,7 +421,7 @@
         "name": "Yahoo Finance company calendar (tracked names)",
         "source_url": "https://finance.yahoo.com/calendar/earnings",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.507257+00:00",
+        "as_of": "2026-09-22T19:53:27.585114+00:00",
         "error": null
       },
       {
@@ -427,7 +429,7 @@
         "name": "NYSE and expiration rules",
         "source_url": "https://www.nyse.com/markets/hours-calendars",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.507339+00:00",
+        "as_of": "2026-09-22T19:53:27.585196+00:00",
         "error": null
       }
     ],
@@ -436,20 +438,9 @@
   "verified_catalysts": {
     "window": {
       "start": "2026-09-18T16:00:00-04:00",
-      "end": "2026-09-22T15:43:29.507417-04:00"
+      "end": "2026-09-22T15:53:27.585241-04:00"
     },
     "items": [
-      {
-        "title": "Oil prices settle lower as crude flows from Middle East improve",
-        "url": "https://finance.yahoo.com/energy/articles/oil-rises-slightly-ahead-potential-003404571.html",
-        "publisher": "Reuters",
-        "published_at": 1790105691,
-        "category": "Market news",
-        "source_type": "news",
-        "related_tickers": [
-          "CL=F"
-        ]
-      },
       {
         "title": "Jefferson, Discount Window Modernization and Treasury Market Functioning",
         "url": "https://www.federalreserve.gov/newsevents/speech/jefferson20260922a.htm",
@@ -466,7 +457,7 @@
         "name": "Federal Reserve press releases (monetary policy)",
         "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.551244+00:00",
+        "as_of": "2026-09-22T19:53:27.622189+00:00",
         "error": null
       },
       {
@@ -474,7 +465,7 @@
         "name": "Federal Reserve speeches",
         "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
         "status": "ok",
-        "as_of": "2026-09-22T19:43:29.581613+00:00",
+        "as_of": "2026-09-22T19:53:27.665027+00:00",
         "error": null
       },
       {
@@ -482,7 +473,7 @@
         "name": "U.S. Bureau of Labor Statistics releases",
         "source_url": "https://www.bls.gov/feed/bls_latest.rss",
         "status": "unavailable",
-        "as_of": "2026-09-22T19:43:29.706526+00:00",
+        "as_of": "2026-09-22T19:53:27.765956+00:00",
         "error": "U.S. Bureau of Labor Statistics releases unavailable (HTTPError)."
       },
       {
@@ -490,15 +481,15 @@
         "name": "U.S. Bureau of Economic Analysis releases",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:43:29.789319+00:00",
+        "as_of": "2026-09-22T19:53:27.860821+00:00",
         "error": null
       },
       {
         "id": "yahoo_news",
         "name": "Yahoo Finance news search (allowlisted publishers)",
         "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
-        "status": "ok",
-        "as_of": "2026-09-22T19:43:30.181571+00:00",
+        "status": "empty",
+        "as_of": "2026-09-22T19:53:28.382074+00:00",
         "error": null
       }
     ],
@@ -692,22 +683,83 @@
     "5s10s_bp": 13.0,
     "official_curve": {
       "id": "treasury_curve",
-      "name": "U.S. Treasury daily par yield curve",
-      "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve",
-      "status": "unavailable",
-      "as_of": "2026-09-22T19:43:27.946173+00:00",
+      "name": "U.S. Treasury yields via FRED",
+      "source_url": "https://fred.stlouisfed.org/",
+      "status": "ok",
+      "as_of": "2026-09-22T19:53:26.330649+00:00",
       "items": [],
-      "error": "Treasury yield curve unavailable (TimeoutError).",
-      "curve": null,
-      "spreads": {},
-      "real": null
+      "error": null,
+      "curve": {
+        "as_of": "2026-09-18",
+        "previous_date": "2026-09-17",
+        "tenors": {
+          "3m": {
+            "value": 4.14,
+            "change_bp": 2.0
+          },
+          "2y": {
+            "value": 4.76,
+            "change_bp": 9.0
+          },
+          "5y": {
+            "value": 4.86,
+            "change_bp": 8.0
+          },
+          "10y": {
+            "value": 5.01,
+            "change_bp": 7.0
+          },
+          "20y": {
+            "value": 5.38,
+            "change_bp": 6.0
+          },
+          "30y": {
+            "value": 5.34,
+            "change_bp": 5.0
+          }
+        }
+      },
+      "spreads": {
+        "2s10s": {
+          "value_bp": 25.0,
+          "change_bp": -2.0
+        },
+        "3m10y": {
+          "value_bp": 87.0,
+          "change_bp": 5.0
+        },
+        "5s30s": {
+          "value_bp": 48.0,
+          "change_bp": -3.0
+        }
+      },
+      "real": {
+        "as_of": "2026-09-18",
+        "previous_date": "2026-09-17",
+        "tenors": {
+          "5y": {
+            "value": 2.55,
+            "change_bp": 9.0
+          },
+          "10y": {
+            "value": 2.68,
+            "change_bp": 7.0
+          },
+          "30y": {
+            "value": 3.09,
+            "change_bp": 5.0
+          }
+        }
+      },
+      "real_source_url": "https://fred.stlouisfed.org/",
+      "fallback": "fred"
     },
     "credit_spreads": {
       "id": "fred_credit",
       "name": "FRED credit spreads (ICE BofA OAS)",
       "source_url": "https://fred.stlouisfed.org/",
       "status": "ok",
-      "as_of": "2026-09-22T19:43:28.506932+00:00",
+      "as_of": "2026-09-22T19:53:26.411941+00:00",
       "items": [],
       "error": null,
       "series": {
@@ -34697,38 +34749,38 @@
   },
   "narrative": {
     "editorial": {
-      "headline": "Cap weight leads",
-      "opening_summary": "S&P 500 +1.49% at the close. Comm. Services (XLC) +3.89% ranked highest; Energy (XLE) -2.30% ranked lowest, separated by 6.19 percentage points.",
+      "headline": "Tech Leadership Drives Uneven Market Gains",
+      "opening_summary": "S&P 500 +1.49% at the close. Nasdaq +2.26% versus S&P 500 +1.49%, a +0.77 percentage-point spread.",
       "watchlist": [
         "Participation above 7/11 advancing sector ETFs would broaden the next-session reading; lower participation would weaken it.",
         "Use 4.96% as the ten-year closing reference; test whether a move above it coincides with weaker technology relative returns.",
         "Compare next-session participation with today\u2019s 8/9 advancing technology names; fewer advancers would narrow leadership."
       ],
       "regime": {
-        "observed": "S&P 500 +1.49%; VIX +0.41%; positive sector share 63.6%.",
-        "interpretation": "The equity, volatility and participation checks do not give a unanimous directional signal."
+        "observed": "RSP +0.56% versus SPY +1.55%; equal weight minus cap weight -0.99 percentage points.",
+        "interpretation": "Cap-weighted outperformance points to concentrated leadership rather than broad-based index gains."
       },
       "sector_leadership": {
         "observed": "Comm. Services (XLC) +3.89% ranked highest; Energy (XLE) -2.30% ranked lowest, separated by 6.19 percentage points.",
-        "interpretation": "The return spread identifies relative leadership, not fund flows or a verified catalyst."
+        "interpretation": "The spread between top and bottom sectors highlights relative leadership rather than a uniform market advance."
       },
       "megacap_leadership": {
         "observed": "INTC +12.14% ranked highest in the available technology sample; SNDK -1.41% ranked lowest.",
-        "interpretation": "Dispersion in this selected sample distinguishes stock-specific exposure from the headline technology narrative; no catalyst is verified."
+        "interpretation": "Wide dispersion among selected technology names separates stock-specific strength from the broader sector narrative."
       },
       "macro_read": {
         "observed": "The ten-year yield closed at 4.96%, a -4.00 basis-point change.",
-        "interpretation": "Lower yields can ease the valuation hurdle for duration-sensitive equities; co-movement is not proof of causality."
+        "interpretation": "A modest pullback in yields may ease valuation pressure on rate-sensitive equities, though correlation alone does not confirm the linkage."
       },
       "investor_takeaway": {
         "observed": "RSP +0.56% versus SPY +1.55%; equal weight minus cap weight -0.99 percentage points.",
-        "interpretation": "Cap-weight outperformance is consistent with concentrated leadership, not a measured attribution of index contributions."
+        "interpretation": "The gap between equal-weight and cap-weight performance suggests leadership remains narrow rather than broadly participatory."
       }
     },
     "sector_bullets": {
       "top_bullet1": "Comm. Services (XLC) +3.89% ranked highest; Energy (XLE) -2.30% ranked lowest, separated by 6.19 percentage points.",
       "top_bullet2": "7 of 11 available sector ETFs advanced (63.6%); coverage 11/11.",
-      "bot_bullet1": "The return spread identifies relative leadership, not fund flows or a verified catalyst.",
+      "bot_bullet1": "The spread between top and bottom sectors highlights relative leadership rather than a uniform market advance.",
       "bot_bullet2": "Check whether Comm. Services (XLC) retains relative strength and whether Energy (XLE) closes the gap."
     },
     "megacap_descriptions": {
@@ -34756,7 +34808,7 @@
     },
     "daily_takeaway": {
       "what_moved": "RSP +0.56% versus SPY +1.55%; equal weight minus cap weight -0.99 percentage points.",
-      "why": "Cap-weight outperformance is consistent with concentrated leadership, not a measured attribution of index contributions.",
+      "why": "The gap between equal-weight and cap-weight performance suggests leadership remains narrow rather than broadly participatory.",
       "what_to_watch": "Participation above 7/11 advancing sector ETFs would broaden the next-session reading; lower participation would weaken it. Use 4.96% as the ten-year closing reference; test whether a move above it coincides with weaker technology relative returns. Compare next-session participation with today\u2019s 8/9 advancing technology names; fewer advancers would narrow leadership."
     },
     "next_session_outlook": {
