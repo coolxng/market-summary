@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import PWARegister from "./components/PWARegister";
+import AnalyticsEvents from "./components/AnalyticsEvents";
 import { THEME_COLORS, THEME_STORAGE_KEY } from "./lib/theme";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
@@ -64,7 +65,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a className="skip-link" href="#main">Skip to content</a>
         <PWARegister />
         {analyticsDomain && (
-          <script defer data-domain={analyticsDomain} src={analyticsSrc} />
+          <>
+            {/* Cookieless Plausible, loaded only when a domain is configured at build time. */}
+            <script defer data-domain={analyticsDomain} src={analyticsSrc} />
+            <script dangerouslySetInnerHTML={{ __html: "window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)}" }} />
+            <AnalyticsEvents />
+          </>
         )}
         <script
           type="application/ld+json"

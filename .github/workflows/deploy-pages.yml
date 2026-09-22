@@ -44,6 +44,8 @@ jobs:
         env:
           GITHUB_PAGES: "true"
           NEXT_PUBLIC_SITE_URL: ${{ steps.pages.outputs.base_url }}/
+          # Optional. Leave the repository variable unset to build without analytics.
+          NEXT_PUBLIC_PLAUSIBLE_DOMAIN: ${{ vars.PLAUSIBLE_DOMAIN }}
         run: npm run build:pages
 
       - name: Validate Static Export
