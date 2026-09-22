@@ -785,7 +785,11 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
           <div className="sector-board">
             {sectorEntries.map(([name, value], index) => (
               <div className="sector-row" key={name}>
-                <span className="rank">{String(index + 1).padStart(2, "0")}</span><span className="sector-name">{name}</span>
+                <span className="rank">{String(index + 1).padStart(2, "0")}</span><span className="sector-name">{(() => {
+                  const symbol = name.match(/\(([A-Z]+)\)$/)?.[1];
+                  const asset = symbol ? assetBySymbol[symbol] : undefined;
+                  return asset ? <a href={`${assetBaseHref}${asset.slug}/`}>{name}</a> : name;
+                })()}</span>
                 <div className="bar-track"><span className={value >= 0 ? "bar-positive" : "bar-negative"} style={{ width: `${Math.max(5, (Math.abs(value) / sectorAbsMax) * 100)}%` }} /></div>
                 <strong className={value >= 0 ? "positive" : "negative"}>{formatPct(value)}</strong>
               </div>
@@ -851,6 +855,7 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
                   </div>
                   <p>{decodeText(dailyReport.narrative.megacap_descriptions[ticker] ?? "")}</p>
                   <div className="mega-price">${formatNumber(item.end_price)}</div>
+                  <a className="asset-card-link" href={`${assetBaseHref}${ticker.toLowerCase()}/`}>Open asset →</a>
                   <div className="mega-range">
                     <span>{hasSessionRange ? "DAY LOW" : "PREV CLOSE"} <b>${formatNumber(hasSessionRange ? item.day_low : item.prev_close)}</b></span>
                     <span>{hasSessionRange ? "DAY HIGH" : "SESSION CLOSE"} <b>${formatNumber(hasSessionRange ? item.day_high : item.end_price)}</b></span>
@@ -924,7 +929,8 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
             {cryptoMarkets.map(([symbol, name, ticker, narrativeKey]) => {
               const item = market[symbol];
               const positive = item.pct_change >= 0;
-              return <article className="digital-card" key={symbol}><div className="digital-head"><span>{ticker}</span><strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong></div><div className="digital-price">${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}</div><span className="digital-name">{name}</span><Sparkline values={item.closes} positive={positive} /><p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey])}</p></article>;
+              const asset = assetBySymbol[symbol];
+              return <article className="digital-card" key={symbol}><div className="digital-head"><span>{ticker}</span><strong className={positive ? "positive" : "negative"}>{formatPct(item.pct_change)}</strong></div><div className="digital-price">${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}</div><span className="digital-name">{name}</span>{asset && <a className="asset-card-link" href={`${assetBaseHref}${asset.slug}/`}>Open asset →</a>}<Sparkline values={item.closes} positive={positive} /><p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey])}</p></article>;
             })}
           </div>
         </section>
