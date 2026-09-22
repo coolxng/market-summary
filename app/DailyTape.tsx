@@ -632,11 +632,49 @@ export default function DailyTape({ report, archived = false, archiveHref = "./r
     ["04", "Risk dashboard", dailyReport.narrative.next_session_outlook.risk_factors],
   ];
 
+  const watchAssets: WatchAsset[] = assetCatalog.map((asset) => {
+    const direct = market[asset.symbol] ?? dailyReport.mega_cap_data?.[asset.symbol]?.result;
+    const history = dailyReport.asset_history?.[asset.symbol];
+    const sectorReturn = Object.entries(dailyReport.daily_sector_performance).find(([name]) => name.includes(`(${asset.symbol})`))?.[1];
+    return {
+      slug: asset.slug,
+      symbol: asset.symbol,
+      name: asset.name,
+      price: direct?.end_price ?? history?.closes?.at(-1) ?? null,
+      pct_change: direct?.pct_change ?? sectorReturn ?? history?.returns?.["5d"] ?? null,
+    };
+  }).filter((asset) => asset.price != null || asset.pct_change != null);
+
+  const headlines = dailyReport.market_headlines?.items ?? [];
+  const calendarEvents = [
+    ...(dailyReport.market_calendar?.economic.items ?? []),
+    ...(dailyReport.market_calendar?.earnings.items ?? []),
+  ].sort((a, b) => `${a.date} ${a.time ?? ""}`.localeCompare(`${b.date} ${b.time ?? ""}`));
+
+  const rateDatum = (key: string) => {
+    const value = dailyReport.rates_credit?.[key];
+    return value && typeof value === "object" && "end_price" in value ? value as MarketDatum : null;
+  };
+  const rateCards = [
+    ["3M", rateDatum("3m"), "us-3m"],
+    ["5Y", rateDatum("5y"), "us-5y"],
+    ["10Y", rateDatum("10y") ?? tenYear, "us-10y"],
+    ["30Y", rateDatum("30y"), "us-30y"],
+    ["HYG", rateDatum("hyg"), "hyg"],
+    ["LQD", rateDatum("lqd"), "lqd"],
+    ["TIP", rateDatum("tip"), "tip"],
+  ] as const;
+  const curve5s10s = typeof dailyReport.rates_credit?.["5s10s_bp"] === "number"
+    ? dailyReport.rates_credit["5s10s_bp"] as number
+    : null;
+  const internals = dailyReport.market_internals?.trend_participation;
+  const dataQuality = dailyReport.data_quality;
+
   return (
     <main>
       <header className="site-header">
         <a className="brand" href={homeHref} aria-label="The Daily Tape home"><span className="brand-mark" style={{ backgroundImage: `url("${logoSrc}")` }} /><span>THE DAILY TAPE</span></a>
-        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={archiveHref}>Archive</a></nav>
+        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={archiveHref}>Archive</a><a href={archived ? "../../search/" : "./search/"}>Search</a></nav>
         <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
           <span className="theme-toggle__icon" aria-hidden="true">{theme === "paper" ? "◐" : "◑"}</span>
           <span className="theme-toggle__label">{theme === "paper" ? "Ink" : "Paper"}</span>
