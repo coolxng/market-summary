@@ -12,6 +12,14 @@ from zoneinfo import ZoneInfo
 
 import yfinance as yf
 
+from market_intelligence import (
+    build_data_quality,
+    fetch_economic_calendar,
+    fetch_history_bundle,
+    fetch_market_headlines,
+    fetch_tracked_earnings,
+)
+
 
 # ─────────────────────────────────────────────
 # CONFIGURATION
@@ -33,6 +41,8 @@ SANITY_BOUNDS = {
     "^RUT": (500, 10000),
     "^VIX": (5, 150),
     "^TNX": (0.1, 20),
+    "^FVX": (0.1, 20),
+    "^TYX": (0.1, 20),
     "^IRX": (0.0, 20),
     "DX-Y.NYB": (50, 200),
     "^N225": (10000, 100000),
@@ -279,6 +289,8 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
                 "session_date": current_date.isoformat(),
                 "previous_session_date": prior_date.isoformat(),
                 "ticker_used": ticker_used,
+                "data_source": "yahoo_finance",
+                "source_symbol": ticker_used,
                 "error": None,
             }
         except Exception as exc:
@@ -831,9 +843,9 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     print(f"Fetching market data for completed session {session_date.isoformat()}...")
 
     ticker_symbols = (
-        "^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "^IRX", "DX-Y.NYB",
+        "^GSPC", "^IXIC", "^DJI", "^RUT", "^VIX", "^TNX", "^FVX", "^TYX", "^IRX", "DX-Y.NYB",
         "GC=F", "CL=F", "BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD",
-        "^N225", "^STOXX50E", "^FTSE", "^HSI",
+        "^N225", "^STOXX50E", "^FTSE", "^HSI", "HYG", "LQD", "TIP",
     )
     datasets = {
         symbol: fetch_daily_data(symbol, session_date, previous_session_date)
@@ -909,6 +921,113 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         }
     spy = fetch_daily_data("SPY", session_date, previous_session_date)
     rsp = fetch_daily_data("RSP", session_date, previous_session_date)
+
+    asset_catalog = [
+        {"slug": "spx", "symbol": "^GSPC", "name": "S&P 500", "category": "Index"},
+        {"slug": "nasdaq", "symbol": "^IXIC", "name": "Nasdaq Composite", "category": "Index"},
+        {"slug": "dow", "symbol": "^DJI", "name": "Dow Jones", "category": "Index"},
+        {"slug": "russell-2000", "symbol": "^RUT", "name": "Russell 2000", "category": "Index"},
+        {"slug": "vix", "symbol": "^VIX", "name": "CBOE Volatility Index", "category": "Volatility"},
+        {"slug": "us-10y", "symbol": "^TNX", "name": "U.S. 10-Year Treasury Yield", "category": "Rates"},
+        {"slug": "dxy", "symbol": "DX-Y.NYB", "name": "U.S. Dollar Index", "category": "FX"},
+        {"slug": "gold", "symbol": "GC=F", "name": "Gold", "category": "Commodity"},
+        {"slug": "wti", "symbol": "CL=F", "name": "WTI Crude", "category": "Commodity"},
+        {"slug": "bitcoin", "symbol": "BTC-USD", "name": "Bitcoin", "category": "Crypto"},
+        {"slug": "ethereum", "symbol": "ETH-USD", "name": "Ethereum", "category": "Crypto"},
+        {"slug": "solana", "symbol": "SOL-USD", "name": "Solana", "category": "Crypto"},
+        {"slug": "xrp", "symbol": "XRP-USD", "name": "XRP", "category": "Crypto"},
+    ]
+    asset_catalog.extend(
+        {"slug": ticker.lower(), "symbol": ticker, "name": company, "category": "Equity"}
+        for ticker, company in megacaps.items()
+    )
+    asset_catalog.extend(
+        {
+            "slug": ticker.lower(),
+            "symbol": ticker,
+            "name": name.split(" (")[0],
+            "category": "Sector ETF",
+        }
+        for name, ticker in sectors.items()
+    )
+
+    history_symbols = [entry["symbol"] for entry in asset_catalog] + ["SPY", "RSP", "QQQ", "IWM", "HYG", "LQD", "TIP", "^FVX", "^TYX"]
+    asset_history = fetch_history_bundle(history_symbols, session_date)
+
+    spy_history = asset_history.get("SPY", {})
+    sector_trend = {}
+    for sector_name, ticker in sectors.items():
+        history = asset_history.get(ticker, {})
+        sector_trend[sector_name] = {
+            "symbol": ticker,
+            "returns": history.get("returns", {}),
+            "above_moving_average": history.get("above_moving_average", {}),
+        }
+
+    def participation(window):
+        states = [
+            row["above_moving_average"].get(window)
+            for row in sector_trend.values()
+            if row.get("above_moving_average", {}).get(window) is not None
+        ]
+        if not states:
+            return None
+        return {
+            "above": sum(bool(value) for value in states),
+            "valid": len(states),
+            "share_pct": round(sum(bool(value) for value in states) / len(states) * 100, 1),
+        }
+
+    spy_returns = spy_history.get("returns", {})
+    relative_strength = {}
+    for sector_name, row in sector_trend.items():
+        relative_strength[sector_name] = {}
+        for window in ("5d", "1m", "3m", "ytd"):
+            sector_return = row.get("returns", {}).get(window)
+            benchmark_return = spy_returns.get(window)
+            relative_strength[sector_name][window] = (
+                round(sector_return - benchmark_return, 2)
+                if isinstance(sector_return, (int, float)) and isinstance(benchmark_return, (int, float))
+                else None
+            )
+
+    market_internals = {
+        "trend_participation": {
+            "above_20d": participation("20d"),
+            "above_50d": participation("50d"),
+            "above_200d": participation("200d"),
+            "universe": "11 S&P sector ETFs",
+        },
+        "sector_relative_strength_vs_spy": relative_strength,
+        "benchmark_returns": spy_returns,
+        "limitation": "Trend participation uses the 11 sector ETFs as a market-internals proxy, not NYSE/Nasdaq constituent breadth.",
+    }
+
+    rates_credit = {
+        "3m": datasets.get("^IRX"),
+        "5y": datasets.get("^FVX"),
+        "10y": datasets.get("^TNX"),
+        "30y": datasets.get("^TYX"),
+        "hyg": datasets.get("HYG"),
+        "lqd": datasets.get("LQD"),
+        "tip": datasets.get("TIP"),
+    }
+    if datasets.get("^TNX") and datasets.get("^FVX") and not datasets["^TNX"].get("error") and not datasets["^FVX"].get("error"):
+        rates_credit["5s10s_bp"] = round((datasets["^TNX"]["end_price"] - datasets["^FVX"]["end_price"]) * 100, 1)
+    else:
+        rates_credit["5s10s_bp"] = None
+
+    market_headlines = fetch_market_headlines(session_date)
+    economic_calendar = fetch_economic_calendar(session_date + datetime.timedelta(days=1))
+    tracked_earnings = fetch_tracked_earnings(megacaps.keys(), session_date + datetime.timedelta(days=1))
+    market_calendar = {
+        "economic": economic_calendar,
+        "earnings": tracked_earnings,
+        "note": "Calendar items are source-linked schedule context and are not treated as causes of price moves.",
+    }
+
+    data_quality = build_data_quality(datasets, session_date)
+
     advances = sum(1 for value in sector_perf.values() if value > 0)
     declines = sum(1 for value in sector_perf.values() if value < 0)
     breadth_share = round((advances / len(sector_perf)) * 100, 1) if sector_perf else 0.0
@@ -950,6 +1069,13 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "report_mode": narrative_provenance["mode"],
         "narrative_provenance": narrative_provenance,
         "derived_metrics": context["derived_metrics"],
+        "data_quality": data_quality,
+        "market_calendar": market_calendar,
+        "market_headlines": market_headlines,
+        "rates_credit": rates_credit,
+        "market_internals": market_internals,
+        "asset_catalog": asset_catalog,
+        "asset_history": asset_history,
         "market_data": datasets,
         "session_charts": session_charts,
         "mega_cap_data": megacap_data,
