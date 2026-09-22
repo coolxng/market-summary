@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import ShareSummaryButton from "./components/ShareSummaryButton";
 import WatchlistPanel, { type WatchAsset } from "./components/WatchlistPanel";
 import { assetCatalog, assetBySymbol } from "./lib/assets";
 
@@ -752,6 +753,16 @@ export default function DailyTape({
                 <span className={`tag ${sp.pct_change >= 0 ? "up" : "down"}`}>S&amp;P {formatPct(sp.pct_change)}</span>
                 <span className="tag neutral">Breadth {breadth.advances}/{sectorTotal}</span>
                 <span className={`tag ${vix.pct_change <= 0 ? "up" : "down"}`}>VIX {formatPct(vix.pct_change)}</span>
+                <ShareSummaryButton
+                  headline={headline}
+                  session={dateRange}
+                  metrics={{
+                    sp500: formatPct(sp.pct_change),
+                    nasdaq: formatPct(nasdaq.pct_change),
+                    vix: formatNumber(vix.end_price),
+                    breadth: `${breadth.positive_sector_share.toFixed(1)}%`,
+                  }}
+                />
               </div>
             </div>
             <aside className="regime-card" aria-label="Market regime signals">
