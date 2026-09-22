@@ -1,4 +1,5 @@
 import base64
+import datetime
 import hashlib
 import json
 import os
@@ -6,6 +7,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from generate_morning import generate_morning_snapshot
 
@@ -16,6 +18,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
 ARTIFACTS = (Path("morning_snapshot.json"), Path("public/morning/latest.json"))
+CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
 def require_environment():
@@ -163,7 +166,21 @@ def notify(snapshot, commit_sha):
         print(f"Warning: Morning Tape Discord notification failed: {exc}")
 
 
+def should_publish_now(now=None):
+    if os.environ.get("MORNING_TAPE_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+    current = now or datetime.datetime.now(datetime.timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=datetime.timezone.utc)
+    local = current.astimezone(CENTRAL_TZ)
+    return local.weekday() < 5 and local.hour == 7
+
+
 def main():
+    if not should_publish_now():
+        print("Morning Tape DST guard: this UTC slot is not 7 AM America/Chicago; exiting.")
+        return
+
     require_environment()
     snapshot = generate_morning_snapshot()
     validate_snapshot(snapshot)
