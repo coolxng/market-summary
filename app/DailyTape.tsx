@@ -810,9 +810,9 @@ export default function DailyTape({
                 <p>{archiveComparison.breadthAverage == null ? "Prior breadth unavailable." : `Prior ${archiveComparison.sampleSize}-session average: ${archiveComparison.breadthAverage.toFixed(1)}%`}</p>
               </article>
               <article>
-                <span>VIX SAMPLE PERCENTILE</span>
-                <strong>{archiveComparison.vixPercentile == null ? "—" : `${archiveComparison.vixPercentile.toFixed(0)}th`}</strong>
-                <p>Rank within the current plus prior archived-session sample.</p>
+                <span>VIX SAMPLE RANK</span>
+                <strong>{archiveComparison.vixPercentile == null ? "—" : `${archiveComparison.vixPercentile.toFixed(0)}%`}</strong>
+                <p>Percentile rank within the current plus prior archived-session sample.</p>
               </article>
               <article>
                 <span>REGIME STREAK</span>
