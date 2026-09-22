@@ -541,6 +541,7 @@ export default function DailyTape({
   assetBaseHref = "./assets/",
   previousReportHref,
   nextReportHref,
+  archiveComparison,
 }: {
   report: DailyReport;
   archived?: boolean;
@@ -549,6 +550,14 @@ export default function DailyTape({
   assetBaseHref?: string;
   previousReportHref?: string;
   nextReportHref?: string;
+  archiveComparison?: {
+    sampleSize: number;
+    breadthAverage: number | null;
+    breadthDelta: number | null;
+    vixPercentile: number | null;
+    regimeStreak: number;
+    sp500FiveSessionReturn: number | null;
+  };
 }) {
   const dailyReport = report;
   const market = dailyReport.market_data;
@@ -781,6 +790,39 @@ export default function DailyTape({
           <article><span>02 / LEADERSHIP</span><strong>{sectorLabel(topSector[0])} over {sectorLabel(bottomSector[0])}</strong><p>A {Math.abs(topSector[1] - bottomSector[1]).toFixed(2)}-point spread separated the best and worst sectors.</p></article>
           <article><span>03 / INTERNALS</span><strong>{breadthTone} breadth</strong><p>{capWeightMessage}</p></article>
         </section>
+
+        {archived && archiveComparison && archiveComparison.sampleSize > 0 && (
+          <section className="archive-context section-block" aria-label="Historical session context">
+            <div className="section-heading">
+              <div><p className="section-kicker">HISTORICAL CONTEXT</p><h2>How this session compared</h2></div>
+              <p>Context is calculated only from earlier archived Daily Tape sessions, so the comparison never uses future data.</p>
+            </div>
+            <div className="archive-context-grid">
+              <article>
+                <span>BREADTH VS PRIOR AVG</span>
+                <strong>{archiveComparison.breadthDelta == null ? "—" : `${archiveComparison.breadthDelta >= 0 ? "+" : ""}${archiveComparison.breadthDelta.toFixed(1)} pp`}</strong>
+                <p>{archiveComparison.breadthAverage == null ? "Prior breadth unavailable." : `Prior ${archiveComparison.sampleSize}-session average: ${archiveComparison.breadthAverage.toFixed(1)}%`}</p>
+              </article>
+              <article>
+                <span>VIX SAMPLE PERCENTILE</span>
+                <strong>{archiveComparison.vixPercentile == null ? "—" : `${archiveComparison.vixPercentile.toFixed(0)}th`}</strong>
+                <p>Rank within the current plus prior archived-session sample.</p>
+              </article>
+              <article>
+                <span>REGIME STREAK</span>
+                <strong>{archiveComparison.regimeStreak || "—"}</strong>
+                <p>Consecutive archived sessions with the same risk-confirmation regime.</p>
+              </article>
+              <article>
+                <span>S&amp;P 5-SESSION</span>
+                <strong className={(archiveComparison.sp500FiveSessionReturn ?? 0) >= 0 ? "positive" : "negative"}>
+                  {archiveComparison.sp500FiveSessionReturn == null ? "—" : formatPct(archiveComparison.sp500FiveSessionReturn)}
+                </strong>
+                <p>Compounded from the archived Daily Tape session returns.</p>
+              </article>
+            </div>
+          </section>
+        )}
 
         <section className="scorecard section-block" id="scorecard">
           <div className="section-heading"><div><p className="section-kicker">01 / SCORECARD</p><h2>The tape, at a glance</h2></div><p>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</p></div>
