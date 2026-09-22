@@ -34,7 +34,7 @@ import trading_calendar
 
 NY_TZ = ZoneInfo("America/New_York")
 CENTRAL_TZ = ZoneInfo("America/Chicago")
-USER_AGENT = "TheDailyTape/1.0 (+https://github.com/coolxng/market-summary)"
+USER_AGENT = "TheDailyTape/1.0 (contact: https://github.com/coolxng/market-summary/issues)"
 BROWSER_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
@@ -528,15 +528,26 @@ def official_catalysts(feed, start, end):
         urls = (feed["url"], *feed.get("fallback_urls", ()))
         for url in urls:
             try:
+                is_bls = "bls.gov" in url
                 raw = http_get(
                     url,
                     accept="application/rss+xml, application/xml, text/xml, */*",
                     timeout=12,
-                    attempts=2,
-                    extra_headers={"Referer": "https://www.bls.gov/feed/"} if "bls.gov" in url else None,
+                    # BLS explicitly rate-limits/blocklists automated retrieval.
+                    # Do not multiply requests from a blocked Railway IP.
+                    attempts=1 if is_bls else 2,
+                    extra_headers={"Referer": "https://www.bls.gov/feed/"} if is_bls else None,
                 )
                 entries = parse_feed_xml(raw)
                 successes += 1
+            except urllib.error.HTTPError as exc:
+                last_error = exc
+                # A BLS 403 is an explicit provider block, not a transient outage.
+                # Trying four more paths from the same IP is counterproductive and
+                # can worsen the block, so fail closed after the first response.
+                if feed["id"] == "bls_releases" and exc.code == 403:
+                    raise PermissionError("BLS blocked automated retrieval") from exc
+                continue
             except Exception as exc:
                 last_error = exc
                 continue
