@@ -10,9 +10,28 @@ import yfinance as yf
 
 
 NY_TZ = ZoneInfo("America/New_York")
+CENTRAL_TZ = ZoneInfo("America/Chicago")
 USER_AGENT = "Mozilla/5.0 (compatible; TheDailyTape/1.0; +https://coolxng.github.io/market-summary/)"
 NASDAQ_CALENDAR_URL = "https://api.nasdaq.com/api/calendar/economicevents"
+NASDAQ_CALENDAR_PAGE = "https://www.nasdaq.com/market-activity/economic-calendar"
 YAHOO_SEARCH_URL = "https://query1.finance.yahoo.com/v1/finance/search"
+
+REPUTABLE_NEWS_PUBLISHERS = (
+    "reuters",
+    "bloomberg",
+    "cnbc",
+    "associated press",
+    "ap finance",
+    "wall street journal",
+    "wsj",
+    "financial times",
+    "marketwatch",
+    "barron",
+    "yahoo finance",
+    "federal reserve",
+    "securities and exchange commission",
+    "sec",
+)
 
 
 def _runtime_data_available():
@@ -163,12 +182,15 @@ def _normalize_news_item(item):
         published = int(published) if published is not None else None
     except (TypeError, ValueError):
         published = None
+    related_tickers = [str(value) for value in item.get("relatedTickers", []) if value]
     return {
         "title": title,
         "url": link,
         "publisher": publisher or "Unknown publisher",
         "published_at": published,
-        "related_tickers": [str(value) for value in item.get("relatedTickers", []) if value],
+        "related_tickers": related_tickers,
+        "affected_assets": related_tickers,
+        "category": "Market news",
     }
 
 
@@ -232,6 +254,9 @@ def fetch_market_headlines(session_date, queries=None, max_items=8):
                 item = _normalize_news_item(raw)
                 if not item:
                     continue
+                publisher_key = item["publisher"].lower()
+                if not any(name in publisher_key for name in REPUTABLE_NEWS_PUBLISHERS):
+                    continue
                 timestamp = item["published_at"]
                 if timestamp is not None:
                     published_at = datetime.datetime.fromtimestamp(timestamp, tz=datetime.timezone.utc).astimezone(NY_TZ)
@@ -249,9 +274,9 @@ def fetch_market_headlines(session_date, queries=None, max_items=8):
     )[:max_items]
     return {
         "items": items,
-        "source": "Yahoo Finance search/news",
+        "source": "Yahoo Finance search/news · reputable publishers only",
         "as_of": session_close.isoformat(),
-        "label": "Source-linked headlines; not claimed causes of market moves.",
+        "label": "Source-linked developments from reputable publishers; not claimed causes of market moves.",
         "error": None if items else "No verified headlines returned.",
     }
 
@@ -276,6 +301,33 @@ def _nasdaq_rows_for_date(day):
     return rows if isinstance(rows, list) else []
 
 
+def _calendar_time_fields(row, day):
+    raw_gmt = str(row.get("gmt") or "").strip()
+    if raw_gmt:
+        for fmt in ("%H:%M:%S", "%H:%M", "%I:%M %p"):
+            try:
+                clock = datetime.datetime.strptime(raw_gmt, fmt).time()
+                utc_dt = datetime.datetime.combine(day, clock, tzinfo=datetime.timezone.utc)
+                local_dt = utc_dt.astimezone(CENTRAL_TZ)
+                return {
+                    "time": local_dt.strftime("%-I:%M %p CT"),
+                    "time_zone": "America/Chicago",
+                    "source_time": raw_gmt,
+                    "source_time_zone": "UTC",
+                }
+            except ValueError:
+                continue
+
+    raw_time = str(row.get("time") or row.get("releaseTime") or "").strip()
+    source_zone = str(row.get("timezone") or row.get("timeZone") or "").strip() or None
+    return {
+        "time": raw_time or "TBD",
+        "time_zone": source_zone,
+        "source_time": raw_time or None,
+        "source_time_zone": source_zone,
+    }
+
+
 def _calendar_event(row, day):
     if not isinstance(row, dict):
         return None
@@ -289,16 +341,21 @@ def _calendar_event(row, day):
     if not title:
         return None
     country = str(row.get("country") or row.get("region") or "").strip()
-    time_value = str(row.get("gmt") or row.get("time") or row.get("releaseTime") or "").strip()
+    category = str(row.get("category") or row.get("eventType") or "Economic data").strip()
+    importance = row.get("importance") or row.get("impact") or row.get("priority")
+    time_fields = _calendar_time_fields(row, day)
     return {
         "date": day.isoformat(),
-        "time": time_value or "TBD",
+        **time_fields,
         "title": str(title).strip(),
+        "category": category,
+        "importance": importance,
         "country": country,
         "actual": row.get("actual"),
         "consensus": row.get("consensus") or row.get("forecast"),
         "previous": row.get("previous"),
         "source": "Nasdaq Economic Calendar",
+        "source_url": NASDAQ_CALENDAR_PAGE,
     }
 
 
@@ -363,8 +420,13 @@ def fetch_tracked_earnings(tickers, start_date, days=10, max_items=12):
                     events.append({
                         "date": day.isoformat(),
                         "ticker": ticker,
+                        "title": f"{ticker} earnings",
                         "time": "TBD",
+                        "time_zone": None,
+                        "category": "Earnings",
+                        "importance": None,
                         "source": "Yahoo Finance company calendar",
+                        "source_url": f"https://finance.yahoo.com/quote/{ticker}/",
                     })
         except Exception as exc:
             print(f"  Earnings calendar unavailable for {ticker}: {exc}")

@@ -1133,7 +1133,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
     else:
         rates_credit["5s10s_bp"] = None
 
-    market_headlines = fetch_market_headlines(session_date)
+    market_headlines = fetch_market_headlines(session_date, max_items=6)
     economic_calendar = fetch_economic_calendar(session_date + datetime.timedelta(days=1))
     tracked_earnings = fetch_tracked_earnings(megacaps.keys(), session_date + datetime.timedelta(days=1))
     market_calendar = {

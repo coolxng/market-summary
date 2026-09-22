@@ -56,18 +56,24 @@ type MarketHeadline = {
   publisher: string;
   published_at: number | null;
   related_tickers: string[];
+  affected_assets?: string[];
+  category?: string;
 };
 
 type CalendarEvent = {
   date: string;
   time?: string;
+  time_zone?: string | null;
   title?: string;
   ticker?: string;
   country?: string;
+  category?: string;
+  importance?: unknown;
   actual?: unknown;
   consensus?: unknown;
   previous?: unknown;
   source: string;
+  source_url?: string;
 };
 
 type TrendParticipation = {
@@ -234,6 +240,13 @@ function formatPct(value: number) {
 function formatBps(value: number) {
   const bps = Math.round(value * 100);
   return `${bps >= 0 ? "+" : ""}${bps} bps`;
+}
+
+function formatCalendarValue(value: unknown) {
+  if (value == null || value === "") return "—";
+  if (typeof value === "number") return Number.isFinite(value) ? String(value) : "—";
+  if (typeof value === "string") return value.trim() || "—";
+  return "—";
 }
 
 function sectorLabel(value: string) {
@@ -852,22 +865,27 @@ export default function DailyTape({
           </div>
           <div className="catalyst-grid">
             <div className="headline-list">
-              <div className="subsection-head"><span>HEADLINES TO KNOW</span><small>{dailyReport.market_headlines?.source ?? "SOURCE FEED PENDING"}</small></div>
+              <div className="subsection-head"><span>VERIFIED DEVELOPMENTS</span><small>{dailyReport.market_headlines?.source ?? "SOURCE FEED PENDING"}</small></div>
               {headlines.length ? headlines.slice(0, 6).map((item) => (
                 <a href={item.url} target="_blank" rel="noreferrer" key={item.url}>
-                  <div><span>{item.publisher}</span><small>{item.published_at ? new Date(item.published_at * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" }) : "TIME N/A"}</small></div>
+                  <div><span>{item.category ?? "Market news"} · {item.publisher}</span><small>{item.published_at ? new Date(item.published_at * 1000).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Chicago", timeZoneName: "short" }) : "TIME N/A"}</small></div>
                   <strong>{item.title}</strong>
+                  {!!(item.affected_assets?.length ?? item.related_tickers.length) && <small>Affected assets: {(item.affected_assets?.length ? item.affected_assets : item.related_tickers).slice(0, 5).join(", ")}</small>}
                   <b>Source ↗</b>
                 </a>
-              )) : <div className="data-empty">No source-linked headlines are stored in this snapshot yet. The next generated tape will populate this feed when upstream data is available.</div>}
+              )) : <div className="data-empty">No qualifying source-linked developments are stored in this snapshot. Low-quality or unverified publishers are omitted rather than filled with placeholders.</div>}
             </div>
             <div className="calendar-list">
-              <div className="subsection-head"><span>UPCOMING CALENDAR</span><small>ECONOMIC + TRACKED EARNINGS</small></div>
+              <div className="subsection-head"><span>MARKET CALENDAR</span><small>CENTRAL TIME WHEN SOURCE GMT IS AVAILABLE</small></div>
               {calendarEvents.length ? calendarEvents.slice(0, 8).map((event, index) => (
                 <article key={`${event.date}-${event.title ?? event.ticker}-${index}`}>
-                  <div><span>{new Date(`${event.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span><small>{event.time ?? "TBD"}</small></div>
+                  <div><span>{new Date(`${event.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}</span><small>{event.time ?? "TBD"}{event.time_zone && event.time !== "TBD" && !event.time?.includes("CT") ? ` · ${event.time_zone}` : ""}</small></div>
                   <strong>{event.title ?? `${event.ticker} earnings`}</strong>
-                  <p>{event.country ? `${event.country} · ` : ""}{event.source}</p>
+                  <p>{[event.category, event.country, event.source].filter(Boolean).join(" · ")}</p>
+                  {(event.actual != null || event.consensus != null || event.previous != null) && (
+                    <small>Actual {formatCalendarValue(event.actual)} · Consensus {formatCalendarValue(event.consensus)} · Previous {formatCalendarValue(event.previous)}</small>
+                  )}
+                  {event.source_url && <a href={event.source_url} target="_blank" rel="noreferrer">Source ↗</a>}
                 </article>
               )) : <div className="data-empty">No calendar events are stored in this snapshot yet. Calendar availability is checked during report generation and failures remain visible instead of being guessed.</div>}
             </div>
