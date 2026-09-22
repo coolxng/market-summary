@@ -2,11 +2,11 @@
   "report_type": "daily_market_close",
   "session_date": "2026-09-21",
   "previous_session_date": "2026-09-18",
-  "generated_at": "2026-09-22T15:26:29.518023-04:00",
+  "generated_at": "2026-09-22T15:43:30.504149-04:00",
   "report_mode": "deterministic_fallback",
   "narrative_provenance": {
     "mode": "deterministic_fallback",
-    "status": "request_or_validation_failed",
+    "status": "http_400",
     "contract_version": 2,
     "model": null,
     "selection": {
@@ -223,16 +223,16 @@
         "id": "nasdaq_economic",
         "name": "Nasdaq Economic Calendar",
         "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
-        "status": "unavailable",
-        "as_of": "2026-09-22T19:26:11.389082+00:00",
-        "error": "Nasdaq Economic Calendar unavailable (ConnectionError)."
+        "status": "ok",
+        "as_of": "2026-09-22T19:43:28.590277+00:00",
+        "error": null
       },
       {
         "id": "treasury_auctions",
         "name": "U.S. Treasury upcoming auctions",
         "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:11.825723+00:00",
+        "as_of": "2026-09-22T19:43:29.024987+00:00",
         "error": null
       },
       {
@@ -240,7 +240,7 @@
         "name": "Yahoo Finance company calendar (tracked names)",
         "source_url": "https://finance.yahoo.com/calendar/earnings",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.370930+00:00",
+        "as_of": "2026-09-22T19:43:29.507257+00:00",
         "error": null
       },
       {
@@ -248,7 +248,7 @@
         "name": "NYSE and expiration rules",
         "source_url": "https://www.nyse.com/markets/hours-calendars",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.371070+00:00",
+        "as_of": "2026-09-22T19:43:29.507339+00:00",
         "error": null
       },
       {
@@ -256,7 +256,7 @@
         "name": "Federal Reserve press releases (monetary policy)",
         "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.455613+00:00",
+        "as_of": "2026-09-22T19:43:29.551244+00:00",
         "error": null
       },
       {
@@ -264,7 +264,7 @@
         "name": "Federal Reserve speeches",
         "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
         "status": "ok",
-        "as_of": "2026-09-22T19:26:12.520876+00:00",
+        "as_of": "2026-09-22T19:43:29.581613+00:00",
         "error": null
       },
       {
@@ -272,7 +272,7 @@
         "name": "U.S. Bureau of Labor Statistics releases",
         "source_url": "https://www.bls.gov/feed/bls_latest.rss",
         "status": "unavailable",
-        "as_of": "2026-09-22T19:26:12.557109+00:00",
+        "as_of": "2026-09-22T19:43:29.706526+00:00",
         "error": "U.S. Bureau of Labor Statistics releases unavailable (HTTPError)."
       },
       {
@@ -280,7 +280,7 @@
         "name": "U.S. Bureau of Economic Analysis releases",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.644748+00:00",
+        "as_of": "2026-09-22T19:43:29.789319+00:00",
         "error": null
       },
       {
@@ -288,7 +288,7 @@
         "name": "Yahoo Finance news search (allowlisted publishers)",
         "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
         "status": "ok",
-        "as_of": "2026-09-22T19:26:13.186223+00:00",
+        "as_of": "2026-09-22T19:43:30.181571+00:00",
         "error": null
       },
       {
@@ -296,7 +296,7 @@
         "name": "U.S. Treasury daily par yield curve",
         "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve",
         "status": "unavailable",
-        "as_of": "2026-09-22T19:25:41.033813+00:00",
+        "as_of": "2026-09-22T19:43:27.946173+00:00",
         "error": "Treasury yield curve unavailable (TimeoutError)."
       },
       {
@@ -304,12 +304,11 @@
         "name": "FRED credit spreads (ICE BofA OAS)",
         "source_url": "https://fred.stlouisfed.org/",
         "status": "ok",
-        "as_of": "2026-09-22T19:25:41.322269+00:00",
+        "as_of": "2026-09-22T19:43:28.506932+00:00",
         "error": null
       }
     ],
     "unavailable_feeds": [
-      "Nasdaq Economic Calendar",
       "U.S. Bureau of Labor Statistics releases",
       "U.S. Treasury daily par yield curve"
     ]
@@ -320,22 +319,99 @@
       "next_session": "2026-09-22",
       "display_time_zone": "America/Chicago"
     },
-    "items": [],
+    "items": [
+      {
+        "date": "2026-09-22",
+        "time": "1:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-22T01:30:00-05:00",
+        "source_time": "06:30",
+        "source_time_zone": "GMT",
+        "title": "Fed Goolsbee Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": null,
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Nasdaq Economic Calendar",
+        "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-22",
+        "time": "3:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-22T03:30:00-05:00",
+        "source_time": "08:30",
+        "source_time_zone": "GMT",
+        "title": "Chicago Fed National Activity",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": null,
+        "actual": "-0.04",
+        "consensus": null,
+        "previous": "0.08",
+        "source": "Nasdaq Economic Calendar",
+        "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-22",
+        "time": "6:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-22T06:30:00-05:00",
+        "source_time": "11:30",
+        "source_time_zone": "GMT",
+        "title": "3-Month Bill Auction",
+        "category": "Treasury auction",
+        "kind": "economic",
+        "country": "United States",
+        "importance": null,
+        "actual": "4.015%",
+        "consensus": null,
+        "previous": "3.970%",
+        "source": "Nasdaq Economic Calendar",
+        "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-22",
+        "time": "6:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-22T06:30:00-05:00",
+        "source_time": "11:30",
+        "source_time_zone": "GMT",
+        "title": "6-Month Bill Auction",
+        "category": "Treasury auction",
+        "kind": "economic",
+        "country": "United States",
+        "importance": null,
+        "actual": "4.155%",
+        "consensus": null,
+        "previous": "4.060%",
+        "source": "Nasdaq Economic Calendar",
+        "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
+        "session": "next"
+      }
+    ],
     "feeds": [
       {
         "id": "nasdaq_economic",
         "name": "Nasdaq Economic Calendar",
         "source_url": "https://www.nasdaq.com/market-activity/economic-calendar",
-        "status": "unavailable",
-        "as_of": "2026-09-22T19:26:11.389082+00:00",
-        "error": "Nasdaq Economic Calendar unavailable (ConnectionError)."
+        "status": "ok",
+        "as_of": "2026-09-22T19:43:28.590277+00:00",
+        "error": null
       },
       {
         "id": "treasury_auctions",
         "name": "U.S. Treasury upcoming auctions",
         "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:11.825723+00:00",
+        "as_of": "2026-09-22T19:43:29.024987+00:00",
         "error": null
       },
       {
@@ -343,7 +419,7 @@
         "name": "Yahoo Finance company calendar (tracked names)",
         "source_url": "https://finance.yahoo.com/calendar/earnings",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.370930+00:00",
+        "as_of": "2026-09-22T19:43:29.507257+00:00",
         "error": null
       },
       {
@@ -351,7 +427,7 @@
         "name": "NYSE and expiration rules",
         "source_url": "https://www.nyse.com/markets/hours-calendars",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.371070+00:00",
+        "as_of": "2026-09-22T19:43:29.507339+00:00",
         "error": null
       }
     ],
@@ -360,17 +436,19 @@
   "verified_catalysts": {
     "window": {
       "start": "2026-09-18T16:00:00-04:00",
-      "end": "2026-09-22T15:26:12.371127-04:00"
+      "end": "2026-09-22T15:43:29.507417-04:00"
     },
     "items": [
       {
-        "title": "Meta CEO Mark Zuckerberg to join tech leaders at Trump-Xi dinner, Bloomberg News reports",
-        "url": "https://finance.yahoo.com/m/654cb813-5397-37bd-96e2-b9bb8863078d/meta-ceo-mark-zuckerberg-to.html",
+        "title": "Oil prices settle lower as crude flows from Middle East improve",
+        "url": "https://finance.yahoo.com/energy/articles/oil-rises-slightly-ahead-potential-003404571.html",
         "publisher": "Reuters",
-        "published_at": 1790104150,
+        "published_at": 1790105691,
         "category": "Market news",
         "source_type": "news",
-        "related_tickers": []
+        "related_tickers": [
+          "CL=F"
+        ]
       },
       {
         "title": "Jefferson, Discount Window Modernization and Treasury Market Functioning",
@@ -388,7 +466,7 @@
         "name": "Federal Reserve press releases (monetary policy)",
         "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.455613+00:00",
+        "as_of": "2026-09-22T19:43:29.551244+00:00",
         "error": null
       },
       {
@@ -396,7 +474,7 @@
         "name": "Federal Reserve speeches",
         "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
         "status": "ok",
-        "as_of": "2026-09-22T19:26:12.520876+00:00",
+        "as_of": "2026-09-22T19:43:29.581613+00:00",
         "error": null
       },
       {
@@ -404,7 +482,7 @@
         "name": "U.S. Bureau of Labor Statistics releases",
         "source_url": "https://www.bls.gov/feed/bls_latest.rss",
         "status": "unavailable",
-        "as_of": "2026-09-22T19:26:12.557109+00:00",
+        "as_of": "2026-09-22T19:43:29.706526+00:00",
         "error": "U.S. Bureau of Labor Statistics releases unavailable (HTTPError)."
       },
       {
@@ -412,7 +490,7 @@
         "name": "U.S. Bureau of Economic Analysis releases",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "empty",
-        "as_of": "2026-09-22T19:26:12.644748+00:00",
+        "as_of": "2026-09-22T19:43:29.789319+00:00",
         "error": null
       },
       {
@@ -420,7 +498,7 @@
         "name": "Yahoo Finance news search (allowlisted publishers)",
         "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
         "status": "ok",
-        "as_of": "2026-09-22T19:26:13.186223+00:00",
+        "as_of": "2026-09-22T19:43:30.181571+00:00",
         "error": null
       }
     ],
@@ -617,7 +695,7 @@
       "name": "U.S. Treasury daily par yield curve",
       "source_url": "https://home.treasury.gov/resource-center/data-chart-center/interest-rates/TextView?type=daily_treasury_yield_curve",
       "status": "unavailable",
-      "as_of": "2026-09-22T19:25:41.033813+00:00",
+      "as_of": "2026-09-22T19:43:27.946173+00:00",
       "items": [],
       "error": "Treasury yield curve unavailable (TimeoutError).",
       "curve": null,
@@ -629,7 +707,7 @@
       "name": "FRED credit spreads (ICE BofA OAS)",
       "source_url": "https://fred.stlouisfed.org/",
       "status": "ok",
-      "as_of": "2026-09-22T19:25:41.322269+00:00",
+      "as_of": "2026-09-22T19:43:28.506932+00:00",
       "items": [],
       "error": null,
       "series": {
