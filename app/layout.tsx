@@ -13,7 +13,10 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: "Market Summary — The Daily Tape",
   description: "A decisive, data-first read on the latest completed U.S. trading session across equities, rates, sectors, crypto, and global markets.",
-  alternates: { canonical: "./" },
+  alternates: {
+    canonical: "./",
+    types: { "application/rss+xml": "./feed.xml" },
+  },
   robots: {
     index: true,
     follow: true,
