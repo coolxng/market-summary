@@ -9,6 +9,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 
 REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "coolxng/market-summary")
@@ -17,6 +18,7 @@ GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
 BASE_ARTIFACTS = (Path("report_snapshot.json"),)
+CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
 def require_environment():
@@ -288,9 +290,22 @@ def send_failure_notification(error):
     discord_post(payload)
 
 
+def should_publish_now(now=None):
+    if os.environ.get("MARKET_SUMMARY_FORCE", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return True
+    current = now or datetime.datetime.now(datetime.timezone.utc)
+    if current.tzinfo is None:
+        current = current.replace(tzinfo=datetime.timezone.utc)
+    local = current.astimezone(CENTRAL_TZ)
+    return local.weekday() < 5 and local.hour == 15
+
+
 def main():
     if os.environ.get("MARKET_SUMMARY_PAUSED", "").strip().lower() in {"1", "true", "yes", "on"}:
         print("Market Summary is paused via MARKET_SUMMARY_PAUSED; exiting without API usage.")
+        return
+    if not should_publish_now():
+        print("Close Tape DST guard: this UTC slot is not 3 PM America/Chicago; exiting.")
         return
 
     try:
