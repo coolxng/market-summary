@@ -63,6 +63,7 @@ jobs:
           grep -q 'ARCHIVED DAILY TAPE' out/reports/2026-09-18/index.html
           ! grep -q 'Daily Market Close' out/reports/2026-09-18/index.html
           grep -q 'reports/2026-09-18' out/sitemap.xml
+          python3 scripts/validate_export.py --site-url "${{ steps.pages.outputs.base_url }}/"
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v4

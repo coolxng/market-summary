@@ -53,6 +53,7 @@ jobs:
 
       - name: Validate Static Export
         run: |
+          python scripts/validate_export.py --site-url "https://coolxng.github.io/market-summary/"
           test -f out/index.html
           test -f out/robots.txt
           test -f out/sitemap.xml
@@ -65,7 +66,9 @@ jobs:
           test -f out/assets/move/index.html
           test -f out/manifest.webmanifest
           test -f out/sw.js
+          test -f out/offline.html
           test -f out/feed.xml
+          test -f out/reports/2026-09-18/report.json
           grep -q 'https://coolxng.github.io/market-summary/' out/sitemap.xml
           grep -q 'reports/2026-09-18' out/sitemap.xml
           grep -q '/morning/' out/sitemap.xml
