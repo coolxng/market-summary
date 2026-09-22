@@ -288,6 +288,7 @@ footer strong { font-size: 13px; letter-spacing: .13em; }
 footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12px; }
 .footer-meta { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 18px; }
 .footer-meta span { font-family: inherit; font-size: 8px; font-weight: 800; letter-spacing: .1em; }
+.shortcut-hint { display: block; margin-top: 10px; color: var(--ink-soft); font-size: 7px; font-weight: 800; letter-spacing: .08em; }
 
 
 .archive-session-nav {
