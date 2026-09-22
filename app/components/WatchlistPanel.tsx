@@ -32,12 +32,15 @@ export default function WatchlistPanel({
   const [selection, setSelection] = useState("");
 
   useEffect(() => {
-    try {
-      const stored = JSON.parse(window.localStorage.getItem("daily-tape-watchlist") || "[]");
-      if (Array.isArray(stored)) setWatchlist(stored.filter((value) => typeof value === "string"));
-    } catch {
-      setWatchlist([]);
-    }
+    const frame = window.requestAnimationFrame(() => {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("daily-tape-watchlist") || "[]");
+        if (Array.isArray(stored)) setWatchlist(stored.filter((value) => typeof value === "string"));
+      } catch {
+        setWatchlist([]);
+      }
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const available = useMemo(
