@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import PWARegister from "./components/PWARegister";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
 const appleTouchIconUrl = new URL("apple-touch-icon.png", siteUrl).toString();
 const favicon16Url = new URL("favicon-16x16.png", siteUrl).toString();
 const favicon32Url = new URL("favicon-32x32.png", siteUrl).toString();
+const analyticsDomain = process.env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN;
+const analyticsSrc = process.env.NEXT_PUBLIC_PLAUSIBLE_SRC ?? "https://plausible.io/js/script.js";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -62,6 +65,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body>
+        <PWARegister />
+        {analyticsDomain && (
+          <script defer data-domain={analyticsDomain} src={analyticsSrc} />
+        )}
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
