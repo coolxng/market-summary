@@ -550,6 +550,8 @@ export default function DailyTape({
 }) {
   const dailyReport = report;
   const market = dailyReport.market_data;
+  const morningHref = archived ? "../../morning/" : "./morning/";
+  const searchHref = archived ? "../../search/" : "./search/";
   const [theme, setTheme] = useState<"paper" | "ink">("paper");
   const [now, setNow] = useState<Date | null>(null);
 
@@ -568,6 +570,30 @@ export default function DailyTape({
     const interval = window.setInterval(updateNow, 60000);
     return () => window.clearInterval(interval);
   }, [archived]);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.matches("input, textarea, select, [contenteditable='true']")) return;
+
+      const key = event.key.toLowerCase();
+      if (key === "/") {
+        event.preventDefault();
+        window.location.href = searchHref;
+      } else if (key === "a") {
+        window.location.href = archiveHref;
+      } else if (key === "m") {
+        document.getElementById("macro")?.scrollIntoView({ behavior: "smooth" });
+      } else if (key === "s") {
+        document.getElementById("scorecard")?.scrollIntoView({ behavior: "smooth" });
+      } else if (key === "w") {
+        document.getElementById("watchlist")?.scrollIntoView({ behavior: "smooth" });
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [archiveHref, searchHref]);
 
   const toggleTheme = () => {
     const next = theme === "paper" ? "ink" : "paper";
@@ -690,7 +716,7 @@ export default function DailyTape({
     <main>
       <header className="site-header">
         <a className="brand" href={homeHref} aria-label="The Daily Tape home"><span className="brand-mark" style={{ backgroundImage: `url("${logoSrc}")` }} /><span>THE DAILY TAPE</span></a>
-        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={archiveHref}>Archive</a><a href={archived ? "../../search/" : "./search/"}>Search</a></nav>
+        <nav aria-label="Report sections">{sections.map(([id, label]) => <a key={id} href={`#${id}`}>{label}</a>)}<a href={morningHref}>Morning</a><a href={archiveHref}>Archive</a><a href={searchHref}>Search</a></nav>
         <button className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === "paper" ? "dark" : "light"} theme`}>
           <span className="theme-toggle__icon" aria-hidden="true">{theme === "paper" ? "◐" : "◑"}</span>
           <span className="theme-toggle__label">{theme === "paper" ? "Ink" : "Paper"}</span>
@@ -981,7 +1007,7 @@ export default function DailyTape({
           </div>
         </aside>
 
-        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href={archiveHref}>Report archive</a></div><div className="footer-meta"><span>DATA: YAHOO FINANCE</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
+        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href={archiveHref}>Report archive</a><small className="shortcut-hint">SHORTCUTS · / SEARCH · A ARCHIVE · S SCORECARD · M MACRO · W WATCHLIST</small></div><div className="footer-meta"><span>DATA: YAHOO FINANCE + FALLBACKS</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
       </div>
     </main>
   );
