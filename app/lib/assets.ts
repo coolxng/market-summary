@@ -14,6 +14,7 @@ export const assetCatalog: AssetDefinition[] = [
   { slug: "dow", symbol: "^DJI", name: "Dow Jones", category: "Index" },
   { slug: "russell-2000", symbol: "^RUT", name: "Russell 2000", category: "Index" },
   { slug: "vix", symbol: "^VIX", name: "CBOE Volatility Index", category: "Volatility" },
+  { slug: "move", symbol: "^MOVE", name: "ICE BofA MOVE Index", category: "Volatility" },
   { slug: "us-3m", symbol: "^IRX", name: "U.S. 13-Week Treasury Yield", category: "Rates", priceSuffix: "%" },
   { slug: "us-5y", symbol: "^FVX", name: "U.S. 5-Year Treasury Yield", category: "Rates", priceSuffix: "%" },
   { slug: "us-10y", symbol: "^TNX", name: "U.S. 10-Year Treasury Yield", category: "Rates", priceSuffix: "%" },
