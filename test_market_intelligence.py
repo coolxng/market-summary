@@ -59,17 +59,18 @@ class DataQualityTests(unittest.TestCase):
         self.assertEqual(quality["issues"], ["^FTSE: stale session 2026-09-10"])
         self.assertEqual(quality["valid"], 3)
 
-    def test_multi_day_overseas_holiday_is_not_stale(self):
-        # Tokyo was shut Sep 21-23, 2026, so the Sep 22 report sees a Sep 18 Nikkei close.
+    def test_overseas_holiday_close_older_than_prior_us_session_is_local(self):
+        # Japan was closed Sep 21-22, 2026, so the Nikkei's latest close on the
+        # Sep 22 report is Sep 18, before the prior U.S. session (Sep 21).
         quality = market_intelligence.build_data_quality(
-            {"^GSPC": row("2026-09-22"), "^N225": row("2026-09-18")},
+            {"^GSPC": row("2026-09-22"), "^N225": row("2026-09-18"), "^HSI": row("2026-09-14")},
             datetime.date(2026, 9, 22),
-            local_calendar_symbols=("^N225",),
+            local_calendar_symbols=("^N225", "^HSI"),
             previous_session=datetime.date(2026, 9, 21),
         )
         self.assertEqual(quality["local_sessions"], {"^N225": "2026-09-18"})
-        self.assertEqual(quality["issues"], [])
-        self.assertEqual(quality["status"], "healthy")
+        self.assertEqual(quality["issues"], ["^HSI: stale session 2026-09-14"])
+        self.assertEqual(quality["valid"], 2)
 
 
 if __name__ == "__main__":

@@ -151,10 +151,7 @@ def fetch_history_bundle(symbols, session_date):
     return {symbol: fetch_history_snapshot(symbol, session_date) for symbol in dict.fromkeys(symbols)}
 
 
-# Overseas exchanges can close for several days in a row (Japan's Silver Week
-# and Golden Week, Lunar New Year, Easter), so a local close up to a week old
-# is a holiday, not stale data. The UI labels that close with its own date.
-LOCAL_SESSION_MAX_AGE_DAYS = 7
+LOCAL_SESSION_MAX_AGE = datetime.timedelta(days=7)
 
 
 def build_data_quality(datasets, expected_session, feed_groups=(), local_calendar_symbols=(), previous_session=None):
@@ -164,10 +161,9 @@ def build_data_quality(datasets, expected_session, feed_groups=(), local_calenda
     `overall` is what readers see: verified, partial, or limited.
 
     Instruments on other calendars (overseas indexes, 24/7 crypto) are checked
-    against a window reaching back to the prior U.S. session or
-    LOCAL_SESSION_MAX_AGE_DAYS, whichever is earlier; when their latest local
-    session differs it is recorded in `local_sessions` so the UI can label the
-    date rather than implying a same-day close.
+    against the prior U.S. session instead of the report session; when their
+    latest local session differs it is recorded in `local_sessions` so the UI
+    can label the date rather than implying a same-day close.
     """
     issues = []
     sources = {}
@@ -182,10 +178,10 @@ def build_data_quality(datasets, expected_session, feed_groups=(), local_calenda
             continue
         row_session = row.get("session_date")
         if symbol in local_symbols and row_session and row_session != expected_session.isoformat():
-            floor = min(
-                previous_session or expected_session,
-                expected_session - datetime.timedelta(days=LOCAL_SESSION_MAX_AGE_DAYS),
-            ).isoformat()
+            # Overseas markets keep their own holidays (Japan closed Sep 21-23,
+            # 2026), so their latest close can predate the prior U.S. session.
+            # Accept closes up to a week old; the UI labels the local date.
+            floor = min(previous_session or expected_session, expected_session - LOCAL_SESSION_MAX_AGE).isoformat()
             if row_session >= floor and row_session <= expected_session.isoformat():
                 local_sessions[symbol] = row_session
                 valid += 1
