@@ -50,7 +50,7 @@ The app never stores pages or report data offline, so it cannot show a stale ses
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/mobile-close-tape-dark.png" />
-    <img src="./assets/screenshots/mobile-close-tape-light.png" alt="Close Tape on a phone: session headline, verified-quotes indicator, summary chips and the regime monitor" width="300" />
+    <img src="./assets/screenshots/mobile-close-tape-light.png" alt="Close Tape in an iPhone frame: site header, verified-quotes indicator, session headline and summary" width="300" />
   </picture>
 </p>
 
