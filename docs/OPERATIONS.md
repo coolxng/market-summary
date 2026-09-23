@@ -17,7 +17,7 @@ The close and morning publications are intentionally separate Railway cron servi
 
 | Variable | Where | Purpose |
 | --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Railway | Optional narrative rewording; the report falls back to deterministic copy without it |
+| `ANTHROPIC_API_KEY` | Railway | Required by the Close Tape service: `railway_cron.py` exits if it is missing. The generator can still fall back to deterministic copy when the narrative model call fails. The Morning Tape service does not need it |
 | `GITHUB_TOKEN` | Railway | Commits generated artifacts |
 | `GITHUB_BRANCH` | Railway | Branch the crons commit to (default `main`) |
 | `DISCORD_WEBHOOK_URL` | Railway | Optional delivery channel |
@@ -26,8 +26,6 @@ The close and morning publications are intentionally separate Railway cron servi
 | `PLAUSIBLE_DOMAIN` | GitHub repository variable | Optional, cookieless analytics |
 
 No keys are needed for the calendar, catalyst, Treasury or FRED feeds.
-
-Note: `railway_cron.py` currently checks for `ANTHROPIC_API_KEY` and `GITHUB_TOKEN` in `require_environment()` and stops if either is missing, even though the generator itself can fall back to deterministic copy.
 
 ## Development
 
