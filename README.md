@@ -13,7 +13,10 @@
 </div>
 
 <p align="center">
-  <img src="./assets/screenshots/The-daily-tape.png" alt="Close Tape home page split diagonally between the light and dark themes, showing the headline, regime monitor, takeaways and index scorecard" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/close-tape-dark.png" />
+    <img src="./assets/screenshots/close-tape-light.png" alt="Close Tape home page: session headline, data status, summary chips, regime monitor and the three takeaways" width="900" />
+  </picture>
 </p>
 
 <p align="center">
@@ -45,7 +48,10 @@ The Daily Tape puts indexes, sectors, rates, breadth, crypto, releases and headl
 The app never stores pages or report data offline, so it cannot show a stale session. Offline, it shows a notice.
 
 <p align="center">
-  <img src="./assets/screenshots/mobile-close-tape.png" alt="Close Tape on a phone: session headline, verified-quotes indicator, summary chips and the regime monitor" width="300" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/mobile-close-tape-dark.png" />
+    <img src="./assets/screenshots/mobile-close-tape-light.png" alt="Close Tape on a phone: session headline, verified-quotes indicator, summary chips and the regime monitor" width="300" />
+  </picture>
 </p>
 
 ## Product tour
@@ -61,7 +67,10 @@ All 11 sector ETFs are ranked by session return. Relative strength against SPY o
 ### Leadership Engine
 
 <p align="center">
-  <img src="./assets/screenshots/leadership-engine.png" alt="Leadership Engine: nine mega-cap stock cards ordered by market cap, each with daily return, return versus the Nasdaq, close, day range and a five-minute session price path" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/leadership-engine-dark.png" />
+    <img src="./assets/screenshots/leadership-engine-light.png" alt="Leadership Engine: nine mega-cap stock cards ordered by market cap, each with daily return, return versus the Nasdaq, close, day range and a five-minute session price path" width="900" />
+  </picture>
 </p>
 
 Nine of the largest U.S.-listed growth stocks (NVDA, AAPL, GOOGL, MSFT, AMZN, META, AVGO, TSLA, MU), ordered by market cap. Each card shows return versus the Nasdaq, close, day range and session path; a summary names the strongest and weakest. That shows whether mega-cap leadership moved together or split. It is an unweighted sample, not index contribution.
@@ -69,7 +78,10 @@ Nine of the largest U.S.-listed growth stocks (NVDA, AAPL, GOOGL, MSFT, AMZN, ME
 ### Morning Tape
 
 <p align="center">
-  <img src="./assets/screenshots/morning-tape.png" alt="Morning Tape: data health panel, What matters today summary, U.S. index futures versus the prior close, and overnight Asia and Europe markets" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/morning-tape-dark.png" />
+    <img src="./assets/screenshots/morning-tape-light.png" alt="Morning Tape: data health panel, What matters today summary, U.S. index futures versus the prior close, and overnight Asia and Europe markets" width="900" />
+  </picture>
 </p>
 
 U.S. futures versus the prior close, overnight Asia and Europe, the Treasury curve, the dollar, commodities, crypto, today's calendar and overnight catalysts. Quotes older than 90 minutes are marked delayed.
@@ -77,7 +89,10 @@ U.S. futures versus the prior close, overnight Asia and Europe, the Treasury cur
 ### Asset pages
 
 <p align="center">
-  <img src="./assets/screenshots/asset-page.png" alt="S&P 500 asset page with its one-day price chart hovered at 11:55 AM CT, showing the tooltip with the index level at that time" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/asset-page-dark.png" />
+    <img src="./assets/screenshots/asset-page-light.png" alt="S&P 500 asset page with its one-day price chart hovered at 11:55 AM CT, showing the tooltip with the index level at that time" width="900" />
+  </picture>
 </p>
 
 Each of the 89 tracked assets has a page with a 1D to 1Y chart you can inspect by pointer, touch or keyboard, plus its session and 52-week range, 20-, 50- and 200-day averages, tagged catalysts and recent archived sessions.
@@ -85,7 +100,10 @@ Each of the 89 tracked assets has a page with a 1D to 1Y chart you can inspect b
 ### Archive and search
 
 <p align="center">
-  <img src="./assets/screenshots/archive.png" alt="Report archive: dated sessions with headline, regime tag, S&P 500, Nasdaq, VIX and sectors-up figures, under a search field and a regime filter" width="900" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/archive-dark.png" />
+    <img src="./assets/screenshots/archive-light.png" alt="Report archive: dated sessions with headline, regime tag, S&P 500, Nasdaq, VIX and sectors-up figures, under a search field and a regime filter" width="900" />
+  </picture>
 </p>
 
 Every completed session has a permanent page at `/reports/YYYY-MM-DD/`. Search by date, headline, sector or ticker, filter by regime, and step between sessions to compare them.

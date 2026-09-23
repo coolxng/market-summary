@@ -39,7 +39,7 @@ python scripts/validate_export.py
 
 ## Screenshots
 
-`scripts/capture_screenshots.mjs` recaptures the README screenshots from the live site with headless Chromium. It forces light mode (Playwright `colorScheme: "light"` plus the site's `daily-tape-theme` localStorage key set to `paper`) and fails if a page renders in any other theme. Playwright and Sharp are installed outside the repo so `package.json` and `package-lock.json` stay untouched:
+`scripts/capture_screenshots.mjs` recaptures the README screenshots from the live site with headless Chromium. It captures every shot twice, as `<name>-light.png` and `<name>-dark.png`, by setting Playwright's `colorScheme` and the site's `daily-tape-theme` localStorage key (`paper` or `ink`), and fails if a page renders in the wrong theme. The README shows the pair with `<picture>`, so GitHub serves the one that matches the reader's theme. Playwright and Sharp are installed outside the repo so `package.json` and `package-lock.json` stay untouched:
 
 ```bash
 mkdir -p /tmp/daily-tape-shots && cd /tmp/daily-tape-shots
@@ -48,7 +48,7 @@ cd /path/to/market-summary
 NODE_PATH=/tmp/daily-tape-shots/node_modules node scripts/capture_screenshots.mjs
 ```
 
-Set `ONLY=morning-tape,asset-page` to capture a subset. Output goes to `assets/screenshots/`, resized to at most 1800px wide. Inspect every image before committing: retake any shot that shows loading states, a "Limited" or "Some feeds unavailable" status, or an unpublished Morning Tape.
+Set `ONLY=morning-tape,asset-page` to capture a subset, or `THEMES=dark` to capture one theme. Output goes to `assets/screenshots/`, resized to at most 1800px wide. Inspect every image before committing: retake any shot that shows loading states, a "Limited" or "Some feeds unavailable" status, or an unpublished Morning Tape.
 
 ## More documentation
 

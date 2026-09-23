@@ -1,4 +1,6 @@
-// Captures the README screenshots from the LIVE site in light ("paper") mode.
+// Captures the README screenshots from the LIVE site, once in the light ("paper")
+// theme and once in the dark ("ink") theme, as <name>-light.png and <name>-dark.png.
+// The README swaps between them with <picture> and prefers-color-scheme.
 //
 // How to run (Playwright and Sharp are installed OUTSIDE the repo so that
 // package.json and package-lock.json, which the Pages build uses, stay untouched):
@@ -9,7 +11,8 @@
 //   NODE_PATH=/tmp/daily-tape-shots/node_modules node scripts/capture_screenshots.mjs
 //
 // Optional: SITE_URL=https://... to point at another deployment, and
-// ONLY=archive,asset-page to capture a subset. Output goes to assets/screenshots/.
+// ONLY=archive,asset-page to capture a subset, and THEMES=light or THEMES=dark to
+// capture one theme. Output goes to assets/screenshots/.
 // Every image is resized to at most 1800px wide and palette-compressed.
 
 import { createRequire } from "node:module";
@@ -25,12 +28,20 @@ const OUT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "asset
 const ONLY = process.env.ONLY ? new Set(process.env.ONLY.split(",")) : null;
 const MAX_WIDTH = 1800;
 
+// README suffix -> site theme name.
+const THEMES = { light: "paper", dark: "ink" };
+const THEME_FILTER = process.env.THEMES ? new Set(process.env.THEMES.split(",")) : null;
+
 // The site reads localStorage "daily-tape-theme" in an inline head script and
-// sets <html data-theme>. Force "paper" (light) before any page script runs.
-const FORCE_LIGHT = `
-  try { localStorage.setItem("daily-tape-theme", "paper"); } catch (e) {}
-  document.documentElement.dataset.theme = "paper";
+// sets <html data-theme>. Force the theme before any page script runs.
+const forceTheme = (theme) => `
+  try { localStorage.setItem("daily-tape-theme", "${theme}"); } catch (e) {}
+  document.documentElement.dataset.theme = "${theme}";
 `;
+
+// Set per theme by the main loop below.
+let variant = "light";
+const siteTheme = () => THEMES[variant];
 
 // Hide scrollbars, and stop sticky bars from overlapping element screenshots.
 const CAPTURE_CSS = `
@@ -44,8 +55,9 @@ const desktop = { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 2 }
 const mobile = { ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 };
 
 async function newPage(browser, profile) {
-  const context = await browser.newContext({ ...profile, colorScheme: "light", reducedMotion: "reduce", serviceWorkers: "block" });
-  await context.addInitScript(FORCE_LIGHT);
+  const colorScheme = variant === "dark" ? "dark" : "light";
+  const context = await browser.newContext({ ...profile, colorScheme, reducedMotion: "reduce", serviceWorkers: "block" });
+  await context.addInitScript(forceTheme(siteTheme()));
   return { context, page: await context.newPage() };
 }
 
@@ -55,7 +67,7 @@ async function open(page, route, readySelector) {
   await page.evaluate(() => document.fonts.ready);
   if (readySelector) await page.waitForSelector(readySelector, { state: "visible", timeout: 30000 });
   const theme = await page.evaluate(() => document.documentElement.dataset.theme);
-  if (theme !== "paper") throw new Error(`${route} rendered with theme "${theme}", expected "paper"`);
+  if (theme !== siteTheme()) throw new Error(`${route} rendered with theme "${theme}", expected "${siteTheme()}"`);
 }
 
 // Scroll through the page so lazy images load, then wait for them.
@@ -90,6 +102,7 @@ async function unionBox(page, fromSelector, toSelector, { pad = 32, bottomPad = 
 }
 
 async function save(buffer, name) {
+  name = name.replace(/\.png$/, `-${variant}.png`);
   const file = path.join(OUT, name);
   await sharp(buffer)
     .resize({ width: MAX_WIDTH, withoutEnlargement: true })
@@ -99,6 +112,15 @@ async function save(buffer, name) {
 }
 
 const shots = {
+  // Desktop hero: the first screen of the latest Close Tape.
+  async "close-tape"(browser) {
+    const { context, page } = await newPage(browser, desktop);
+    await open(page, "", "#regime-monitor");
+    await settle(page);
+    await save(await page.screenshot({ clip: { x: 0, y: 0, width: 1440, height: 900 } }), "close-tape.png");
+    await context.close();
+  },
+
   async "morning-tape"(browser) {
     const { context, page } = await newPage(browser, desktop);
     await open(page, "morning/", "#overnight");
@@ -163,9 +185,12 @@ const shots = {
 
 const browser = await chromium.launch();
 try {
-  for (const [name, capture] of Object.entries(shots)) {
-    if (ONLY && !ONLY.has(name)) continue;
-    await capture(browser);
+  for (variant of Object.keys(THEMES)) {
+    if (THEME_FILTER && !THEME_FILTER.has(variant)) continue;
+    for (const [name, capture] of Object.entries(shots)) {
+      if (ONLY && !ONLY.has(name)) continue;
+      await capture(browser);
+    }
   }
 } finally {
   await browser.close();
