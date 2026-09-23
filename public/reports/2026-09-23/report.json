@@ -2,7 +2,7 @@
   "report_type": "daily_market_close",
   "session_date": "2026-09-23",
   "previous_session_date": "2026-09-21",
-  "generated_at": "2026-09-23T16:33:44.349159-04:00",
+  "generated_at": "2026-09-23T19:54:52.264369-04:00",
   "report_mode": "ai",
   "narrative_provenance": {
     "mode": "ai",
@@ -101,23 +101,23 @@
         "source": "sampled intraday closes, not exchange OHLC extremes"
       },
       "BTC-USD": {
-        "first_to_last_pct": -2.3179,
-        "close_location_pct": 17.08,
+        "first_to_last_pct": -2.3269,
+        "close_location_pct": 16.85,
         "source": "sampled intraday closes, not exchange OHLC extremes"
       },
       "ETH-USD": {
-        "first_to_last_pct": -3.0753,
-        "close_location_pct": 16.4,
+        "first_to_last_pct": -2.6876,
+        "close_location_pct": 24.57,
         "source": "sampled intraday closes, not exchange OHLC extremes"
       },
       "SOL-USD": {
-        "first_to_last_pct": -3.8057,
-        "close_location_pct": 13.27,
+        "first_to_last_pct": -3.2331,
+        "close_location_pct": 24.27,
         "source": "sampled intraday closes, not exchange OHLC extremes"
       },
       "XRP-USD": {
-        "first_to_last_pct": -6.3291,
-        "close_location_pct": 0.0,
+        "first_to_last_pct": -5.0633,
+        "close_location_pct": 11.76,
         "source": "sampled intraday closes, not exchange OHLC extremes"
       },
       "^STOXX50E": {
@@ -195,6 +195,8 @@
     "checked_session": "2026-09-23",
     "local_sessions": {
       "^N225": "2026-09-18",
+      "^STOXX50E": "2026-09-21",
+      "^FTSE": "2026-09-21",
       "^HSI": "2026-09-21"
     },
     "feeds": [
@@ -203,7 +205,7 @@
         "name": "Forex Factory Economic Calendar",
         "source_url": "https://www.forexfactory.com/calendar",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:36.650504+00:00",
+        "as_of": "2026-09-23T23:54:44.719890+00:00",
         "error": null
       },
       {
@@ -211,7 +213,7 @@
         "name": "U.S. Treasury upcoming auctions",
         "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:37.181406+00:00",
+        "as_of": "2026-09-23T23:54:45.133595+00:00",
         "error": null
       },
       {
@@ -219,7 +221,7 @@
         "name": "Yahoo Finance company calendar (tracked names)",
         "source_url": "https://finance.yahoo.com/calendar/earnings",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.732062+00:00",
+        "as_of": "2026-09-23T23:54:45.587360+00:00",
         "error": null
       },
       {
@@ -227,7 +229,7 @@
         "name": "NYSE and expiration rules",
         "source_url": "https://www.nyse.com/markets/hours-calendars",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.732176+00:00",
+        "as_of": "2026-09-23T23:54:45.587434+00:00",
         "error": null
       },
       {
@@ -235,7 +237,7 @@
         "name": "Federal Reserve press releases (monetary policy)",
         "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.795325+00:00",
+        "as_of": "2026-09-23T23:54:45.621776+00:00",
         "error": null
       },
       {
@@ -243,7 +245,7 @@
         "name": "Federal Reserve speeches",
         "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:37.831892+00:00",
+        "as_of": "2026-09-23T23:54:45.647351+00:00",
         "error": null
       },
       {
@@ -251,7 +253,7 @@
         "name": "U.S. Bureau of Labor Statistics releases",
         "source_url": "https://www.bls.gov/feed/bls_latest.rss",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.891373+00:00",
+        "as_of": "2026-09-23T23:54:45.683208+00:00",
         "error": null
       },
       {
@@ -259,7 +261,7 @@
         "name": "U.S. Bureau of Economic Analysis releases",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.984807+00:00",
+        "as_of": "2026-09-23T23:54:45.755198+00:00",
         "error": null
       },
       {
@@ -267,7 +269,7 @@
         "name": "Yahoo Finance news search (allowlisted publishers)",
         "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:38.536356+00:00",
+        "as_of": "2026-09-23T23:54:46.274898+00:00",
         "error": null
       },
       {
@@ -275,7 +277,7 @@
         "name": "U.S. Treasury yields via FRED",
         "source_url": "https://fred.stlouisfed.org/",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:35.787492+00:00",
+        "as_of": "2026-09-23T23:54:43.819211+00:00",
         "error": null
       },
       {
@@ -283,7 +285,7 @@
         "name": "FRED credit spreads (ICE BofA OAS)",
         "source_url": "https://fred.stlouisfed.org/",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:36.545938+00:00",
+        "as_of": "2026-09-23T23:54:44.471722+00:00",
         "error": null
       }
     ],
@@ -592,7 +594,7 @@
         "name": "Forex Factory Economic Calendar",
         "source_url": "https://www.forexfactory.com/calendar",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:36.650504+00:00",
+        "as_of": "2026-09-23T23:54:44.719890+00:00",
         "error": null
       },
       {
@@ -600,7 +602,7 @@
         "name": "U.S. Treasury upcoming auctions",
         "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:37.181406+00:00",
+        "as_of": "2026-09-23T23:54:45.133595+00:00",
         "error": null
       },
       {
@@ -608,7 +610,7 @@
         "name": "Yahoo Finance company calendar (tracked names)",
         "source_url": "https://finance.yahoo.com/calendar/earnings",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.732062+00:00",
+        "as_of": "2026-09-23T23:54:45.587360+00:00",
         "error": null
       },
       {
@@ -616,7 +618,7 @@
         "name": "NYSE and expiration rules",
         "source_url": "https://www.nyse.com/markets/hours-calendars",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.732176+00:00",
+        "as_of": "2026-09-23T23:54:45.587434+00:00",
         "error": null
       }
     ],
@@ -625,7 +627,7 @@
   "verified_catalysts": {
     "window": {
       "start": "2026-09-21T16:00:00-04:00",
-      "end": "2026-09-23T16:33:37.732478-04:00"
+      "end": "2026-09-23T19:54:45.587500-04:00"
     },
     "items": [
       {
@@ -653,7 +655,7 @@
         "name": "Federal Reserve press releases (monetary policy)",
         "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.795325+00:00",
+        "as_of": "2026-09-23T23:54:45.621776+00:00",
         "error": null
       },
       {
@@ -661,7 +663,7 @@
         "name": "Federal Reserve speeches",
         "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
         "status": "ok",
-        "as_of": "2026-09-23T20:33:37.831892+00:00",
+        "as_of": "2026-09-23T23:54:45.647351+00:00",
         "error": null
       },
       {
@@ -669,7 +671,7 @@
         "name": "U.S. Bureau of Labor Statistics releases",
         "source_url": "https://www.bls.gov/feed/bls_latest.rss",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.891373+00:00",
+        "as_of": "2026-09-23T23:54:45.683208+00:00",
         "error": null
       },
       {
@@ -677,7 +679,7 @@
         "name": "U.S. Bureau of Economic Analysis releases",
         "source_url": "https://apps.bea.gov/rss/rss.xml",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:37.984807+00:00",
+        "as_of": "2026-09-23T23:54:45.755198+00:00",
         "error": null
       },
       {
@@ -685,7 +687,7 @@
         "name": "Yahoo Finance news search (allowlisted publishers)",
         "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
         "status": "empty",
-        "as_of": "2026-09-23T20:33:38.536356+00:00",
+        "as_of": "2026-09-23T23:54:46.274898+00:00",
         "error": null
       }
     ],
@@ -860,15 +862,15 @@
       ],
       "closes": [
         81.2,
-        78.56
+        95.45
       ],
-      "end_price": 78.56,
-      "pct_change": -3.25,
-      "abs_change": -2.64,
+      "end_price": 95.45,
+      "pct_change": 17.55,
+      "abs_change": 14.25,
       "prev_close": 81.2,
-      "session_open": 78.56,
-      "day_high": 78.56,
-      "day_low": 78.56,
+      "session_open": 0.0,
+      "day_high": 0.0,
+      "day_low": 0.0,
       "session_date": "2026-09-23",
       "previous_session_date": "2026-09-21",
       "ticker_used": "^MOVE",
@@ -882,7 +884,7 @@
       "name": "U.S. Treasury yields via FRED",
       "source_url": "https://fred.stlouisfed.org/",
       "status": "ok",
-      "as_of": "2026-09-23T20:33:35.787492+00:00",
+      "as_of": "2026-09-23T23:54:43.819211+00:00",
       "items": [],
       "error": null,
       "curve": {
@@ -955,7 +957,7 @@
       "name": "FRED credit spreads (ICE BofA OAS)",
       "source_url": "https://fred.stlouisfed.org/",
       "status": "ok",
-      "as_of": "2026-09-23T20:33:36.545938+00:00",
+      "as_of": "2026-09-23T23:54:44.471722+00:00",
       "items": [],
       "error": null,
       "series": {
@@ -2239,6 +2241,18 @@
       "category": "Equity"
     },
     {
+      "slug": "hood",
+      "symbol": "HOOD",
+      "name": "Robinhood Markets",
+      "category": "Equity"
+    },
+    {
+      "slug": "spcx",
+      "symbol": "SPCX",
+      "name": "SpaceX",
+      "category": "Equity"
+    },
+    {
       "slug": "spy",
       "symbol": "SPY",
       "name": "SPDR S&P 500 ETF",
@@ -2452,15 +2466,15 @@
       ],
       "closes": [
         81.2,
-        78.56
+        95.45
       ],
-      "end_price": 78.56,
-      "pct_change": -3.25,
-      "abs_change": -2.64,
+      "end_price": 95.45,
+      "pct_change": 17.55,
+      "abs_change": 14.25,
       "prev_close": 81.2,
-      "session_open": 78.56,
-      "day_high": 78.56,
-      "day_low": 78.56,
+      "session_open": 0.0,
+      "day_high": 0.0,
+      "day_low": 0.0,
       "session_date": "2026-09-23",
       "previous_session_date": "2026-09-21",
       "ticker_used": "^MOVE",
@@ -2573,7 +2587,7 @@
       "pct_change": 0.68,
       "abs_change": 0.68,
       "prev_close": 100.43,
-      "session_open": 100.56,
+      "session_open": 101.11,
       "day_high": 101.23,
       "day_low": 100.54,
       "session_date": "2026-09-23",
@@ -2590,15 +2604,15 @@
       ],
       "closes": [
         4376.4,
-        4318.9
+        4320.4
       ],
-      "end_price": 4318.9,
-      "pct_change": -1.31,
-      "abs_change": -57.5,
+      "end_price": 4320.4,
+      "pct_change": -1.28,
+      "abs_change": -56.0,
       "prev_close": 4376.4,
-      "session_open": 4394.7,
-      "day_high": 4407.5,
-      "day_low": 4310.7,
+      "session_open": 4324.4,
+      "day_high": 4328.8,
+      "day_low": 4320.2,
       "session_date": "2026-09-23",
       "previous_session_date": "2026-09-22",
       "ticker_used": "GC=F",
@@ -2613,15 +2627,15 @@
       ],
       "closes": [
         94.59,
-        92.81
+        92.16
       ],
-      "end_price": 92.81,
-      "pct_change": -1.88,
-      "abs_change": -1.78,
+      "end_price": 92.16,
+      "pct_change": -2.57,
+      "abs_change": -2.43,
       "prev_close": 94.59,
-      "session_open": 89.89,
-      "day_high": 92.89,
-      "day_low": 88.71,
+      "session_open": 92.72,
+      "day_high": 92.79,
+      "day_low": 92.05,
       "session_date": "2026-09-23",
       "previous_session_date": "2026-09-22",
       "ticker_used": "CL=F",
@@ -2636,11 +2650,11 @@
       ],
       "closes": [
         86172.28,
-        84355.7
+        84354.11
       ],
-      "end_price": 84355.7,
+      "end_price": 84354.11,
       "pct_change": -2.11,
-      "abs_change": -1816.58,
+      "abs_change": -1818.17,
       "prev_close": 86172.28,
       "session_open": 86195.28,
       "day_high": 87243.36,
@@ -2659,11 +2673,11 @@
       ],
       "closes": [
         2752.63,
-        2672.81
+        2683.64
       ],
-      "end_price": 2672.81,
-      "pct_change": -2.9,
-      "abs_change": -79.82,
+      "end_price": 2683.64,
+      "pct_change": -2.51,
+      "abs_change": -68.99,
       "prev_close": 2752.63,
       "session_open": 2753.25,
       "day_high": 2785.63,
@@ -2682,11 +2696,11 @@
       ],
       "closes": [
         118.51,
-        114.25
+        114.93
       ],
-      "end_price": 114.25,
-      "pct_change": -3.59,
-      "abs_change": -4.26,
+      "end_price": 114.93,
+      "pct_change": -3.02,
+      "abs_change": -3.58,
       "prev_close": 118.51,
       "session_open": 118.52,
       "day_high": 119.6,
@@ -2705,15 +2719,15 @@
       ],
       "closes": [
         1.57,
-        1.49
+        1.5
       ],
-      "end_price": 1.49,
-      "pct_change": -5.1,
-      "abs_change": -0.08,
+      "end_price": 1.5,
+      "pct_change": -4.46,
+      "abs_change": -0.07,
       "prev_close": 1.57,
       "session_open": 1.57,
       "day_high": 1.65,
-      "day_low": 1.49,
+      "day_low": 1.48,
       "session_date": "2026-09-23",
       "previous_session_date": "2026-09-22",
       "ticker_used": "XRP-USD",
@@ -2746,22 +2760,22 @@
     },
     "^STOXX50E": {
       "dates": [
-        "2026-09-21",
-        "2026-09-23"
+        "2026-09-18",
+        "2026-09-21"
       ],
       "closes": [
-        6318.2,
-        6299.82
+        6236.2,
+        6318.2
       ],
-      "end_price": 6299.82,
-      "pct_change": -0.29,
-      "abs_change": -18.38,
-      "prev_close": 6318.2,
-      "session_open": 6334.44,
-      "day_high": 6361.61,
-      "day_low": 6289.18,
-      "session_date": "2026-09-23",
-      "previous_session_date": "2026-09-21",
+      "end_price": 6318.2,
+      "pct_change": 1.31,
+      "abs_change": 82.0,
+      "prev_close": 6236.2,
+      "session_open": 6243.44,
+      "day_high": 6325.11,
+      "day_low": 6243.44,
+      "session_date": "2026-09-21",
+      "previous_session_date": "2026-09-18",
       "ticker_used": "^STOXX50E",
       "data_source": "yahoo_finance",
       "source_symbol": "^STOXX50E",
@@ -2769,22 +2783,22 @@
     },
     "^FTSE": {
       "dates": [
-        "2026-09-21",
-        "2026-09-23"
+        "2026-09-18",
+        "2026-09-21"
       ],
       "closes": [
-        10739.0,
-        10705.26
+        10659.1,
+        10739.0
       ],
-      "end_price": 10705.26,
-      "pct_change": -0.31,
-      "abs_change": -33.74,
-      "prev_close": 10739.0,
-      "session_open": 10708.79,
-      "day_high": 10762.52,
-      "day_low": 10682.73,
-      "session_date": "2026-09-23",
-      "previous_session_date": "2026-09-21",
+      "end_price": 10739.0,
+      "pct_change": 0.75,
+      "abs_change": 79.9,
+      "prev_close": 10659.1,
+      "session_open": 10659.1,
+      "day_high": 10774.7,
+      "day_low": 10656.7,
+      "session_date": "2026-09-21",
+      "previous_session_date": "2026-09-18",
       "ticker_used": "^FTSE",
       "data_source": "yahoo_finance",
       "source_symbol": "^FTSE",
@@ -4414,7 +4428,20 @@
         "7:45 PM",
         "8:00 PM",
         "8:15 PM",
-        "8:30 PM"
+        "8:30 PM",
+        "8:45 PM",
+        "9:00 PM",
+        "9:15 PM",
+        "9:30 PM",
+        "9:45 PM",
+        "10:00 PM",
+        "10:15 PM",
+        "10:30 PM",
+        "10:45 PM",
+        "11:00 PM",
+        "11:15 PM",
+        "11:30 PM",
+        "11:45 PM"
       ],
       "timestamps": [
         1790121600,
@@ -4499,7 +4526,20 @@
         1790192700,
         1790193600,
         1790194500,
-        1790195400
+        1790195400,
+        1790196300,
+        1790197200,
+        1790198100,
+        1790199000,
+        1790199900,
+        1790200800,
+        1790201700,
+        1790202600,
+        1790203500,
+        1790204400,
+        1790205300,
+        1790206200,
+        1790207100
       ],
       "time_zone": "UTC",
       "closes": [
@@ -4585,7 +4625,20 @@
         84522.35,
         84338.24,
         84299.59,
-        84363.8
+        84402.31,
+        84235.61,
+        84356.67,
+        84412.78,
+        84479.64,
+        84399.35,
+        84581.26,
+        84470.27,
+        84475.2,
+        84546.97,
+        84479.94,
+        84476.63,
+        84457.66,
+        84356.04
       ],
       "source": "intraday_15m",
       "session_date": "2026-09-23",
@@ -4675,7 +4728,20 @@
         "7:45 PM",
         "8:00 PM",
         "8:15 PM",
-        "8:30 PM"
+        "8:30 PM",
+        "8:45 PM",
+        "9:00 PM",
+        "9:15 PM",
+        "9:30 PM",
+        "9:45 PM",
+        "10:00 PM",
+        "10:15 PM",
+        "10:30 PM",
+        "10:45 PM",
+        "11:00 PM",
+        "11:15 PM",
+        "11:30 PM",
+        "11:45 PM"
       ],
       "timestamps": [
         1790121600,
@@ -4760,7 +4826,20 @@
         1790192700,
         1790193600,
         1790194500,
-        1790195400
+        1790195400,
+        1790196300,
+        1790197200,
+        1790198100,
+        1790199000,
+        1790199900,
+        1790200800,
+        1790201700,
+        1790202600,
+        1790203500,
+        1790204400,
+        1790205300,
+        1790206200,
+        1790207100
       ],
       "time_zone": "UTC",
       "closes": [
@@ -4846,7 +4925,20 @@
         2678.85,
         2672.61,
         2671.02,
-        2673.0
+        2675.44,
+        2671.25,
+        2673.41,
+        2674.61,
+        2677.69,
+        2677.13,
+        2689.41,
+        2687.26,
+        2685.26,
+        2689.33,
+        2685.62,
+        2683.62,
+        2681.4,
+        2683.69
       ],
       "source": "intraday_15m",
       "session_date": "2026-09-23",
@@ -4936,7 +5028,20 @@
         "7:45 PM",
         "8:00 PM",
         "8:15 PM",
-        "8:30 PM"
+        "8:30 PM",
+        "8:45 PM",
+        "9:00 PM",
+        "9:15 PM",
+        "9:30 PM",
+        "9:45 PM",
+        "10:00 PM",
+        "10:15 PM",
+        "10:30 PM",
+        "10:45 PM",
+        "11:00 PM",
+        "11:15 PM",
+        "11:30 PM",
+        "11:45 PM"
       ],
       "timestamps": [
         1790121600,
@@ -5021,7 +5126,20 @@
         1790192700,
         1790193600,
         1790194500,
-        1790195400
+        1790195400,
+        1790196300,
+        1790197200,
+        1790198100,
+        1790199000,
+        1790199900,
+        1790200800,
+        1790201700,
+        1790202600,
+        1790203500,
+        1790204400,
+        1790205300,
+        1790206200,
+        1790207100
       ],
       "time_zone": "UTC",
       "closes": [
@@ -5107,7 +5225,20 @@
         114.51,
         114.24,
         114.12,
-        114.25
+        114.34,
+        114.03,
+        114.32,
+        114.34,
+        114.59,
+        114.7,
+        115.3,
+        114.88,
+        114.84,
+        115.13,
+        114.97,
+        114.95,
+        114.79,
+        114.93
       ],
       "source": "intraday_15m",
       "session_date": "2026-09-23",
@@ -5197,7 +5328,20 @@
         "7:45 PM",
         "8:00 PM",
         "8:15 PM",
-        "8:30 PM"
+        "8:30 PM",
+        "8:45 PM",
+        "9:00 PM",
+        "9:15 PM",
+        "9:30 PM",
+        "9:45 PM",
+        "10:00 PM",
+        "10:15 PM",
+        "10:30 PM",
+        "10:45 PM",
+        "11:00 PM",
+        "11:15 PM",
+        "11:30 PM",
+        "11:45 PM"
       ],
       "timestamps": [
         1790121600,
@@ -5282,7 +5426,20 @@
         1790192700,
         1790193600,
         1790194500,
-        1790195400
+        1790195400,
+        1790196300,
+        1790197200,
+        1790198100,
+        1790199000,
+        1790199900,
+        1790200800,
+        1790201700,
+        1790202600,
+        1790203500,
+        1790204400,
+        1790205300,
+        1790206200,
+        1790207100
       ],
       "time_zone": "UTC",
       "closes": [
@@ -5368,7 +5525,20 @@
         1.49,
         1.49,
         1.48,
-        1.48
+        1.49,
+        1.48,
+        1.49,
+        1.49,
+        1.5,
+        1.5,
+        1.51,
+        1.5,
+        1.5,
+        1.5,
+        1.5,
+        1.5,
+        1.5,
+        1.5
       ],
       "source": "intraday_15m",
       "session_date": "2026-09-23",
@@ -7360,7 +7530,7 @@
         "pct_change": -2.24,
         "abs_change": -5.71,
         "prev_close": 254.98,
-        "session_open": 253.0,
+        "session_open": 253.33,
         "day_high": 253.81,
         "day_low": 247.76,
         "session_date": "2026-09-23",
@@ -8179,7 +8349,7 @@
         "pct_change": 0.32,
         "abs_change": 1.22,
         "prev_close": 378.9,
-        "session_open": 380.1,
+        "session_open": 379.93,
         "day_high": 386.7,
         "day_low": 377.58,
         "session_date": "2026-09-23",
@@ -8726,7 +8896,7 @@
         "pct_change": -1.47,
         "abs_change": -9.16,
         "prev_close": 623.77,
-        "session_open": 621.5,
+        "session_open": 622.15,
         "day_high": 624.69,
         "day_low": 608.09,
         "session_date": "2026-09-23",
@@ -8776,7 +8946,7 @@
         "pct_change": -3.73,
         "abs_change": -70.47,
         "prev_close": 1887.04,
-        "session_open": 1895.41,
+        "session_open": 1895.0,
         "day_high": 1902.22,
         "day_low": 1803.67,
         "session_date": "2026-09-23",
@@ -8851,7 +9021,7 @@
         "pct_change": -1.11,
         "abs_change": -0.8,
         "prev_close": 72.16,
-        "session_open": 72.07,
+        "session_open": 72.06,
         "day_high": 72.37,
         "day_low": 71.07,
         "session_date": "2026-09-23",
@@ -8926,7 +9096,7 @@
         "pct_change": 1.02,
         "abs_change": 2.44,
         "prev_close": 238.25,
-        "session_open": 239.48,
+        "session_open": 239.43,
         "day_high": 241.74,
         "day_low": 237.51,
         "session_date": "2026-09-23",
@@ -9226,7 +9396,7 @@
         "pct_change": 0.37,
         "abs_change": 0.41,
         "prev_close": 110.12,
-        "session_open": 110.21,
+        "session_open": 110.37,
         "day_high": 111.23,
         "day_low": 109.49,
         "session_date": "2026-09-23",
@@ -9451,7 +9621,7 @@
         "pct_change": -1.46,
         "abs_change": -2.94,
         "prev_close": 201.07,
-        "session_open": 198.0,
+        "session_open": 197.71,
         "day_high": 204.5,
         "day_low": 195.64,
         "session_date": "2026-09-23",
@@ -9459,6 +9629,56 @@
         "ticker_used": "COIN",
         "data_source": "yahoo_finance",
         "source_symbol": "COIN",
+        "error": null
+      }
+    },
+    "HOOD": {
+      "result": {
+        "dates": [
+          "2026-09-22",
+          "2026-09-23"
+        ],
+        "closes": [
+          124.25,
+          122.7
+        ],
+        "end_price": 122.7,
+        "pct_change": -1.25,
+        "abs_change": -1.55,
+        "prev_close": 124.25,
+        "session_open": 122.57,
+        "day_high": 126.73,
+        "day_low": 122.28,
+        "session_date": "2026-09-23",
+        "previous_session_date": "2026-09-22",
+        "ticker_used": "HOOD",
+        "data_source": "yahoo_finance",
+        "source_symbol": "HOOD",
+        "error": null
+      }
+    },
+    "SPCX": {
+      "result": {
+        "dates": [
+          "2026-09-22",
+          "2026-09-23"
+        ],
+        "closes": [
+          154.72,
+          148.36
+        ],
+        "end_price": 148.36,
+        "pct_change": -4.11,
+        "abs_change": -6.36,
+        "prev_close": 154.72,
+        "session_open": 153.36,
+        "day_high": 154.26,
+        "day_low": 147.89,
+        "session_date": "2026-09-23",
+        "previous_session_date": "2026-09-22",
+        "ticker_used": "SPCX",
+        "data_source": "yahoo_finance",
+        "source_symbol": "SPCX",
         "error": null
       }
     },
@@ -9601,7 +9821,7 @@
         "pct_change": -1.58,
         "abs_change": -1.29,
         "prev_close": 81.75,
-        "session_open": 81.48,
+        "session_open": 81.47,
         "day_high": 81.5,
         "day_low": 80.22,
         "session_date": "2026-09-23",
@@ -9676,7 +9896,7 @@
         "pct_change": -1.0,
         "abs_change": -6.05,
         "prev_close": 607.46,
-        "session_open": 604.39,
+        "session_open": 605.02,
         "day_high": 606.28,
         "day_low": 593.79,
         "session_date": "2026-09-23",
@@ -9770,15 +9990,15 @@
         ],
         "closes": [
           65.93,
-          64.81
+          64.79
         ],
-        "end_price": 64.81,
-        "pct_change": -1.7,
-        "abs_change": -1.12,
+        "end_price": 64.79,
+        "pct_change": -1.73,
+        "abs_change": -1.14,
         "prev_close": 65.93,
-        "session_open": 67.61,
-        "day_high": 68.06,
-        "day_low": 64.71,
+        "session_open": 64.92,
+        "day_high": 65.0,
+        "day_low": 64.76,
         "session_date": "2026-09-23",
         "previous_session_date": "2026-09-22",
         "ticker_used": "SI=F",
@@ -9801,9 +10021,9 @@
         "pct_change": 7.09,
         "abs_change": 0.21,
         "prev_close": 2.96,
-        "session_open": 3.16,
-        "day_high": 3.22,
-        "day_low": 3.1,
+        "session_open": 3.17,
+        "day_high": 3.17,
+        "day_low": 3.17,
         "session_date": "2026-09-23",
         "previous_session_date": "2026-09-22",
         "ticker_used": "NG=F",
@@ -9826,9 +10046,9 @@
         "pct_change": 0.3,
         "abs_change": 0.02,
         "prev_close": 6.76,
-        "session_open": 6.9,
-        "day_high": 6.91,
-        "day_low": 6.73,
+        "session_open": 6.78,
+        "day_high": 6.8,
+        "day_low": 6.77,
         "session_date": "2026-09-23",
         "previous_session_date": "2026-09-22",
         "ticker_used": "HG=F",
@@ -10197,7 +10417,7 @@
   },
   "narrative": {
     "editorial": {
-      "headline": "Stocks retreat as small caps lag broader market",
+      "headline": "Stocks Retreat as Yields Climb",
       "opening_summary": "S&P 500 -0.76% at the close. Russell 2000 -1.28% versus S&P 500 -0.76%, a -0.52 percentage-point spread.",
       "watchlist": [
         "Participation above 4/9 advancing sector ETFs would broaden the next-session reading; lower participation would weaken it.",
@@ -10206,11 +10426,11 @@
       ],
       "regime": {
         "observed": "S&P 500 -0.76%; VIX +2.08%; positive sector share 44.4%.",
-        "interpretation": "Signals across equities, volatility and participation point in different directions rather than confirming a single regime."
+        "interpretation": "Equity direction, volatility and participation signals are not pointing in unanimous agreement."
       },
       "sector_leadership": {
         "observed": "Materials (XLB) +1.15% ranked highest; Utilities (XLU) -2.24% ranked lowest, separated by 3.39 percentage points.",
-        "interpretation": "Materials and utilities mark opposite ends of sector performance, highlighting relative positioning rather than a verified cause."
+        "interpretation": "The spread between top and bottom sectors highlights relative positioning rather than any confirmed catalyst."
       },
       "megacap_leadership": {
         "observed": "Verified evidence unavailable.",
@@ -10218,17 +10438,17 @@
       },
       "macro_read": {
         "observed": "The ten-year yield closed at 5.11%, a +15.00 basis-point change.",
-        "interpretation": "Rising yields raise the valuation bar for rate-sensitive equities, though the relationship is not necessarily causal."
+        "interpretation": "Rising yields can lift the valuation bar for rate-sensitive equities, though co-movement alone does not confirm a causal link."
       },
       "investor_takeaway": {
         "observed": "S&P 500 -0.76%; VIX +2.08%; positive sector share 44.4%.",
-        "interpretation": "With equity, volatility and participation signals not aligned, the session lacks a broadly confirmed directional read."
+        "interpretation": "With mixed signals across equities, volatility and participation, the session's move lacks broad confirmation."
       }
     },
     "sector_bullets": {
       "top_bullet1": "Materials (XLB) +1.15% ranked highest; Utilities (XLU) -2.24% ranked lowest, separated by 3.39 percentage points.",
       "top_bullet2": "4 of 9 available sector ETFs advanced (44.4%); coverage 9/11.",
-      "bot_bullet1": "Materials and utilities mark opposite ends of sector performance, highlighting relative positioning rather than a verified cause.",
+      "bot_bullet1": "The spread between top and bottom sectors highlights relative positioning rather than any confirmed catalyst.",
       "bot_bullet2": "Check whether Materials (XLB) retains relative strength and whether Utilities (XLU) closes the gap."
     },
     "megacap_descriptions": {
@@ -10244,8 +10464,8 @@
     },
     "global_status": {
       "nikkei": "Verified session data unavailable.",
-      "stoxx": "^STOXX50E -0.29% for the reported session.",
-      "ftse": "^FTSE -0.31% for the reported session.",
+      "stoxx": "Verified session data unavailable.",
+      "ftse": "Verified session data unavailable.",
       "hsi": "Verified session data unavailable."
     },
     "crypto_descriptions": {
@@ -10256,7 +10476,7 @@
     },
     "daily_takeaway": {
       "what_moved": "S&P 500 -0.76%; VIX +2.08%; positive sector share 44.4%.",
-      "why": "With equity, volatility and participation signals not aligned, the session lacks a broadly confirmed directional read.",
+      "why": "With mixed signals across equities, volatility and participation, the session's move lacks broad confirmation.",
       "what_to_watch": "Participation above 4/9 advancing sector ETFs would broaden the next-session reading; lower participation would weaken it. Use 5.11% as the ten-year closing reference; test whether a move above it coincides with weaker technology relative returns. Check whether Materials (XLB) retains relative strength and whether Utilities (XLU) closes the gap."
     },
     "next_session_outlook": {
