@@ -78,6 +78,8 @@ export const assetCatalog: AssetDefinition[] = [
   { slug: "cat", symbol: "CAT", name: "Caterpillar", category: "Equity", pricePrefix: "$", logo: "caterpillar" },
   { slug: "uber", symbol: "UBER", name: "Uber Technologies", category: "Equity", pricePrefix: "$", logo: "uber" },
   { slug: "coin", symbol: "COIN", name: "Coinbase", category: "Equity", pricePrefix: "$", logo: "coinbase" },
+  { slug: "hood", symbol: "HOOD", name: "Robinhood Markets", category: "Equity", pricePrefix: "$", logo: "robinhood" },
+  { slug: "spcx", symbol: "SPCX", name: "SpaceX", category: "Equity", pricePrefix: "$", logo: "spacex" },
   { slug: "spy", symbol: "SPY", name: "SPDR S&P 500 ETF", category: "ETF", pricePrefix: "$" },
   { slug: "qqq", symbol: "QQQ", name: "Invesco QQQ Trust", category: "ETF", pricePrefix: "$" },
   { slug: "iwm", symbol: "IWM", name: "iShares Russell 2000 ETF", category: "ETF", pricePrefix: "$" },
