@@ -1,9 +1,9 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
-watchPatterns = ["**", "!/report_snapshot.json", "!/public/reports/**/report.json", "!/morning_snapshot.json", "!/public/morning/latest.json"]
+watchPatterns = ["**", "!/data/report_snapshot.json", "!/public/reports/**/report.json", "!/data/morning_snapshot.json", "!/public/morning/latest.json"]
 
 [deploy]
-startCommand = "python railway_cron.py"
+startCommand = "python pipeline/railway_cron.py"
 cronSchedule = "*/15 20-22 * * 1-5"
 restartPolicyType = "NEVER"

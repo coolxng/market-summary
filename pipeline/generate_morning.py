@@ -207,7 +207,7 @@ def what_matters_today(market_date, futures, global_markets, calendar, catalysts
     return items[:5]
 
 
-def generate_morning_snapshot(now=None, snapshot_path="morning_snapshot.json", public_path="public/morning/latest.json"):
+def generate_morning_snapshot(now=None, snapshot_path="data/morning_snapshot.json", public_path="public/morning/latest.json"):
     current = market_now(now)
     market_date = current.date()
 

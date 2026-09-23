@@ -1,4 +1,4 @@
-import report from "../../../report_snapshot.json";
+import report from "../../../data/report_snapshot.json";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteHeader from "../../components/SiteHeader";

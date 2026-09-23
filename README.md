@@ -165,10 +165,10 @@ U.S. releases (actual, consensus, previous), Treasury auctions, tracked earnings
 Railway cron
     │
     ▼
-railway_cron.py
+pipeline/railway_cron.py
     │
     ▼
-generate_report.py
+pipeline/generate_report.py
     ├─ resolves the latest completed U.S. session
     ├─ downloads market data with yfinance
     ├─ validates core prices and sanity bounds
@@ -178,7 +178,7 @@ generate_report.py
     └─ generates market commentary
     │
     ▼
-report_snapshot.json
+data/report_snapshot.json
 public/reports/YYYY-MM-DD/report.json
     │
     ▼
@@ -198,6 +198,19 @@ Next.js static export → live dashboard
 | Frontend | Next.js 16, React 19, TypeScript |
 | Scheduled publishing | Railway cron jobs |
 | Hosting | GitHub Pages |
+
+### Repository layout
+
+```text
+app/        Next.js pages, components and client helpers
+pipeline/   Python report generators, data providers and Railway cron entry points
+tests/      Python unit tests (python -m unittest -v, fully offline)
+data/       latest Close Tape and Morning Tape snapshots, written by the cron jobs
+public/     static assets plus the dated report archive (public/reports/YYYY-MM-DD/)
+scripts/    screenshot capture and static-export validation
+docs/       operations, data providers, delivery and analytics notes
+assets/     README screenshots
+```
 | Narrative layer | Claude Sonnet 5, with deterministic fallback copy |
 
 ## Data notes

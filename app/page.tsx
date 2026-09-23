@@ -1,4 +1,4 @@
-import report from "../report_snapshot.json";
+import report from "../data/report_snapshot.json";
 import DailyTape, { type DailyReport } from "./DailyTape";
 import { archivedReports } from "./lib/archive";
 import { buildRegimeTimeline } from "./lib/regime";

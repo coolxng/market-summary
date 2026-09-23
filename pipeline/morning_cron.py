@@ -17,7 +17,7 @@ REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "coolxng/market-summary")
 BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
-ARTIFACTS = (Path("morning_snapshot.json"), Path("public/morning/latest.json"))
+ARTIFACTS = (Path("data/morning_snapshot.json"), Path("public/morning/latest.json"))
 CENTRAL_TZ = ZoneInfo("America/Chicago")
 
 
