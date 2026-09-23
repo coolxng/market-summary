@@ -35,7 +35,7 @@ export type { DailyReport } from "./lib/report";
 // #ahead …) are kept on the subsections inside them so shared links still work.
 const chapters: ReportChapter[] = [
   { id: "brief", label: "Brief" },
-  { id: "overview", label: "Context", number: "01" },
+  { id: "overview", label: "Overview", number: "01" },
   { id: "leadership", label: "Leadership", number: "02" },
   { id: "drivers", label: "Drivers", number: "03" },
   { id: "cross-asset", label: "Macro", number: "04" },
@@ -436,7 +436,7 @@ export default function DailyTape({
         <Chapter
           id="overview"
           number="01"
-          title="Context"
+          title="Overview"
           dek="How today fits the recent run of sessions, and the markets you follow."
           contents={[
             ...(regimeTimeline.length ? [["regime", "Regime history"] as [string, string]] : []),
@@ -447,7 +447,7 @@ export default function DailyTape({
           {regimeTimeline.length > 0 && (
             <section className="report-subsection regime-history" id="regime" aria-labelledby="regime-title">
               <div className="regime-history__head">
-                <p className="section-kicker"><span className="section-kicker__chapter">Context</span><span>Regime history</span></p>
+                <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Regime history</span></p>
                 <h3 id="regime-title">How the tape has read</h3>
                 <p>Today&apos;s regime in the context of recent sessions. Select a day to see its inputs.</p>
               </div>
@@ -457,7 +457,7 @@ export default function DailyTape({
 
           {hasArchiveContext && archiveComparison && (
             <section className="report-subsection archive-context" id="context" aria-labelledby="context-title">
-              <SectionHeading id="context" chapter="Context" kicker="Historical context" title="How this session compared">Context is calculated only from earlier archived Daily Tape sessions, so the comparison never uses future data.</SectionHeading>
+              <SectionHeading id="context" chapter="Overview" kicker="Historical context" title="How this session compared">Context is calculated only from earlier archived Daily Tape sessions, so the comparison never uses future data.</SectionHeading>
               <div className="archive-context-grid">
                 <article>
                   <span>BREADTH VS PRIOR AVG</span>

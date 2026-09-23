@@ -92,7 +92,7 @@ export default function WatchlistPanel({ assets, assetBaseHref, sessionLabel }: 
     <section className="watchlist-panel report-subsection report-utility" id="watchlist" aria-labelledby="watchlist-title">
       <div className="section-heading">
         <div>
-          <p className="section-kicker"><span className="section-kicker__chapter">Context</span><span>Your tape · Personal</span></p>
+          <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Your tape · Personal</span></p>
           <h3 id="watchlist-title">Your watchlist</h3>
         </div>
         <div className="section-heading__aside"><p>Pin up to {WATCHLIST_MAX} tracked markets on this device. Stored only in this browser; nothing is sent anywhere, and the published report is unchanged.</p></div>
