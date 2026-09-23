@@ -151,6 +151,9 @@ def fetch_history_bundle(symbols, session_date):
     return {symbol: fetch_history_snapshot(symbol, session_date) for symbol in dict.fromkeys(symbols)}
 
 
+LOCAL_SESSION_MAX_AGE = datetime.timedelta(days=7)
+
+
 def build_data_quality(datasets, expected_session, feed_groups=(), local_calendar_symbols=(), previous_session=None):
     """Market-data coverage plus external feed health for the trust panel.
 
@@ -175,7 +178,10 @@ def build_data_quality(datasets, expected_session, feed_groups=(), local_calenda
             continue
         row_session = row.get("session_date")
         if symbol in local_symbols and row_session and row_session != expected_session.isoformat():
-            floor = (previous_session or expected_session).isoformat()
+            # Overseas markets keep their own holidays (Japan closed Sep 21-23,
+            # 2026), so their latest close can predate the prior U.S. session.
+            # Accept closes up to a week old; the UI labels the local date.
+            floor = min(previous_session or expected_session, expected_session - LOCAL_SESSION_MAX_AGE).isoformat()
             if row_session >= floor and row_session <= expected_session.isoformat():
                 local_sessions[symbol] = row_session
                 valid += 1
