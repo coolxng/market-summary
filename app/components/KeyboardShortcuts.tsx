@@ -43,8 +43,7 @@ export default function KeyboardShortcuts({ bindings }: { bindings: Record<strin
         element.focus();
         return;
       }
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      element.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
       if (!element.hasAttribute("tabindex")) element.setAttribute("tabindex", "-1");
       element.focus({ preventScroll: true });
     };
