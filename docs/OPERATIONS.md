@@ -48,7 +48,7 @@ cd /path/to/market-summary
 NODE_PATH=/tmp/daily-tape-shots/node_modules node scripts/capture_screenshots.mjs
 ```
 
-The mobile shot is one iPhone 14 screen (390×797 CSS px at 3×, below a drawn 47pt status bar), framed with rounded corners, a bezel and a Dynamic Island. Set `ONLY=morning-tape,asset-page` to capture a subset, or `THEMES=dark` to capture one theme. Output goes to `assets/screenshots/`, resized to at most 1800px wide. Inspect every image before committing: retake any shot that shows loading states, a "Limited" or "Some feeds unavailable" status, or an unpublished Morning Tape.
+The README hero, `close-tape-split.png`, is built from `close-tape-light.png` and `close-tape-dark.png` joined along a diagonal (`SEAM` in the script; retune it if the headline or layout changes). The mobile shot is one iPhone 14 screen (390×797 CSS px at 3×, below a drawn 47pt status bar), framed with rounded corners, a bezel and a Dynamic Island. Set `ONLY=morning-tape,asset-page` to capture a subset, or `THEMES=dark` to capture one theme. Output goes to `assets/screenshots/`, resized to at most 1800px wide. Inspect every image before committing: retake any shot that shows loading states, a "Limited" or "Some feeds unavailable" status, or an unpublished Morning Tape.
 
 ## More documentation
 

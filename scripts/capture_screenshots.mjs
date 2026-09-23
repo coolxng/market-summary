@@ -159,6 +159,33 @@ async function save(buffer, name, { maxWidth = MAX_WIDTH } = {}) {
   console.log(`saved ${name}`);
 }
 
+// README hero: the light and dark close-tape captures joined along a diagonal.
+// The seam passes through the gap between "Small" and "Caps" in the headline
+// and the gutter before the third takeaway card at 1440px; retune SEAM if the
+// layout or headline changes. Small header and ticker text may be crossed.
+const SEAM = { x: 843, y: 445, slope: 0.54, colour: "#ff5a36", width: 3 };
+
+async function splitHero() {
+  const light = path.join(OUT, "close-tape-light.png");
+  const dark = path.join(OUT, "close-tape-dark.png");
+  const { width, height } = await sharp(light).metadata();
+  const xAt = (y) => SEAM.x + SEAM.slope * (y - SEAM.y);
+  const [top, bottom] = [xAt(0), xAt(height)];
+  const svg = (body) => Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${body}</svg>`);
+  const darkHalf = await sharp(dark)
+    .ensureAlpha()
+    .composite([{ input: svg(`<polygon points="${top},0 ${width},0 ${width},${height} ${bottom},${height}" fill="#fff"/>`), blend: "dest-in" }])
+    .png().toBuffer();
+  const joined = await sharp(light)
+    .composite([
+      { input: darkHalf },
+      { input: svg(`<line x1="${top}" y1="0" x2="${bottom}" y2="${height}" stroke="${SEAM.colour}" stroke-width="${SEAM.width}"/>`) },
+    ])
+    .png().toBuffer();
+  await sharp(joined).png({ palette: true, quality: 90, effort: 10, compressionLevel: 9 }).toFile(path.join(OUT, "close-tape-split.png"));
+  console.log("saved close-tape-split.png");
+}
+
 const shots = {
   // Desktop hero: the first screen of the latest Close Tape.
   async "close-tape"(browser) {
@@ -242,3 +269,4 @@ try {
 } finally {
   await browser.close();
 }
+if (!ONLY || ONLY.has("close-tape")) await splitHero();

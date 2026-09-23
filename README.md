@@ -13,10 +13,7 @@
 </div>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/close-tape-dark.png" />
-    <img src="./assets/screenshots/close-tape-light.png" alt="Close Tape home page: session headline, data status, summary chips, regime monitor and the three takeaways" width="900" />
-  </picture>
+  <img src="./assets/screenshots/close-tape-split.png" alt="Close Tape home page split diagonally between the light Paper and dark Ink themes: session headline, verified-quotes status, summary chips, regime monitor and the three takeaways" width="900" />
 </p>
 
 <p align="center">
