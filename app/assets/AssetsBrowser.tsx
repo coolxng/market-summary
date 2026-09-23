@@ -91,7 +91,7 @@ export default function AssetsBrowser({ groups, all }: { groups: AssetGroup[]; a
       {watched.length > 0 && (
         <Group group={{ id: "watchlist", title: "Your watchlist", changeLabel: "1D", rows: watched }} showLogos />
       )}
-      {groups.map((group) => <Group key={group.id} group={group} showLogos={group.id === "equity"} />)}
+      {groups.map((group) => <Group key={group.id} group={group} showLogos={group.rows.some((asset) => asset.logo)} />)}
     </>
   );
 }
