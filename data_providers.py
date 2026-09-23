@@ -35,6 +35,11 @@ import trading_calendar
 NY_TZ = ZoneInfo("America/New_York")
 CENTRAL_TZ = ZoneInfo("America/Chicago")
 USER_AGENT = "TheDailyTape/1.0 (contact: https://github.com/coolxng/market-summary/issues)"
+# BLS rejects automated requests unless the User-Agent names a contact email.
+# The address comes from the environment so it never lives in the repository,
+# and it is sent only to these hosts.
+CONTACT_EMAIL_ENV = "DAILY_TAPE_CONTACT_EMAIL"
+CONTACT_EMAIL_HOSTS = frozenset({"www.bls.gov", "bls.gov"})
 BROWSER_USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36"
@@ -153,9 +158,17 @@ def feed_meta(feed):
     return {key: value for key, value in feed.items() if key != "items"}
 
 
+def user_agent_for(url):
+    """Default User-Agent, plus the contact email for hosts that require one."""
+    email_address = os.environ.get(CONTACT_EMAIL_ENV, "").strip()
+    if email_address and urllib.parse.urlsplit(url).hostname in CONTACT_EMAIL_HOSTS:
+        return f"TheDailyTape/1.0 ({email_address})"
+    return USER_AGENT
+
+
 def http_get(url, accept="application/json", timeout=15, extra_headers=None, attempts=2):
     """Small, bounded GET helper with one retry for transient provider failures."""
-    headers = {"User-Agent": USER_AGENT, "Accept": accept, "Accept-Language": "en-US,en;q=0.9"}
+    headers = {"User-Agent": user_agent_for(url), "Accept": accept, "Accept-Language": "en-US,en;q=0.9"}
     headers.update(extra_headers or {})
     request = urllib.request.Request(url, headers=headers)
     last_error = None
