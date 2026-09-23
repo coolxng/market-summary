@@ -219,7 +219,7 @@ def _parse_fair_economy_datetime(raw):
         return None
     # The feed normally uses ISO-8601 offsets such as -04:00. Accept the
     # compact -0400 form too so a harmless formatting change does not break it.
-    text = re.sub(r"([+-]\\d{2})(\\d{2})$", r"\\1:\\2", text)
+    text = re.sub(r"([+-]\d{2})(\d{2})$", r"\1:\2", text)
     if text.endswith("Z"):
         text = text[:-1] + "+00:00"
     try:
