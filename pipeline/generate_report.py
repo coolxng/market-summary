@@ -118,6 +118,8 @@ EXTRA_ASSETS = {
     "CAT": ("Caterpillar", "Equity"),
     "UBER": ("Uber Technologies", "Equity"),
     "COIN": ("Coinbase", "Equity"),
+    "HOOD": ("Robinhood Markets", "Equity"),
+    "SPCX": ("SpaceX", "Equity"),
     "SPY": ("SPDR S&P 500 ETF", "ETF"),
     "QQQ": ("Invesco QQQ Trust", "ETF"),
     "IWM": ("iShares Russell 2000 ETF", "ETF"),
