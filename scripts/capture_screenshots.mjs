@@ -69,8 +69,8 @@ async function open(page, route, readySelector) {
   if (theme !== siteTheme()) throw new Error(`${route} rendered with theme "${theme}", expected "${siteTheme()}"`);
 }
 
-// The README's mobile shot (mobile-close-tape.png) is a real iPhone screenshot
-// added by hand, used for both themes, so it is not captured here.
+// The README's mobile shots (mobile-close-tape-light.png and -dark.png) are
+// real iPhone screenshots added by hand, so they are not captured here.
 
 // Scroll through the page so lazy images load, then wait for them.
 async function settle(page) {
