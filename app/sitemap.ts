@@ -12,11 +12,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  const assets: MetadataRoute.Sitemap = assetCatalog.map((asset) => ({
+  const assets: MetadataRoute.Sitemap = [{ url: `${siteUrl}/assets/`, changeFrequency: "daily", priority: 0.8 }, ...assetCatalog.map((asset) => ({
     url: `${siteUrl}/assets/${asset.slug}/`,
-    changeFrequency: "daily",
+    changeFrequency: "daily" as const,
     priority: 0.6,
-  }));
+  }))];
 
   return [
     {

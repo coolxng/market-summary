@@ -1,6 +1,6 @@
 import type { CatalystSet } from "../lib/report";
 import { assetBySymbol } from "../lib/assets";
-import { formatCentralDateTime } from "../lib/format";
+import { formatCentralDateTime, safeHref } from "../lib/format";
 
 export default function CatalystList({
   catalysts,
@@ -40,7 +40,7 @@ export default function CatalystList({
                   {item.published_at ? formatCentralDateTime(item.published_at) : "Time not provided"}
                 </time>
               </div>
-              <a className="catalyst-row__title" href={item.url} target="_blank" rel="noopener noreferrer" data-outbound="catalyst">
+              <a className="catalyst-row__title" href={safeHref(item.url)} target="_blank" rel="noopener noreferrer" data-outbound="catalyst">
                 {item.title}
               </a>
               <div className="catalyst-row__foot">

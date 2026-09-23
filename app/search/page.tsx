@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { assetCatalog } from "../lib/assets";
+import { assetSummaries } from "../lib/assetSummary";
 import SearchClient, { type SearchReport } from "./SearchClient";
 import { archivedReports, reportHeadline } from "../lib/archive";
 import { formatSessionDate } from "../lib/format";
@@ -19,7 +19,7 @@ function reports(): SearchReport[] {
 export default function SearchPage() {
   return (
     <SearchClient
-      assets={assetCatalog.map(({ slug, symbol, name, category }) => ({ slug, symbol, name, category }))}
+      assets={assetSummaries}
       reports={reports()}
     />
   );

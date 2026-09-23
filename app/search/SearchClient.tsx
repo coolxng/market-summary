@@ -4,8 +4,11 @@ import SiteHeader from "../components/SiteHeader";
 import Breadcrumbs from "../components/Breadcrumbs";
 import { useMemo, useState } from "react";
 import styles from "./search.module.css";
+import AssetLogo from "../components/AssetLogo";
+import { sparkPoints } from "../lib/chart";
+import type { AssetSummary } from "../lib/assetSummary";
 
-export type SearchAsset = { slug: string; symbol: string; name: string; category: string };
+export type SearchAsset = AssetSummary;
 export type SearchReport = { date: string; displayDate: string; headline: string };
 
 export default function SearchClient({
@@ -38,7 +41,7 @@ export default function SearchClient({
 
       <div className={styles.page}>
         <section className={styles.hero}>
-          <Breadcrumbs items={[{ label: "Close Tape", href: "../" }, { label: "Search" }]} />
+          <Breadcrumbs items={[{ label: "Today", href: "../" }, { label: "Search" }]} />
           <p>POWER SEARCH</p>
           <h1>Find the tape.</h1>
           <span>Search tracked assets, sectors, rates, commodities, crypto, and archived sessions without leaving the Daily Tape.</span>
@@ -60,13 +63,19 @@ export default function SearchClient({
           <div className={styles.column}>
             <div className={styles.heading}><span>TRACKED ASSETS</span><small>{assetResults.length} result{assetResults.length === 1 ? "" : "s"}</small></div>
             <div className={styles.list}>
-              {assetResults.map((asset) => (
-                <a href={`../assets/${asset.slug}/`} key={asset.slug}>
-                  <div><strong>{asset.symbol}</strong><span>{asset.category}</span></div>
-                  <p>{asset.name}</p>
-                  <b>Open →</b>
-                </a>
-              ))}
+              {assetResults.map((asset) => {
+                const spark = sparkPoints(asset.spark);
+                return (
+                  <a className={styles.assetRow} href={`../assets/${asset.slug}/`} key={asset.slug}>
+                    <AssetLogo src={asset.logo} symbol={asset.symbol} size={30} />
+                    <div className={styles.assetName}><p>{asset.name}</p><span>{asset.symbol} · {asset.category}</span></div>
+                    <span className={`${styles.assetSpark} ${asset.sparkTone}`} aria-hidden="true">
+                      {spark && <svg viewBox="0 0 100 32" preserveAspectRatio="none"><polyline points={spark} fill="none" stroke="currentColor" strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg>}
+                    </span>
+                    <span className={styles.assetQuote}><strong>{asset.priceText}</strong><b className={asset.tone}>{asset.changeText}</b></span>
+                  </a>
+                );
+              })}
               {!assetResults.length && <p className={styles.empty}>No tracked asset matches that search.</p>}
             </div>
           </div>
@@ -77,7 +86,7 @@ export default function SearchClient({
                 <a href={`../reports/${report.date}/`} key={report.date}>
                   <div><strong>{report.date}</strong><span>Archived session</span></div>
                   <p><b>{report.displayDate}</b><br />{report.headline}</p>
-                  <b>Open →</b>
+                  <i className={styles.arrow} aria-hidden="true">→</i>
                 </a>
               ))}
               {!reportResults.length && <p className={styles.empty}>No archived report matches that search.</p>}

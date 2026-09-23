@@ -1,4 +1,6 @@
 import SiteHeader from "../components/SiteHeader";
+import FooterLinks from "../components/FooterLinks";
+import MorningCountdown from "./MorningCountdown";
 import MarketCalendarList from "../components/MarketCalendarList";
 import CatalystList from "../components/CatalystList";
 import EditionFreshness from "../components/EditionFreshness";
@@ -6,7 +8,7 @@ import KeyboardShortcuts from "../components/KeyboardShortcuts";
 import { FeedHealthList } from "../components/DataStatus";
 import { assetBySymbol } from "../lib/assets";
 import { calendarOf, catalystsOf, type CatalystSet, type DailyReport, type FeedStatus, type TreasuryRates } from "../lib/report";
-import { formatBps, formatCentralDateTime, formatNumber, formatPct, formatSessionDate, toneClass } from "../lib/format";
+import { formatBps, formatCentralDateTime, formatNumber, formatPct, formatSessionDate, toneClass, safeHref } from "../lib/format";
 import styles from "./morning.module.css";
 
 type Quote = {
@@ -133,13 +135,22 @@ function RatesBoard({ rates }: { rates: TreasuryRates | null | undefined }) {
       <p className={styles.sourceLine}>
         Official end-of-day par yields as of <strong>{formatSessionDate(rates.curve.as_of, { weekday: "short", month: "short", day: "numeric" })}</strong>
         {rates.curve.previous_date && <> versus {formatSessionDate(rates.curve.previous_date, { month: "short", day: "numeric" })}</>}.{" "}
-        <a href={rates.source_url} target="_blank" rel="noopener noreferrer" data-outbound="source">U.S. Treasury ↗</a>
+        <a href={safeHref(rates.source_url)} target="_blank" rel="noopener noreferrer" data-outbound="source">U.S. Treasury ↗</a>
       </p>
     </>
   );
 }
 
-export default function MorningTape({ snapshot }: { snapshot: MorningSnapshot }) {
+const PREVIEW_ITEMS = [
+  ["Futures", "S&P 500, Nasdaq and Dow futures against yesterday's close"],
+  ["Overnight markets", "Tokyo, Hong Kong, London and Europe as they traded"],
+  ["Rates & dollar", "The official Treasury curve, the 10-year and the dollar index"],
+  ["Commodities & crypto", "Oil, gold and the major cryptocurrencies since the close"],
+  ["Today's calendar", "Economic releases and earnings on the schedule"],
+  ["Overnight developments", "Source-linked headlines tagged to tracked assets"],
+] as const;
+
+export default function MorningTape({ snapshot, latestClose }: { snapshot: MorningSnapshot; latestClose?: { date: string; headline: string } }) {
   const calendar = snapshot.market_calendar ? calendarOf({ market_calendar: snapshot.market_calendar }) : undefined;
   const catalysts = catalystsOf({ verified_catalysts: snapshot.verified_catalysts ?? undefined, market_headlines: snapshot.market_headlines });
   const awaiting = !snapshot.generated_at;
@@ -175,8 +186,26 @@ export default function MorningTape({ snapshot }: { snapshot: MorningSnapshot })
         </section>
 
         {awaiting ? (
-          <section className={styles.section}>
-            <p className={styles.empty}>The Morning Tape has not been generated yet. It publishes at about 7:45 AM Central on NYSE trading days. Until then, nothing is shown in place of live data.</p>
+          <section className={`${styles.section} ${styles.awaiting}`} aria-label="Before the first Pre-Market brief">
+            <div className={styles.awaitingLead}>
+              <MorningCountdown />
+              <p className={styles.empty}>The Pre-Market brief publishes at about 7:45 AM Central on NYSE trading days. Until the first edition runs, nothing is shown in place of live data.</p>
+              {latestClose && (
+                <a className={styles.latestClose} href="../">
+                  <span>MEANWHILE · LATEST CLOSE · {formatSessionDate(latestClose.date, { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}</span>
+                  <strong>{latestClose.headline}</strong>
+                  <b>Read today&apos;s close <i aria-hidden="true">→</i></b>
+                </a>
+              )}
+            </div>
+            <div>
+              <p className={styles.kicker}>WHAT EACH BRIEF COVERS</p>
+              <ol className={styles.preview}>
+                {PREVIEW_ITEMS.map(([title, text], index) => (
+                  <li key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><strong>{title}</strong><p>{text}</p></div></li>
+                ))}
+              </ol>
+            </div>
           </section>
         ) : (
           <>
@@ -244,10 +273,10 @@ export default function MorningTape({ snapshot }: { snapshot: MorningSnapshot })
         <footer className={styles.footer}>
           <div><strong>THE DAILY TAPE</strong><span>Morning orientation. Close intelligence.</span></div>
           <div>
-            <a href="../">Close Tape →</a><a href="../reports/">Archive →</a><a href="../feed.xml">RSS →</a>
+            <FooterLinks root="../"><a href="../feed.xml">RSS</a></FooterLinks>
             <KeyboardShortcuts bindings={{
               "/": { kind: "href", href: "../search/", label: "Search assets and archive" },
-              h: { kind: "href", href: "../", label: "Latest Close Tape" },
+              h: { kind: "href", href: "../", label: "Today's close" },
               a: { kind: "href", href: "../reports/", label: "Report archive" },
               c: { kind: "anchor", id: "calendar", label: "Today's calendar" },
             }} />

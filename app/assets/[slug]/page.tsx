@@ -2,14 +2,19 @@ import report from "../../../report_snapshot.json";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import SiteHeader from "../../components/SiteHeader";
+import FooterLinks from "../../components/FooterLinks";
+import TickerStrip from "../../components/TickerStrip";
 import CatalystList from "../../components/CatalystList";
 import WatchToggle from "../../components/WatchToggle";
 import KeyboardShortcuts from "../../components/KeyboardShortcuts";
 import AssetRangeChart, { type RangeKey } from "./AssetRangeChart";
-import { assetBySlug, assetCatalog, type AssetDefinition } from "../../lib/assets";
+import AssetQuote, { AssetHoverProvider } from "./AssetQuote";
+import { assetBySlug, assetCatalog, isYieldAsset, logoUrl } from "../../lib/assets";
+import { yearRange } from "../../lib/assetSummary";
+import AssetLogo from "../../components/AssetLogo";
 import { archivedReports } from "../../lib/archive";
-import { historyPoints, sessionPoints, type ChartPoint } from "../../lib/chart";
-import { catalystsOf, verified, type AssetHistory, type DailyReport, type MarketDatum } from "../../lib/report";
+import { historyPoints, intradayMinutes, sessionPoints, type ChartPoint } from "../../lib/chart";
+import { catalystsOf, quoteRow, quoteSessionChart, verified, type AssetHistory, type DailyReport } from "../../lib/report";
 import { formatBpsFromPoints, formatNumber, formatPct, formatSessionDate, toneClass } from "../../lib/format";
 import styles from "./asset.module.css";
 
@@ -39,21 +44,13 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-function isYield(asset: AssetDefinition) {
-  return asset.category === "Rates" && asset.priceSuffix === "%";
-}
-
 function sectorName(source: DailyReport, symbol: string) {
   return Object.keys(source.daily_sector_performance ?? {}).find((name) => name.endsWith(`(${symbol})`));
 }
 
-function rowFor(source: DailyReport, symbol: string): MarketDatum | undefined {
-  return source.market_data?.[symbol] ?? source.mega_cap_data?.[symbol]?.result ?? source.sector_data?.[symbol];
-}
-
 /** One-day move for `symbol` in a given issue, plus a ranking note when it led or lagged. */
 function issueMove(source: DailyReport, symbol: string): { move: number | null; note: string | null } {
-  const row = verified(rowFor(source, symbol));
+  const row = verified(quoteRow(source, symbol));
   const sector = sectorName(source, symbol);
   const move = row?.pct_change ?? (sector ? source.daily_sector_performance[sector] : null) ?? null;
   let note: string | null = null;
@@ -64,8 +61,8 @@ function issueMove(source: DailyReport, symbol: string): { move: number | null; 
   } else if (source.mega_cap_data?.[symbol]) {
     const moves = Object.entries(source.mega_cap_data).map(([ticker, entry]) => [ticker, verified(entry.result)?.pct_change] as const)
       .filter((entry): entry is readonly [string, number] => entry[1] != null).sort((a, b) => b[1] - a[1]);
-    if (moves[0]?.[0] === symbol) note = "Best in tracked tech sample";
-    else if (moves.at(-1)?.[0] === symbol) note = "Weakest in tracked tech sample";
+    if (moves[0]?.[0] === symbol) note = "Best in leadership sample";
+    else if (moves.at(-1)?.[0] === symbol) note = "Weakest in leadership sample";
   }
   return { move, note };
 }
@@ -107,12 +104,18 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
   const asset = assetBySlug[slug];
   if (!asset) notFound();
 
-  const asYield = isYield(asset);
-  const row = verified(rowFor(dailyReport, asset.symbol));
+  const asYield = isYieldAsset(asset);
+  const row = verified(quoteRow(dailyReport, asset.symbol));
   const sector = sectorName(dailyReport, asset.symbol);
   const dayMove = row?.pct_change ?? (sector ? dailyReport.daily_sector_performance[sector] : null) ?? null;
-  const session = dailyReport.session_charts?.[asset.symbol] ?? dailyReport.mega_cap_data?.[asset.symbol]?.session_chart ?? null;
+  const session = quoteSessionChart(dailyReport, asset.symbol);
   const intraday = sessionPoints(session, !OFF_US_CLOCK.has(asset.symbol));
+  // The last 5-minute bar opens at 3:55 PM; end U.S.-hours paths on the official
+  // close so the chart, its header and the hover all finish on the published number.
+  const closesAtBell = !OFF_US_CLOCK.has(asset.symbol) && !["Commodity", "FX", "Crypto"].includes(asset.category);
+  const dayPoints = closesAtBell && row && intraday.points.length >= 3 && session?.session_date === row.session_date && intraday.points.at(-1)!.value !== row.end_price
+    ? [...intraday.points, { label: "Official close", value: row.end_price }]
+    : intraday.points;
   const history = dailyReport.asset_history?.[asset.symbol];
   const historyUsable = history && !history.error && history.closes.length > 1 ? history : undefined;
   const digits = asset.digits ?? 2;
@@ -123,12 +126,12 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
   const ranges: Array<{ key: RangeKey; points: ChartPoint[]; note: string }> = [
     {
       key: "1D",
-      points: intraday.points,
-      note: session?.source === "intraday_5m" ? `5-minute session path${intraday.zoneLabel ? ` · ${intraday.zoneLabel}` : ""}` : session?.source === "daily_5d_fallback" ? "Recent daily closes (no intraday path stored)" : session ? "Open and close only" : "No intraday path stored",
+      points: dayPoints,
+      note: intradayMinutes(session?.source) ? `${intradayMinutes(session?.source)}-minute session path${intraday.zoneLabel ? ` · ${intraday.zoneLabel}` : ""}` : session?.source === "daily_5d_fallback" ? "Recent daily closes (no intraday path stored)" : session ? "Open and close only" : "No intraday path stored",
     },
     ...(["5D", "1M", "3M", "YTD", "1Y"] as const).map((key) => ({ key, points: sliceHistory(historyUsable, key), note: "Daily closes" })),
   ];
-  const initial: RangeKey = intraday.points.length >= 3 ? "1D" : ranges.find((range) => range.key === "1M" && range.points.length > 1) ? "1M" : "1D";
+  const initial: RangeKey = dayPoints.length >= 3 ? "1D" : ranges.find((range) => range.key === "1M" && range.points.length > 1) ? "1M" : "1D";
 
   const performance: Array<[string, number | null]> = [
     ["1D", asYield ? row?.abs_change ?? null : dayMove],
@@ -151,36 +154,45 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
 
   const historyStale = historyUsable && historyUsable.as_of && historyUsable.as_of < dailyReport.session_date && !OFF_US_CLOCK.has(asset.symbol);
   const rowSource = row?.data_source ? SOURCE_NAMES[row.data_source] ?? row.data_source : "Yahoo Finance";
+  const yearly = yearRange(asset.symbol, row?.end_price);
+  const range52 = yearly && yearly.sessions >= 200 ? { ...yearly, position: yearly.high > yearly.low ? (yearly.last - yearly.low) / (yearly.high - yearly.low) : 0.5 } : null;
   const ma = historyUsable?.moving_averages ?? {};
   const above = historyUsable?.above_moving_average ?? {};
 
   return (
     <main id="main">
       <SiteHeader root="../../" current="asset" />
+      <TickerStrip root="../../" />
       <div className={styles.page}>
+        <AssetHoverProvider>
         <section className={styles.hero}>
-          <nav className={styles.crumbs} aria-label="Breadcrumb"><a href="../../">Close Tape</a><span aria-hidden="true">/</span><a href="../../search/">Assets</a><span aria-hidden="true">/</span><span>{asset.symbol}</span></nav>
+          <nav className={styles.crumbs} aria-label="Breadcrumb"><a href="../../">Today</a><span aria-hidden="true">/</span><a href="../">Assets</a><span aria-hidden="true">/</span><span>{asset.symbol}</span></nav>
           <div className={styles.heroGrid}>
             <div>
               <p className={styles.kicker}>{asset.category.toUpperCase()} · {asset.symbol}</p>
-              <h1>{asset.name}</h1>
+              <h1 className={styles.title}>{logoUrl(asset) && <AssetLogo src={logoUrl(asset)} symbol={asset.symbol} size={64} />}<span>{asset.name}</span></h1>
               <p className={styles.sub}>
                 {row ? `Closed at ${price(row.end_price)} on ${formatSessionDate(row.session_date ?? dailyReport.session_date, { weekday: "long", month: "short", day: "numeric" })}, ${asYield ? `${formatBpsFromPoints(row.abs_change)} on the day` : `${formatPct(row.pct_change)} on the day`}.`
                   : dayMove != null ? `${formatPct(dayMove)} on ${formatSessionDate(dailyReport.session_date, { weekday: "long", month: "short", day: "numeric" })}.` : "No verified close is stored for the latest session."}
               </p>
             </div>
-            <div className={styles.quote}>
-              <span>{row ? "LATEST CLOSE" : "LATEST SESSION"}</span>
-              <strong>{price(row?.end_price ?? (historyUsable?.as_of === dailyReport.session_date ? historyUsable.closes.at(-1) : null))}</strong>
-              <b className={toneClass(asYield ? row?.abs_change : dayMove)}>{move(asYield ? row?.abs_change ?? null : dayMove)} <small>1D</small></b>
+            <AssetQuote
+              className={styles.quote}
+              label={row ? "LATEST CLOSE" : "LATEST SESSION"}
+              value={row?.end_price ?? (historyUsable?.as_of === dailyReport.session_date ? historyUsable.closes.at(-1) ?? null : null)}
+              change={asYield ? row?.abs_change ?? null : dayMove}
+              changeUnit={asYield ? "bps" : "pct"}
+              format={format}
+            >
               <WatchToggle slug={asset.slug} name={asset.name} />
-            </div>
+            </AssetQuote>
           </div>
         </section>
 
         <section className={styles.chartSection} aria-label={`${asset.name} price chart`}>
-          <AssetRangeChart name={asset.name} ranges={ranges} initial={initial} format={format} changeUnit={asYield ? "bps" : "pct"} />
+          <AssetRangeChart name={asset.name} ranges={ranges} initial={initial} format={format} changeUnit={asYield ? "bps" : "pct"} dayBase={row?.prev_close} latest={row?.end_price} />
         </section>
+        </AssetHoverProvider>
 
         <section className={styles.performance} aria-label="Multi-period performance">
           {performance.map(([label, value]) => (
@@ -201,6 +213,23 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
             </div>
           ))}
         </section>
+
+        {range52 && (
+          <section className={styles.yearRange} aria-label="52-week range">
+            <div className={styles.yearRangeHead}>
+              <span>52-WEEK RANGE · DAILY CLOSES</span>
+              <small>{range52.position >= 0.98 ? "At the top of its range" : range52.position <= 0.02 ? "At the bottom of its range" : `${Math.round(range52.position * 100)}% of the way from low to high`}</small>
+            </div>
+            <div className={styles.yearRangeBar}>
+              <strong>{price(range52.low)}<small>LOW</small></strong>
+              <div className={styles.track} role="img" aria-label={`Latest close ${price(range52.last)} between a 52-week low of ${price(range52.low)} and high of ${price(range52.high)}`}>
+                <i style={{ width: `${range52.position * 100}%` }} />
+                <b style={{ left: `${range52.position * 100}%` }} />
+              </div>
+              <strong>{price(range52.high)}<small>HIGH</small></strong>
+            </div>
+          </section>
+        )}
 
         <section className={styles.context} aria-labelledby="asset-catalysts">
           <div className={styles.sectionHeading}>
@@ -244,12 +273,12 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
           </span>
         </aside>
         <footer className={styles.footer}>
-          <div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span></div>
+          <div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><FooterLinks root="../../" /></div>
           <KeyboardShortcuts bindings={{
             "/": { kind: "href", href: "../../search/", label: "Search assets and archive" },
-            h: { kind: "href", href: "../../", label: "Latest Close Tape" },
+            h: { kind: "href", href: "../../", label: "Today's close" },
             a: { kind: "href", href: "../../reports/", label: "Report archive" },
-            m: { kind: "href", href: "../../morning/", label: "Morning Tape" },
+            m: { kind: "href", href: "../../morning/", label: "Pre-Market brief" },
           }} />
         </footer>
       </div>

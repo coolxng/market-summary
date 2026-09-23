@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import snapshot from "../../morning_snapshot.json";
+import report from "../../report_snapshot.json";
 import MorningTape, { type MorningSnapshot } from "./MorningTape";
+import { reportHeadline } from "../lib/archive";
+import type { DailyReport } from "../lib/report";
 
 export const metadata: Metadata = {
   title: "Morning Tape | The Daily Tape",
@@ -15,5 +18,6 @@ export const metadata: Metadata = {
 };
 
 export default function MorningPage() {
-  return <MorningTape snapshot={snapshot as unknown as MorningSnapshot} />;
+  const latest = report as unknown as DailyReport;
+  return <MorningTape snapshot={snapshot as unknown as MorningSnapshot} latestClose={{ date: latest.session_date, headline: reportHeadline(latest) }} />;
 }

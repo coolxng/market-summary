@@ -77,11 +77,64 @@ SUMMARY_TILE_TICKERS = (
 US_REGULAR_CHART_TICKERS = (
     "^GSPC", "^IXIC", "^DJI", "^VIX", "^TNX", "DX-Y.NYB",
 )
+CRYPTO_CHART_TICKERS = ("BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD")
 FULL_DAY_CHART_TICKERS = (
     "BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD",
     "^N225", "^STOXX50E", "^FTSE", "^HSI",
 )
 SESSION_CHART_TICKERS = US_REGULAR_CHART_TICKERS + FULL_DAY_CHART_TICKERS
+
+# Instruments that only feed the asset pages and search. They are fetched like
+# the tech sample (close, session path, history) but kept out of the report's
+# data-quality count and editorial context, so a miss never degrades the issue.
+EXTRA_ASSETS = {
+    "AMD": ("Advanced Micro Devices", "Equity"),
+    "INTC": ("Intel", "Equity"),
+    "SNDK": ("SanDisk", "Equity"),
+    "TSM": ("Taiwan Semiconductor", "Equity"),
+    "ORCL": ("Oracle", "Equity"),
+    "NFLX": ("Netflix", "Equity"),
+    "PLTR": ("Palantir Technologies", "Equity"),
+    "CRM": ("Salesforce", "Equity"),
+    "ADBE": ("Adobe", "Equity"),
+    "BRK-B": ("Berkshire Hathaway", "Equity"),
+    "JPM": ("JPMorgan Chase", "Equity"),
+    "BAC": ("Bank of America", "Equity"),
+    "GS": ("Goldman Sachs", "Equity"),
+    "V": ("Visa", "Equity"),
+    "MA": ("Mastercard", "Equity"),
+    "LLY": ("Eli Lilly", "Equity"),
+    "UNH": ("UnitedHealth Group", "Equity"),
+    "JNJ": ("Johnson & Johnson", "Equity"),
+    "XOM": ("Exxon Mobil", "Equity"),
+    "CVX": ("Chevron", "Equity"),
+    "WMT": ("Walmart", "Equity"),
+    "COST": ("Costco", "Equity"),
+    "HD": ("Home Depot", "Equity"),
+    "KO": ("Coca-Cola", "Equity"),
+    "PG": ("Procter & Gamble", "Equity"),
+    "DIS": ("Walt Disney", "Equity"),
+    "BA": ("Boeing", "Equity"),
+    "CAT": ("Caterpillar", "Equity"),
+    "UBER": ("Uber Technologies", "Equity"),
+    "COIN": ("Coinbase", "Equity"),
+    "SPY": ("SPDR S&P 500 ETF", "ETF"),
+    "QQQ": ("Invesco QQQ Trust", "ETF"),
+    "IWM": ("iShares Russell 2000 ETF", "ETF"),
+    "DIA": ("SPDR Dow Jones Industrial Average ETF", "ETF"),
+    "RSP": ("Invesco S&P 500 Equal Weight ETF", "ETF"),
+    "TLT": ("iShares 20+ Year Treasury Bond ETF", "ETF"),
+    "GLD": ("SPDR Gold Shares", "ETF"),
+    "SLV": ("iShares Silver Trust", "ETF"),
+    "SMH": ("VanEck Semiconductor ETF", "ETF"),
+    "EEM": ("iShares MSCI Emerging Markets ETF", "ETF"),
+    "EFA": ("iShares MSCI EAFE ETF", "ETF"),
+    "ARKK": ("ARK Innovation ETF", "ETF"),
+    "SI=F": ("Silver", "Commodity"),
+    "NG=F": ("Natural Gas", "Commodity"),
+    "HG=F": ("Copper", "Commodity"),
+}
+EXTRA_ASSET_SLUGS = {"BRK-B": "brk-b", "SI=F": "silver", "NG=F": "natural-gas", "HG=F": "copper"}
 NY_TZ = ZoneInfo("America/New_York")
 MARKET_CLOSE_SETTLE_TIME = datetime.time(16, 15)
 SESSION_LOOKBACK_DAYS = 15
@@ -281,6 +334,13 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
             previous_position = eligible_positions[-2]
             current_date = index_date(hist.index[current_position])
             prior_date = index_date(hist.index[previous_position])
+            if current_date < session_date and (previous_session_date is None or current_date == previous_session_date):
+                # Yahoo sometimes leaves the session's daily bar empty (NaN) for
+                # hours after the close while its quote already carries the
+                # official close. Use that quote, anchored to the last full bar.
+                official = official_session_row(ticker, ticker_used, session_date, hist.iloc[current_position], current_date)
+                if official:
+                    return official
             current_row = hist.iloc[current_position]
             previous_row = hist.iloc[previous_position]
             end_price = round(float(current_row["Close"]), 2)
@@ -368,6 +428,53 @@ def fetch_daily_data(ticker_symbol, session_date, previous_session_date=None):
     return unavailable_dataset(ticker_symbol, f"Data unavailable for {ticker_symbol}")
 
 
+def official_session_row(ticker, ticker_used, session_date, previous_row, previous_date):
+    """Session row from Yahoo's regular-market quote, or None unless it is stamped on `session_date`.
+
+    The quote's regularMarketPrice is the official close (closing auction) once
+    the session has ended; its timestamp can trail 4:00 p.m. by a few minutes.
+    """
+    try:
+        info = ticker.get_info()
+        stamp = datetime.datetime.fromtimestamp(int(info["regularMarketTime"]), NY_TZ)
+        if stamp.date() != session_date or stamp.time() < datetime.time(16, 0):
+            return None
+        end_price = round(float(info["regularMarketPrice"]), 2)
+        prev_close = round(float(previous_row["Close"]), 2)
+        if not is_sane(ticker_used, end_price) or prev_close <= 0:
+            return None
+        return {
+            "dates": [previous_date.isoformat(), session_date.isoformat()],
+            "closes": [prev_close, end_price],
+            "end_price": end_price,
+            "pct_change": round((end_price - prev_close) / prev_close * 100, 2),
+            "abs_change": round(end_price - prev_close, 2),
+            "prev_close": prev_close,
+            "session_open": round(float(info.get("regularMarketOpen") or end_price), 2),
+            "day_high": round(float(info.get("regularMarketDayHigh") or end_price), 2),
+            "day_low": round(float(info.get("regularMarketDayLow") or end_price), 2),
+            "session_date": session_date.isoformat(),
+            "previous_session_date": previous_date.isoformat(),
+            "ticker_used": ticker_used,
+            "data_source": "yahoo_finance",
+            "source_symbol": ticker_used,
+            "error": None,
+        }
+    except Exception as exc:
+        print(f"  Official quote unavailable for {ticker_used}: {exc}")
+        return None
+
+
+def fetch_market_cap(ticker_symbol):
+    """Latest market capitalization in dollars, or None when Yahoo has none."""
+    try:
+        value = yf.Ticker(ticker_symbol).fast_info["market_cap"]
+        return round(float(value)) if value and math.isfinite(float(value)) else None
+    except Exception as exc:
+        print(f"  Market cap unavailable for {ticker_symbol}: {exc}")
+        return None
+
+
 def unavailable_dataset(ticker_symbol, error):
     # Unavailable rows keep null values so no consumer can mistake them for a flat session.
     return {
@@ -450,8 +557,13 @@ def fetch_daily_chart_data(
     *,
     regular_hours=True,
     prefer_multi_day_fallback=False,
+    interval="5m",
 ):
     """Fetch a verified intraday path for the requested market session.
+
+    `interval` is the bar size; round-the-clock markets use wider bars so a
+    full day does not render as a dense scribble. The source is labeled with it
+    (e.g. "intraday_15m").
 
     U.S. market charts are restricted to 9:30 a.m.–4:00 p.m. New York time.
     Global and crypto charts preserve the source instrument timezone and use the
@@ -462,7 +574,7 @@ def fetch_daily_chart_data(
         hist = ticker.history(
             start=session_date.isoformat(),
             end=(session_date + datetime.timedelta(days=1)).isoformat(),
-            interval="5m",
+            interval=interval,
             prepost=False,
         )
 
@@ -495,7 +607,7 @@ def fetch_daily_chart_data(
             "timestamps": [int(timestamp.timestamp()) for timestamp in chart_times],
             "time_zone": "America/New_York" if regular_hours else str(chart_times[0].tzinfo),
             "closes": [round(float(hist["Close"].iloc[position]), 2) for position in chart_positions],
-            "source": "intraday_5m",
+            "source": f"intraday_{interval}",
             "session_date": session_date.isoformat(),
             "error": None,
         }
@@ -654,16 +766,16 @@ def build_editorial_context(datasets, sectors, megacaps, charts, spy, rsp, sessi
             'dispersion_pp':round(valid_stocks[best]['pct_change']-valid_stocks[worst]['pct_change'],4),
             'leader_share_of_positive_returns_pct':round(max(positives)/sum(positives)*100,2) if sum(positives)>0 else None,
             'limitation':'unweighted selected-stock sample; not index contribution or portfolio weight'}
-        add('megacaps','megacap','Selected technology leaders diverge' if valid_stocks[best]['pct_change'] != valid_stocks[worst]['pct_change'] else 'Selected technology returns match',
-            (f'{best} {valid_stocks[best]["pct_change"]:+.2f}% ranked highest in the available technology sample; {worst} {valid_stocks[worst]["pct_change"]:+.2f}% ranked lowest.' if valid_stocks[best]['pct_change'] != valid_stocks[worst]['pct_change'] else f'The {len(ordered)} available technology-stock returns matched at {valid_stocks[best]["pct_change"]:+.2f}%.'),
-            'Dispersion in this selected sample distinguishes stock-specific exposure from the headline technology narrative; no catalyst is verified.',
-            f'Compare next-session participation with today’s {sum(v > 0 for v in positives)}/{len(ordered)} advancing technology names; fewer advancers would narrow leadership.')
+        add('megacaps','megacap','Selected market leaders diverge' if valid_stocks[best]['pct_change'] != valid_stocks[worst]['pct_change'] else 'Selected market leader returns match',
+            (f'{best} {valid_stocks[best]["pct_change"]:+.2f}% ranked highest in the available leadership sample; {worst} {valid_stocks[worst]["pct_change"]:+.2f}% ranked lowest.' if valid_stocks[best]['pct_change'] != valid_stocks[worst]['pct_change'] else f'The {len(ordered)} available leadership-stock returns matched at {valid_stocks[best]["pct_change"]:+.2f}%.'),
+            'Dispersion in this selected sample distinguishes stock-specific exposure from the headline mega-cap narrative; no catalyst is verified.',
+            f'Compare next-session participation with today’s {sum(v > 0 for v in positives)}/{len(ordered)} advancing leaders; fewer advancers would narrow leadership.')
     for symbol,row in valid_stocks.items():
         move=row['pct_change']
         add('stock_'+symbol,'megacap',symbol+' relative performance',
             f'{symbol} {move:+.2f}%'+(f', {move-nd:+.2f} percentage points versus Nasdaq.' if nd is not None else '.'),
             'Relative price strength is observable; earnings, AI demand and order-flow explanations are not established by these data.',
-            f'Check whether {symbol} maintains relative strength alongside the broader technology sample.')
+            f'Check whether {symbol} maintains relative strength alongside the broader leadership sample.')
     for key,symbol in [('nikkei','^N225'),('stoxx','^STOXX50E'),('ftse','^FTSE'),('hsi','^HSI'),('btc','BTC-USD'),('eth','ETH-USD'),('sol','SOL-USD'),('xrp','XRP-USD')]:
         if market.get(symbol):
             add(key,'global' if key in ('nikkei','stoxx','ftse','hsi') else 'crypto',symbol+' session read',
@@ -673,7 +785,7 @@ def build_editorial_context(datasets, sectors, megacaps, charts, spy, rsp, sessi
     intraday={}
     for symbol,chart in charts.items():
         values=chart.get('closes',[])
-        if (chart.get('error') or chart.get('source')!='intraday_5m' or chart.get('session_date')!=session
+        if (chart.get('error') or not str(chart.get('source','')).startswith('intraday_') or chart.get('session_date')!=session
                 or len(values)<3 or not all(finite_number(x) and x>0 for x in values)):
             continue
         high,low=max(values),min(values)
@@ -690,7 +802,7 @@ def build_editorial_context(datasets, sectors, megacaps, charts, spy, rsp, sessi
     context={'session_date':session,'market':market,'sectors':sector_rows,'megacaps':stocks,'derived_metrics':metrics,
              'limitations':['Verified catalysts and calendar items are published separately with sources; never attribute price moves to events.',
                             'Missing/stale/error rows are null; no imputed zero returns.',
-                            'Sector ETFs and the selected technology sample are proxies, not whole-market breadth.',
+                            'Sector ETFs and the selected leadership sample are proxies, not whole-market breadth.',
                             'Futures fallback instruments remain explicitly labeled; global and crypto clocks differ.']}
     return context,cards
 
@@ -1003,7 +1115,12 @@ ARCHIVE_EXCLUDED_KEYS = ("asset_history",)
 
 
 def archive_snapshot(snapshot):
-    return {key: value for key, value in snapshot.items() if key not in ARCHIVE_EXCLUDED_KEYS}
+    archived = {key: value for key, value in snapshot.items() if key not in ARCHIVE_EXCLUDED_KEYS}
+    # Archived pages only read the asset-page quotes' closes; their intraday
+    # paths (~130 KB a day) would grow the permanent archive for nothing.
+    if "asset_quotes" in archived:
+        archived["asset_quotes"] = {symbol: {"result": entry.get("result")} for symbol, entry in archived["asset_quotes"].items()}
+    return archived
 
 
 def fmt_date(dt, include_day=True):
@@ -1089,18 +1206,21 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
             fallback_data=datasets[symbol],
             regular_hours=symbol in US_REGULAR_CHART_TICKERS,
             prefer_multi_day_fallback=symbol in FULL_DAY_CHART_TICKERS,
+            interval="15m" if symbol in CRYPTO_CHART_TICKERS else "5m",
         )
         for symbol in SESSION_CHART_TICKERS
     }
+    # Leadership sample: the largest U.S.-listed growth leaders. The page orders
+    # them by the market cap stored below; this order is only the fallback.
     megacaps = {
-        "AAPL": "Apple",
-        "MSFT": "Microsoft",
         "NVDA": "Nvidia",
+        "AAPL": "Apple",
+        "GOOGL": "Alphabet",
+        "MSFT": "Microsoft",
         "AMZN": "Amazon",
         "META": "Meta Platforms",
-        "SNDK": "SanDisk",
-        "AMD": "Advanced Micro Devices",
-        "INTC": "Intel",
+        "AVGO": "Broadcom",
+        "TSLA": "Tesla",
         "MU": "Micron Technology",
     }
     megacap_data = {}
@@ -1109,6 +1229,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         megacap_data[ticker] = {
             "name": company,
             "result": result,
+            "market_cap": fetch_market_cap(ticker),
             "session_chart": fetch_daily_chart_data(
                 ticker,
                 session_date,
@@ -1117,6 +1238,17 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         }
     spy = enforce_session(fetch_daily_data("SPY", session_date, previous_session_date), "SPY", session_date)
     rsp = enforce_session(fetch_daily_data("RSP", session_date, previous_session_date), "RSP", session_date)
+
+    fetched_rows = {"SPY": spy, "RSP": rsp}
+    asset_quotes = {}
+    for ticker in EXTRA_ASSETS:
+        result = fetched_rows.get(ticker) or enforce_session(
+            fetch_daily_data(ticker, session_date, previous_session_date), ticker, session_date,
+        )
+        asset_quotes[ticker] = {
+            "result": result,
+            "session_chart": fetch_daily_chart_data(ticker, session_date, fallback_data=result),
+        }
 
     asset_catalog = [
         {"slug": "spx", "symbol": "^GSPC", "name": "S&P 500", "category": "Index"},
@@ -1133,6 +1265,10 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         {"slug": "ethereum", "symbol": "ETH-USD", "name": "Ethereum", "category": "Crypto"},
         {"slug": "solana", "symbol": "SOL-USD", "name": "Solana", "category": "Crypto"},
         {"slug": "xrp", "symbol": "XRP-USD", "name": "XRP", "category": "Crypto"},
+        {"slug": "nikkei-225", "symbol": "^N225", "name": "Nikkei 225", "category": "Index"},
+        {"slug": "euro-stoxx-50", "symbol": "^STOXX50E", "name": "Euro Stoxx 50", "category": "Index"},
+        {"slug": "ftse-100", "symbol": "^FTSE", "name": "FTSE 100", "category": "Index"},
+        {"slug": "hang-seng", "symbol": "^HSI", "name": "Hang Seng", "category": "Index"},
     ]
     asset_catalog.extend(
         {"slug": ticker.lower(), "symbol": ticker, "name": company, "category": "Equity"}
@@ -1146,6 +1282,11 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
             "category": "Sector ETF",
         }
         for name, ticker in sectors.items()
+    )
+
+    asset_catalog.extend(
+        {"slug": EXTRA_ASSET_SLUGS.get(ticker, ticker.lower()), "symbol": ticker, "name": name, "category": category}
+        for ticker, (name, category) in EXTRA_ASSETS.items()
     )
 
     history_symbols = [entry["symbol"] for entry in asset_catalog] + ["SPY", "RSP", "QQQ", "IWM", "HYG", "LQD", "TIP", "^FVX", "^TYX"]
@@ -1361,6 +1502,7 @@ def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="
         "market_data": datasets,
         "session_charts": session_charts,
         "mega_cap_data": megacap_data,
+        "asset_quotes": asset_quotes,
         "sector_data": {ticker: sector_results[name] for name, ticker in sectors.items()},
         "daily_sector_performance": sector_perf,
         "all_sectors_ranked": all_sectors_ranked,

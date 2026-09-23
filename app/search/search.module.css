@@ -19,6 +19,17 @@
 .list a > div span { margin-top: 4px; color: var(--ink-soft); font-size: 8px; }
 .list a p { margin: 0; color: var(--ink); font-family: Georgia, serif; font-size: 15px; line-height: 1.4; }
 .list a > b { justify-self: end; font-size: 8px; text-transform: uppercase; }
+.list a.assetRow { grid-template-columns: auto minmax(0, 1fr) 80px auto; gap: 14px; min-height: 68px; }
+.assetName { min-width: 0; }
+.assetName p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list a > div.assetName span { margin-top: 4px; color: var(--ink-soft); font-family: var(--font-data); font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+.assetSpark { display: block; height: 26px; color: var(--ink-soft); }
+.assetSpark svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.assetQuote { display: grid; justify-items: end; gap: 3px; min-width: 88px; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.assetQuote strong { color: var(--ink); font-size: 13px; font-weight: 600; }
+.assetQuote b { font-size: 11px; }
+.arrow { justify-self: end; color: var(--ink-soft); font-size: 15px; font-style: normal; transition: transform .2s ease, color .2s ease; }
+.list a:hover .arrow { color: var(--accent); transform: translateX(3px); }
 .empty { color: var(--ink-soft); font-family: Georgia, serif; }
 @media (max-width: 900px) { .results { grid-template-columns: 1fr; } }
 @media (max-width: 650px) {
@@ -26,6 +37,6 @@
   .hero { padding-top: 24px; }
   .hero > nav { margin-bottom: 36px; }
   .list a { grid-template-columns: 90px 1fr auto; gap: 10px; }
-  .list a > b { font-size: 0; }
-  .list a > b::after { content: "→"; font-size: 15px; }
+  .list a.assetRow { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .assetSpark { display: none; }
 }

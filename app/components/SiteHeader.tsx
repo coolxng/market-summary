@@ -24,9 +24,10 @@ export default function SiteHeader({
   reportLinks?: NavLink[];
 }) {
   const routes: NavLink[] = [
-    { href: root, label: "Close", current: current === "close" },
-    { href: `${root}morning/`, label: "Morning", current: current === "morning" },
-    { href: `${root}reports/`, label: "Reports", current: current === "reports" },
+    { href: root, label: "Today", current: current === "close" },
+    { href: `${root}morning/`, label: "Pre-Market", current: current === "morning" },
+    { href: `${root}reports/`, label: "Archive", current: current === "reports" },
+    { href: `${root}assets/`, label: "Assets", current: current === "asset" },
     { href: `${root}search/`, label: "Search", current: current === "search" },
   ];
 

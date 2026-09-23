@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import SiteHeader from "../components/SiteHeader";
+import FooterLinks from "../components/FooterLinks";
 import Breadcrumbs from "../components/Breadcrumbs";
 import RegimeStrip from "../components/RegimeStrip";
 import KeyboardShortcuts from "../components/KeyboardShortcuts";
@@ -72,7 +73,7 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
 
       <div className={styles.page}>
         <section className={styles.hero}>
-          <Breadcrumbs items={[{ label: "Close Tape", href: "../" }, { label: "Reports" }]} />
+          <Breadcrumbs items={[{ label: "Today", href: "../" }, { label: "Archive" }]} />
           <div className={styles.issueLine}>
             <span>HISTORICAL MARKET INTELLIGENCE</span>
             <span><b>ARCHIVED</b> {reports.length} SESSION{reports.length === 1 ? "" : "S"}</span>
@@ -165,13 +166,13 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
         </section>
 
         <footer className={styles.footer}>
-          <div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span></div>
+          <div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><FooterLinks root="../" /></div>
           <div>
             <span>{reports.length} ARCHIVED SESSION{reports.length === 1 ? "" : "S"}</span><span>PERMANENT DAILY SNAPSHOTS</span><a href="../feed.xml">RSS FEED</a>
             <KeyboardShortcuts bindings={{
               "/": { kind: "focus", id: "archive-search", label: "Search the archive" },
-              h: { kind: "href", href: "../", label: "Latest Close Tape" },
-              m: { kind: "href", href: "../morning/", label: "Morning Tape" },
+              h: { kind: "href", href: "../", label: "Today's close" },
+              m: { kind: "href", href: "../morning/", label: "Pre-Market brief" },
             }} />
           </div>
         </footer>

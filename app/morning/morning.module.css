@@ -26,6 +26,22 @@
 .quoteGrid article > strong { display: block; margin-top: 25px; font-size: clamp(27px, 2.6vw, 40px); font-weight: 650; letter-spacing: -.035em; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .quoteGrid article p { margin: 5px 0 18px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 12px; }
 .quoteGrid article small { color: var(--ink-soft); font-size: 8px; }
+/* Before the first edition: countdown + latest close on the left, coverage list on the right. */
+.awaiting { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 32px clamp(40px, 6vw, 96px); align-items: start; }
+.awaitingLead .empty { padding: 18px 0 0; }
+.latestClose { display: block; margin-top: 28px; padding: 20px 0; border-block: 1px solid var(--ink); }
+.latestClose span { display: block; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .14em; }
+.latestClose strong { display: block; margin-top: 10px; font-family: var(--serif); font-size: clamp(22px, 2.2vw, 30px); font-weight: 500; line-height: 1.15; letter-spacing: -.02em; }
+.latestClose b { display: inline-flex; gap: 8px; margin-top: 14px; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+.latestClose i { font-style: normal; transition: transform .2s ease; }
+.latestClose:hover strong, .latestClose:hover b { color: var(--accent); }
+.latestClose:hover i { transform: translateX(3px); }
+.preview { margin: 0; padding: 0; border-top: 1px solid var(--ink); list-style: none; }
+.preview li { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--line); }
+.preview li > span { color: var(--accent); font-family: var(--font-data); font-size: 11px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.preview strong { font-family: var(--serif); font-size: 19px; font-weight: 500; }
+.preview p { margin: 5px 0 0; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+@media (max-width: 900px) { .awaiting { grid-template-columns: 1fr; } }
 .empty { padding: 28px 0; color: var(--ink-soft); font-family: Georgia, serif; font-size: 14px; line-height: 1.55; }
 .note { display: grid; grid-template-columns: .5fr 1.5fr; gap: 30px; align-items: start; padding: 22px 0; border: solid var(--ink); border-width: 1px 0; }
 .note strong { color: var(--accent); font-size: 9px; letter-spacing: .12em; }

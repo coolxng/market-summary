@@ -33,12 +33,12 @@ export type SessionChart = {
   timestamps?: number[];
   time_zone?: string;
   closes: number[];
-  source: "intraday_5m" | "daily_ohlc_fallback" | "daily_5d_fallback";
+  source: `intraday_${number}m` | "daily_ohlc_fallback" | "daily_5d_fallback";
   session_date: string;
   error: string | null;
 };
 
-export type MegaCapSnapshot = { name: string; result: MarketDatum; session_chart?: SessionChart };
+export type MegaCapSnapshot = { name: string; result: MarketDatum; session_chart?: SessionChart; market_cap?: number | null };
 
 export type EditorialReading = { observed: string; interpretation: string };
 export type EditorialBrief = {
@@ -203,6 +203,8 @@ export type DailyReport = {
   market_data: Record<string, MarketDatum>;
   session_charts: Record<string, SessionChart>;
   mega_cap_data?: Record<string, MegaCapSnapshot>;
+  /** Instruments that only feed asset pages and search (same shape as the tech sample). */
+  asset_quotes?: Record<string, MegaCapSnapshot>;
   sector_data?: Record<string, MarketDatum>;
   daily_sector_performance: Record<string, number>;
   daily_market_breadth: {
@@ -270,4 +272,14 @@ export function catalystsOf(report: { verified_catalysts?: CatalystSet; market_h
     }],
     label: legacy.label,
   };
+}
+
+/** Stored close for any tracked symbol, wherever the report files it. */
+export function quoteRow(report: DailyReport, symbol: string): MarketDatum | undefined {
+  return report.market_data?.[symbol] ?? report.mega_cap_data?.[symbol]?.result ?? report.sector_data?.[symbol] ?? report.asset_quotes?.[symbol]?.result;
+}
+
+/** Stored intraday path for any tracked symbol. */
+export function quoteSessionChart(report: DailyReport, symbol: string): SessionChart | null {
+  return report.session_charts?.[symbol] ?? report.mega_cap_data?.[symbol]?.session_chart ?? report.asset_quotes?.[symbol]?.session_chart ?? null;
 }

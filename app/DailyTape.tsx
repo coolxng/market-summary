@@ -2,6 +2,8 @@ import ShareSummaryButton from "./components/ShareSummaryButton";
 import DeliveryPanel from "./components/DeliveryPanel";
 import WatchlistPanel, { type WatchAsset } from "./components/WatchlistPanel";
 import SiteHeader from "./components/SiteHeader";
+import FooterLinks from "./components/FooterLinks";
+import TickerStrip from "./components/TickerStrip";
 import ReportNav, { type ReportChapter } from "./components/ReportNav";
 import Breadcrumbs from "./components/Breadcrumbs";
 import PublicationBanner from "./components/PublicationBanner";
@@ -12,11 +14,11 @@ import MarketInternals from "./components/MarketInternals";
 import RatesCredit from "./components/RatesCredit";
 import RegimeStrip from "./components/RegimeStrip";
 import RelativeStrength from "./components/RelativeStrength";
-import { sessionPoints } from "./lib/chart";
+import { intradayMinutes, sessionPoints } from "./lib/chart";
 import MarketCalendarList from "./components/MarketCalendarList";
 import CatalystList from "./components/CatalystList";
 import DataStatus, { FeedHealthList, dataStatusLabel } from "./components/DataStatus";
-import { assetCatalog, assetBySymbol } from "./lib/assets";
+import { assetCatalog, assetBySymbol, logoUrl } from "./lib/assets";
 import {
   calendarOf,
   catalystsOf,
@@ -56,28 +58,21 @@ const cryptoMarkets = [
   ["XRP-USD", "XRP", "XRP", "xrp"],
 ] as const;
 
+// Fallback names and logos. Older archived issues carry a different sample, so
+// entries stay here after a ticker leaves the current leadership list.
 const megaCapNames: Record<string, string> = {
-  AAPL: "Apple",
-  MSFT: "Microsoft",
   NVDA: "Nvidia",
+  AAPL: "Apple",
+  GOOGL: "Alphabet",
+  MSFT: "Microsoft",
   AMZN: "Amazon",
   META: "Meta Platforms",
+  AVGO: "Broadcom",
+  TSLA: "Tesla",
   SNDK: "SanDisk",
   AMD: "Advanced Micro Devices",
   INTC: "Intel",
   MU: "Micron Technology",
-};
-
-const megaCapLogoSlugs: Record<string, string> = {
-  AAPL: "apple",
-  MSFT: "microsoft",
-  NVDA: "nvidia",
-  AMZN: "amazon",
-  META: "meta-platforms",
-  SNDK: "sandisk",
-  AMD: "advanced-micro-devices",
-  INTC: "intel",
-  MU: "micron-technology",
 };
 
 function sectorLabel(value: string) {
@@ -103,6 +98,10 @@ function isoWeek(value: Date) {
   return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
 }
 
+function formatMarketCap(value: number) {
+  return value >= 1e12 ? `$${(value / 1e12).toFixed(2)}T` : `$${Math.round(value / 1e9)}B`;
+}
+
 function axisLabels(times: string[]) {
   return [times[0], times[Math.floor(times.length / 2)], times.at(-1)].filter(Boolean) as string[];
 }
@@ -125,6 +124,19 @@ function pathLabel(name: string, values: number[], digits = 2) {
   return `${name} path: ${formatNumber(values[0], digits)} to ${formatNumber(values.at(-1), digits)}, low ${formatNumber(Math.min(...values), digits)}, high ${formatNumber(Math.max(...values), digits)}.`;
 }
 
+/**
+ * Card-level asset link. Its ::after overlay stretches over the whole card, so
+ * the entire card opens the asset page; the visible label is only the cue.
+ */
+function AssetLink({ href, name }: { href: string; name: string }) {
+  return (
+    <a className="asset-card-link" href={href} aria-label={`${name}: price history and asset page`}>
+      <span>View asset</span>
+      <i aria-hidden="true">→</i>
+    </a>
+  );
+}
+
 function IndexCard({ item, chart, name, short, slug, assetBaseHref, currency = false, digits = 2, suffix = "" }: {
   item: MarketDatum | undefined; chart?: SessionChart; name: string; short: string; slug: string; assetBaseHref: string; currency?: boolean; digits?: number; suffix?: string;
 }) {
@@ -138,7 +150,7 @@ function IndexCard({ item, chart, name, short, slug, assetBaseHref, currency = f
       </div>
       <div className="index-value">{row ? `${currency ? "$" : ""}${formatNumber(row.end_price, digits)}${suffix}` : "—"}</div>
       <div className="index-name">{name}</div>
-      <a className="asset-card-link" href={`${assetBaseHref}${slug}/`}>Open asset →</a>
+      <AssetLink href={`${assetBaseHref}${slug}/`} name={name} />
       <Sparkline values={values} positive={(row?.pct_change ?? 0) >= 0} label={pathLabel(name, values, digits)} />
     </article>
   );
@@ -233,13 +245,21 @@ export default function DailyTape({
   const sectorAbsMax = Math.max(0.01, ...sectorEntries.map(([, value]) => Math.abs(value)));
   const topSector = sectorEntries[0];
   const bottomSector = sectorEntries[sectorEntries.length - 1];
-  const megaCaps = Object.keys(megaCapNames).map((ticker) => {
+  // Each issue renders its own sample, largest market cap first; issues stored
+  // before caps were recorded keep their original order.
+  const megaCapData = dailyReport.mega_cap_data ?? {};
+  const megaCapTickers = (Object.keys(megaCapData).length ? Object.keys(megaCapData) : Object.keys(megaCapNames))
+    .map((ticker, index) => ({ ticker, index, cap: megaCapData[ticker]?.market_cap ?? null }))
+    .sort((a, b) => (b.cap ?? -1) - (a.cap ?? -1) || a.index - b.index)
+    .map(({ ticker }) => ticker);
+  const megaCaps = megaCapTickers.map((ticker) => {
     const snapshot = dailyReport.mega_cap_data?.[ticker];
     const item = verified(snapshot?.result);
     const chart = snapshot?.session_chart;
     return {
       ticker,
-      name: snapshot?.name ?? megaCapNames[ticker],
+      name: snapshot?.name ?? megaCapNames[ticker] ?? ticker,
+      marketCap: snapshot?.market_cap ?? null,
       item,
       chartValues: item ? (chart?.closes?.length ? chart.closes : item.closes) : [],
       chartAxis: axisLabels(chart?.times?.length ? chart.times : ["9:30 AM", "4:00 PM"]),
@@ -332,6 +352,7 @@ export default function DailyTape({
   return (
     <main id="main">
       <SiteHeader root={siteRoot} current={archived ? "reports" : "close"} reportLinks={reportLinks} />
+      {!archived && <TickerStrip root={siteRoot} />}
       <ReportNav
         chapters={chapters}
         edition={`${editionShort} close`}
@@ -344,7 +365,7 @@ export default function DailyTape({
         <section className="report-opening" id="brief" aria-label={`The brief: ${archived ? "archived" : "latest"} Daily Tape for ${editionLong}`}>
           {archived && (
             <div className="archive-banner">
-              <Breadcrumbs items={[{ label: "Close Tape", href: siteRoot }, { label: "Reports", href: archiveHref }, { label: shareDate }]} />
+              <Breadcrumbs items={[{ label: "Today", href: siteRoot }, { label: "Archive", href: archiveHref }, { label: shareDate }]} />
               <div className="archive-banner__body" role="note">
                 <div>
                   <span className="archive-banner__label">Archived edition</span>
@@ -564,16 +585,16 @@ export default function DailyTape({
           </section>
 
           <section className="report-subsection" id="mega-cap" aria-labelledby="mega-cap-title">
-            <SectionHeading id="mega-cap" chapter="Drivers" kicker="Mega-cap & AI" title="The leadership engine" share={shareFor("mega-cap", "Mega-cap & AI")}>Close, session range, daily return, and the latest verified price path for the market’s most-watched technology names.</SectionHeading>
+            <SectionHeading id="mega-cap" chapter="Drivers" kicker="Mega-cap & AI" title="The leadership engine" share={shareFor("mega-cap", "Mega-cap & AI")}>The market’s largest leaders, ordered by market cap: close, session range, daily return, and the latest verified price path.</SectionHeading>
             {editorial && <p className="section-read">{editorial.megacap_leadership.observed} <strong>Interpretation:</strong> {editorial.megacap_leadership.interpretation}</p>}
             <div className="mega-grid">
-              {megaCaps.map(({ ticker, name, item, chartValues, chartAxis: axis, chartSource }) => (
+              {megaCaps.map(({ ticker, name, marketCap, item, chartValues, chartAxis: axis, chartSource }) => (
                 <article className="mega-card" key={ticker}>
                   <div className="mega-head">
                     <div className="company-id">
                       {/* eslint-disable-next-line @next/next/no-img-element -- static export; decorative remote logo */}
-                      <img loading="lazy" width={34} height={34} src={`https://s3-symbol-logo.tradingview.com/${megaCapLogoSlugs[ticker]}--big.svg`} alt="" />
-                      <div><strong>{ticker}</strong><span>{name}</span></div>
+                      <img loading="lazy" width={34} height={34} src={logoUrl(assetBySymbol[ticker]) ?? undefined} referrerPolicy="no-referrer" alt="" />
+                      <div><strong>{ticker}</strong><span>{name}{marketCap ? ` · ${formatMarketCap(marketCap)}` : ""}</span></div>
                     </div>
                     <strong className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "UNAVAILABLE"}</strong>
                   </div>
@@ -583,10 +604,10 @@ export default function DailyTape({
                   <div className="mega-range">
                     <span>DAY LOW <b>{item?.day_low != null ? `$${formatNumber(item.day_low)}` : "—"}</b></span>
                     <span>DAY HIGH <b>{item?.day_high != null ? `$${formatNumber(item.day_high)}` : "—"}</b></span>
-                    <a className="asset-card-link" href={`${assetBaseHref}${ticker.toLowerCase()}/`}>Open asset →</a>
+                    <AssetLink href={`${assetBaseHref}${ticker.toLowerCase()}/`} name={name} />
                   </div>
                   <div className="mega-chart">
-                    <div className="mega-chart-meta"><span>REGULAR SESSION</span><small>{chartSource === "intraday_5m" ? "5 MIN" : chartSource ? "OPEN / CLOSE" : "UNAVAILABLE"}</small></div>
+                    <div className="mega-chart-meta"><span>REGULAR SESSION</span><small>{intradayMinutes(chartSource) ? `${intradayMinutes(chartSource)} MIN` : chartSource ? "OPEN / CLOSE" : "UNAVAILABLE"}</small></div>
                     <Sparkline values={chartValues} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(`${ticker} session`, chartValues)} />
                     <div className="mega-axis" aria-hidden="true">{axis.map((time, index) => <span key={`${ticker}-${time}-${index}`}>{time}</span>)}</div>
                   </div>
@@ -643,8 +664,8 @@ export default function DailyTape({
                 const chart = dailyReport.session_charts[symbol];
                 const values = item && chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
                 return (
-                  <div className="global-row" role="row" key={symbol}>
-                    <strong role="cell">{name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">Local close {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</strong><span role="cell">{region}</span>
+                  <div className="global-row global-row--link" role="row" key={symbol}>
+                    <strong role="cell">{assetBySymbol[symbol] ? <a className="global-row__link" href={`${assetBaseHref}${assetBySymbol[symbol].slug}/`}>{name}</a> : name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">Local close {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</strong><span role="cell">{region}</span>
                     <span role="cell">{item ? formatNumber(item.end_price) : "—"}</span>
                     <strong role="cell" className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "Unavailable"}</strong>
                     <div role="cell" className="global-spark"><Sparkline values={values} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(name, values)} /></div>
@@ -667,9 +688,9 @@ export default function DailyTape({
                     <div className="digital-head"><span>{ticker}</span><strong className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "UNAVAILABLE"}</strong></div>
                     <div className="digital-price">{item ? `$${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}` : "—"}</div>
                     <span className="digital-name">{name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">UTC day {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</span>
-                    {asset && <a className="asset-card-link" href={`${assetBaseHref}${asset.slug}/`}>Open asset →</a>}
+                    {asset && <AssetLink href={`${assetBaseHref}${asset.slug}/`} name={name} />}
                     <div className="digital-chart">
-                      <div className="digital-chart-meta"><span>VERIFIED PATH</span><small>{chart?.source === "intraday_5m" ? "5 MIN" : chart?.source === "daily_5d_fallback" ? "5 DAY" : "UNAVAILABLE"}</small></div>
+                      <div className="digital-chart-meta"><span>VERIFIED PATH</span><small>{intradayMinutes(chart?.source) ? `${intradayMinutes(chart?.source)} MIN` : chart?.source === "daily_5d_fallback" ? "5 DAY" : "UNAVAILABLE"}</small></div>
                       <Sparkline values={values} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(name, values, values[0] < 10 ? 4 : 0)} />
                     </div>
                     <p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey] ?? "")}</p>
@@ -741,12 +762,9 @@ export default function DailyTape({
           <div>
             <strong>THE DAILY TAPE</strong>
             <span>Signal over noise.</span>
-            <nav className="footer-nav" aria-label="Footer">
-              <a href={siteRoot}>Latest Close Tape</a>
-              <a href={archiveHref}>All reports</a>
-              <a href={searchHref}>Search</a>
+            <FooterLinks root={siteRoot}>
               <a href="#top">Back to top ↑</a>
-            </nav>
+            </FooterLinks>
             <KeyboardShortcuts
               bindings={{
                 "/": { kind: "href", href: searchHref, label: "Search assets and archive" },

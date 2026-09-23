@@ -129,20 +129,25 @@ function centralDateTime(value: CalendarDate, hour: number, minute: number) {
   return new Date(guess - offset);
 }
 
+/** Next NYSE trading day at `hour:minute` Central that is still in the future. */
+export function nextTradingDayAt(now: Date, hour: number, minute: number) {
+  let candidate = centralCalendarDate(now);
+  for (let index = 0; index < 14; index += 1) {
+    if (isTradingDay(candidate)) {
+      const target = centralDateTime(candidate, hour, minute);
+      if (target.getTime() > now.getTime()) return target;
+    }
+    candidate = addCalendarDays(candidate, 1);
+  }
+  return centralDateTime(addCalendarDays(candidate, 1), hour, minute);
+}
+
 function publicationTarget(value: CalendarDate) {
   return centralDateTime(value, PUBLISH_HOUR, PUBLISH_MINUTE);
 }
 
 function nextPublication(now: Date) {
-  let candidate = centralCalendarDate(now);
-  for (let index = 0; index < 14; index += 1) {
-    if (isTradingDay(candidate)) {
-      const target = publicationTarget(candidate);
-      if (target.getTime() > now.getTime()) return target;
-    }
-    candidate = addCalendarDays(candidate, 1);
-  }
-  return publicationTarget(addCalendarDays(candidate, 1));
+  return nextTradingDayAt(now, PUBLISH_HOUR, PUBLISH_MINUTE);
 }
 
 function relativePublicationName(now: Date, target: Date) {

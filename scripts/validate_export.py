@@ -34,6 +34,7 @@ REQUIRED = (
     "reports/2026-09-18/report.json",
     "morning/index.html",
     "search/index.html",
+    "assets/index.html",
     "assets/nvda/index.html",
     "assets/spx/index.html",
     "assets/bitcoin/index.html",
@@ -47,6 +48,7 @@ CONTENT = (
     ("reports/index.html", "Browse the tape"),
     ("morning/index.html", "Morning Tape"),
     ("search/index.html", "Find the tape"),
+    ("assets/index.html", "Every market on the tape"),
 )
 
 SECRET_PATTERNS = (

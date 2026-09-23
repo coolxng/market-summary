@@ -1,5 +1,5 @@
 import type { DataQuality, FeedStatus } from "../lib/report";
-import { formatSessionDate } from "../lib/format";
+import { formatSessionDate, safeHref } from "../lib/format";
 
 const SOURCE_NAMES: Record<string, string> = {
   yahoo_finance: "Yahoo Finance",
@@ -57,7 +57,7 @@ export function FeedHealthList({ feeds }: { feeds: FeedStatus[] }) {
       {feeds.map((feed) => (
         <li key={feed.id}>
           <i className={`feed-health__dot feed-health__dot--${feed.status}`} aria-hidden="true" />
-          {feed.source_url ? <a href={feed.source_url} target="_blank" rel="noopener noreferrer" data-outbound="source">{feed.name}</a> : <span>{feed.name}</span>}
+          {feed.source_url ? <a href={safeHref(feed.source_url)} target="_blank" rel="noopener noreferrer" data-outbound="source">{feed.name}</a> : <span>{feed.name}</span>}
           <b>{FEED_LABEL[feed.status]}</b>
         </li>
       ))}

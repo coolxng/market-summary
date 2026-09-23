@@ -71,3 +71,17 @@ export function decodeText(value: string) {
   }
   return decoded.replace(/<\/?strong>/g, "");
 }
+
+/**
+ * Feed-supplied URL, only if it is plain http(s); anything else (javascript:,
+ * data:, relative paths) becomes undefined so it is never rendered as a link.
+ */
+export function safeHref(value: string | null | undefined) {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:" ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}

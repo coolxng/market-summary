@@ -33,3 +33,17 @@ export function axisOf(points: ChartPoint[]) {
   if (!points.length) return [];
   return [points[0].label, points[Math.floor(points.length / 2)].label, points.at(-1)!.label];
 }
+
+/** Bar size in minutes for an intraday path ("intraday_15m" → 15), or null for daily fallbacks. */
+export function intradayMinutes(source: string | undefined) {
+  const match = source?.match(/^intraday_(\d+)m$/);
+  return match ? Number(match[1]) : null;
+}
+
+/** One-month sparkline polyline for a 100×32 box. */
+export function sparkPoints(values: number[]) {
+  if (values.length < 2) return null;
+  const min = Math.min(...values);
+  const span = Math.max(...values) - min || 1;
+  return values.map((value, index) => `${(index / (values.length - 1)) * 100},${30 - ((value - min) / span) * 28}`).join(" ");
+}

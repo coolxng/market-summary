@@ -1,6 +1,6 @@
 import type { DailyReport, MarketDatum } from "../lib/report";
 import { verified } from "../lib/report";
-import { formatBps, formatBpsFromPoints, formatNumber, formatPct, formatSessionDate, toneClass } from "../lib/format";
+import { formatBps, formatBpsFromPoints, formatNumber, formatPct, formatSessionDate, toneClass, safeHref } from "../lib/format";
 
 function asRow(value: unknown) {
   return value && typeof value === "object" && "end_price" in value ? verified(value as MarketDatum) : null;
@@ -64,7 +64,7 @@ export default function RatesCredit({ report, assetBaseHref }: { report: DailyRe
         </table>
         <p className="rates-foot">
           {curve ? <>Official curve <AsOf date={curve.as_of} reportDate={report.session_date} />. Treasury publishes it late in the afternoon, so the Close Tape can show the prior session. </> : official ? "The official Treasury curve was unavailable at generation; no substitute is shown. " : "The official Treasury curve was not recorded for this issue. "}
-          {official?.source_url && <a href={official.source_url} target="_blank" rel="noopener noreferrer" data-outbound="source">U.S. Treasury ↗</a>}
+          {official?.source_url && <a href={safeHref(official.source_url)} target="_blank" rel="noopener noreferrer" data-outbound="source">U.S. Treasury ↗</a>}
         </p>
       </div>
 
@@ -98,7 +98,7 @@ export default function RatesCredit({ report, assetBaseHref }: { report: DailyRe
               <span>{label}</span>
               <strong>{series ? `${series.value_bp.toFixed(0)} bps` : "—"}</strong>
               <b className={toneClass(series?.change_bp == null ? null : -series.change_bp)}>{series ? `${formatBps(series.change_bp)} d/d` : credit ? "Unavailable" : "Not recorded"}</b>
-              <small>{series ? <><a href={series.source_url} target="_blank" rel="noopener noreferrer" data-outbound="source">{series.name} · FRED ↗</a> <AsOf date={series.as_of} reportDate={report.session_date} /></> : "ICE BofA option-adjusted spread via FRED"}</small>
+              <small>{series ? <><a href={safeHref(series.source_url)} target="_blank" rel="noopener noreferrer" data-outbound="source">{series.name} · FRED ↗</a> <AsOf date={series.as_of} reportDate={report.session_date} /></> : "ICE BofA option-adjusted spread via FRED"}</small>
             </article>
           );
         })}

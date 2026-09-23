@@ -70,3 +70,25 @@
 .performance > div, .stats > div { border: 0; padding-left: 0; padding-right: 0; }
 .stats { margin-top: -1px; border-top-color: var(--line); }
 .footer { margin-top: 0; border-top: 0; }
+
+/* Company mark beside the name. */
+.title { display: flex; align-items: center; gap: clamp(14px, 1.6vw, 22px); }
+.title > span:last-child { min-width: 0; }
+
+/* 52-week range: low and high at the ends, a dot at the latest close. */
+.yearRange { margin-top: 34px; padding: 18px 0 20px; border-bottom: 1px solid var(--line); }
+.yearRangeHead { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; margin-bottom: 16px; }
+.yearRangeHead span { color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .13em; }
+.yearRangeHead small { color: var(--ink-soft); font-family: var(--serif); font-size: 13px; }
+.yearRangeBar { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 20px; align-items: center; }
+.yearRangeBar > strong { display: grid; gap: 3px; font-family: var(--font-data); font-size: 15px; font-variant-numeric: tabular-nums; }
+.yearRangeBar > strong:last-child { text-align: right; }
+.yearRangeBar > strong small { color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .13em; }
+.track { position: relative; height: 4px; border-radius: 2px; background: var(--line); }
+.track i { position: absolute; inset: 0 auto 0 0; border-radius: 2px; background: color-mix(in srgb, var(--ink) 35%, transparent); }
+.track b { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 3px solid var(--paper); border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+@media (max-width: 650px) {
+  .yearRangeHead { flex-direction: column; gap: 6px; }
+  .yearRangeBar { gap: 12px; }
+  .yearRangeBar > strong { font-size: 13px; }
+}

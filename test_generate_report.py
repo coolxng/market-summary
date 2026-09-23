@@ -181,6 +181,45 @@ class GenerateReportTests(unittest.TestCase):
         self.assertEqual(result["day_high"], 106.0)
         self.assertEqual(result["day_low"], 103.0)
 
+    def official_quote_ticker(self, quote_time):
+        # Yahoo drops the empty session bar (NaN close), so history ends on the prior session.
+        history = FakeHistory(
+            [datetime.date(2026, 9, 18), datetime.date(2026, 9, 21)],
+            [
+                {"Open": 357.31, "High": 359.44, "Low": 348.45, "Close": 349.54},
+                {"Open": 350.64, "High": 357.61, "Low": 349.1, "Close": 354.97},
+            ],
+        )
+        info = {
+            "regularMarketTime": int(quote_time.timestamp()),
+            "regularMarketPrice": 351.16,
+            "regularMarketOpen": 354.1,
+            "regularMarketDayHigh": 355.2,
+            "regularMarketDayLow": 350.22,
+        }
+        return types.SimpleNamespace(history=lambda **kwargs: history, get_info=lambda: info)
+
+    def test_empty_session_bar_uses_official_close_from_quote(self):
+        ticker = self.official_quote_ticker(datetime.datetime(2026, 9, 22, 16, 0, 1, tzinfo=generate_report.NY_TZ))
+        with mock.patch.object(generate_report.yf, "Ticker", return_value=ticker):
+            result = generate_report.fetch_daily_data("GOOGL", datetime.date(2026, 9, 22), datetime.date(2026, 9, 21))
+        self.assertEqual(result["session_date"], "2026-09-22")
+        self.assertEqual(result["end_price"], 351.16)
+        self.assertEqual(result["prev_close"], 354.97)
+        self.assertEqual(result["pct_change"], -1.07)
+        self.assertEqual(result["day_high"], 355.2)
+        self.assertIsNone(result["error"])
+
+    def test_quote_from_before_the_close_is_not_used_as_official(self):
+        ticker = self.official_quote_ticker(datetime.datetime(2026, 9, 22, 15, 30, tzinfo=generate_report.NY_TZ))
+        with (
+            mock.patch.object(generate_report.yf, "Ticker", return_value=ticker),
+            mock.patch.object(generate_report, "fetch_stooq_daily_rows", side_effect=RuntimeError("offline")),
+        ):
+            result = generate_report.fetch_daily_data("GOOGL", datetime.date(2026, 9, 22), datetime.date(2026, 9, 21))
+        # Falls through to the existing behavior: the prior session, which enforce_session rejects.
+        self.assertEqual(result["session_date"], "2026-09-21")
+
     def test_fetch_daily_data_uses_stooq_after_yfinance_failure(self):
         csv_payload = (
             "Date,Open,High,Low,Close,Volume\n"
@@ -283,11 +322,12 @@ class GenerateReportTests(unittest.TestCase):
             *,
             regular_hours=True,
             prefer_multi_day_fallback=False,
+            interval="5m",
         ):
             return {
                 "times": ["9:30 AM", "12:00 PM", "4:00 PM"],
                 "closes": [fallback_data["session_open"], fallback_data["day_high"], fallback_data["end_price"]],
-                "source": "intraday_5m",
+                "source": f"intraday_{interval}",
                 "session_date": session_date.isoformat(),
                 "error": None,
             }
@@ -325,6 +365,12 @@ class GenerateReportTests(unittest.TestCase):
             for symbol in ("BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "^N225", "^STOXX50E", "^FTSE", "^HSI"):
                 self.assertIn(symbol, snapshot["session_charts"])
                 self.assertEqual(len(snapshot["session_charts"][symbol]["closes"]), 3)
+            self.assertIn("session_chart", snapshot["asset_quotes"]["TSM"])
+            self.assertEqual(set(archived_snapshot["asset_quotes"]["TSM"]), {"result"})
+            # Round-the-clock crypto uses 15-minute bars; exchange-hours markets keep 5-minute bars.
+            for symbol in generate_report.CRYPTO_CHART_TICKERS:
+                self.assertEqual(snapshot["session_charts"][symbol]["source"], "intraday_15m")
+            self.assertEqual(snapshot["session_charts"]["^N225"]["source"], "intraday_5m")
             self.assertNotIn("report_window", snapshot)
             self.assertNotIn("hourly_charts", snapshot)
             self.assertIn("asset_history", snapshot)

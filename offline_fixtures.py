@@ -85,6 +85,8 @@ def offline_generation(module, price_lookup=None):
         mock.patch.object(module, "build_market_calendar", side_effect=offline_market_calendar),
         mock.patch.object(module, "build_verified_catalysts", side_effect=offline_catalysts),
     ]
+    if hasattr(module, "fetch_market_cap"):
+        patches.append(mock.patch.object(module, "fetch_market_cap", return_value=None))
     for name in ("fetch_treasury_rates", "fetch_credit_spreads"):
         if hasattr(module, name):
             patches.append(mock.patch.object(module, name, side_effect=lambda *_args, _name=name: offline_rates(_name)))

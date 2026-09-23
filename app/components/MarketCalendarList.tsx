@@ -1,5 +1,5 @@
 import type { CalendarItem, MarketCalendar } from "../lib/report";
-import { formatSessionDate } from "../lib/format";
+import { formatSessionDate, safeHref } from "../lib/format";
 
 function timeLabel(item: CalendarItem) {
   if (item.time) return item.time;
@@ -76,7 +76,7 @@ export default function MarketCalendarList({
                 </div>
                 <div className="tape-calendar__source">
                   {item.source_url
-                    ? <a href={item.source_url} target="_blank" rel="noopener noreferrer" data-outbound="calendar">{item.source} ↗</a>
+                    ? <a href={safeHref(item.source_url)} target="_blank" rel="noopener noreferrer" data-outbound="calendar">{item.source} ↗</a>
                     : <span>{item.source}</span>}
                 </div>
               </li>
