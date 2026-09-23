@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export type ReportChapter = { id: string; label: string; number?: string };
 
@@ -14,11 +14,14 @@ export default function ReportNav({
   edition,
   archived,
   latestHref,
+  status,
 }: {
   chapters: ReportChapter[];
   edition: string;
   archived: boolean;
   latestHref?: string;
+  /** Publication status for the latest edition, shown at the bar's end on wide screens. */
+  status?: ReactNode;
 }) {
   const [active, setActive] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -91,6 +94,7 @@ export default function ReportNav({
         </ol>
         <div className="report-nav__end">
           {archived && latestHref && <a className="report-nav__latest" href={latestHref}>Latest edition →</a>}
+          {status && <span className="report-nav__status">{status}</span>}
           <a className={`report-nav__top${scrolled ? " is-visible" : ""}`} href="#top" aria-hidden={scrolled ? undefined : true} tabIndex={scrolled ? undefined : -1}>
             Top <span aria-hidden="true">↑</span>
           </a>

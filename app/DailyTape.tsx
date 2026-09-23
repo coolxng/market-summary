@@ -171,20 +171,19 @@ function SectionHeading({ id, chapter, kicker, title, children, share, lead = fa
   );
 }
 
-/** A primary report chapter: heavy rule, numbered title, and an in-chapter contents list. */
+/** A primary report chapter, opened by an ink section-front band and the chapter's question. */
 function Chapter({ id, number, title, dek, contents, children, className = "" }: { id: string; number: string; title: string; dek: string; contents: Array<[anchor: string, label: string]>; children: React.ReactNode; className?: string }) {
   return (
     <section className={`report-chapter ${className}`.trim()} id={id} aria-labelledby={`${id}-title`}>
       <header className="report-chapter__header">
-        <p className="report-chapter__number"><span className="visually-hidden">Chapter </span>{number}</p>
-        <div className="report-chapter__title">
+        <div className="report-chapter__band">
+          <p className="report-chapter__number"><span className="visually-hidden">Chapter </span>{number}</p>
           <h2 id={`${id}-title`}>{title}</h2>
-          <p>{dek}</p>
+          <nav className="report-chapter__contents" aria-label={`${title}: sections`}>
+            <ul>{contents.map(([anchor, label]) => <li key={anchor}><a href={`#${anchor}`}>{label}</a></li>)}</ul>
+          </nav>
         </div>
-        <nav className="report-chapter__contents" aria-label={`${title}: sections`}>
-          <span aria-hidden="true">In this chapter</span>
-          <ul>{contents.map(([anchor, label]) => <li key={anchor}><a href={`#${anchor}`}>{label}</a></li>)}</ul>
-        </nav>
+        <p className="report-chapter__dek">{dek}</p>
       </header>
       <div className="report-chapter__body">{children}</div>
     </section>
@@ -338,6 +337,7 @@ export default function DailyTape({
         edition={`${editionShort} close`}
         archived={archived}
         latestHref={archived ? siteRoot : undefined}
+        status={archived ? undefined : <PublicationBanner compact sessionDate={dailyReport.session_date} generatedAt={dailyReport.generated_at} />}
       />
 
       <div className="page" id="top">
@@ -360,12 +360,17 @@ export default function DailyTape({
               </nav>
             </div>
           )}
-          <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
-          {!archived && <PublicationBanner sessionDate={dailyReport.session_date} generatedAt={dailyReport.generated_at} />}
-          <DataStatus sessionDate={dailyReport.session_date} quality={quality} />
           <div className="hero-grid hero">
             <div className="hero-copy">
-              <p className="section-kicker">THE ONE-LINE READ</p>
+              <div className="opening-meta">
+                <p className="issue-line">
+                  <span className="issue-line__edition">{archived ? "Archived Daily Tape" : "Daily Market Intelligence"}</span>
+                  <span>Issue {issue}</span>
+                  <time dateTime={dailyReport.session_date} title={`Previous close to latest close: ${dateRange}`}>{shareDate}</time>
+                  {!archived && <PublicationBanner compact className="issue-line__publication" sessionDate={dailyReport.session_date} generatedAt={dailyReport.generated_at} />}
+                </p>
+                <DataStatus sessionDate={dailyReport.session_date} quality={quality} />
+              </div>
               <h1>
                 {headlineParts.lead}
                 {headlineParts.accent && <em>{headlineParts.accent}</em>}
@@ -412,22 +417,9 @@ export default function DailyTape({
             <article><span>02 / LEADERSHIP</span><strong>{topSector && bottomSector ? `${sectorLabel(topSector[0])} over ${sectorLabel(bottomSector[0])}` : "Sector data unavailable"}</strong><p>{topSector && bottomSector ? `A ${Math.abs(topSector[1] - bottomSector[1]).toFixed(2)}-point spread separated the best and worst sectors.` : "Sector returns were not verified."}</p></article>
             <article><span>03 / INTERNALS</span><strong>{breadthTone} breadth</strong><p>{capWeightMessage}</p></article>
           </div>
-        </section>
 
-        <Chapter
-          id="overview"
-          number="01"
-          title="Market overview"
-          dek="Where markets closed, how the tape has read lately, and the assets you follow."
-          contents={[
-            ["scorecard", "Scorecard"],
-            ...(regimeTimeline.length ? [["regime", "Regime history"] as [string, string]] : []),
-            ...(hasArchiveContext ? [["context", "Historical context"] as [string, string]] : []),
-            ...(!archived ? [["watchlist", "Your watchlist"] as [string, string]] : []),
-          ]}
-        >
-          <section className="report-subsection scorecard" id="scorecard" aria-labelledby="scorecard-title">
-            <SectionHeading id="scorecard" chapter="Overview" kicker="Scorecard" title="The tape, at a glance" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
+          <section className="opening-tape scorecard" id="scorecard" aria-labelledby="scorecard-title">
+            <SectionHeading id="scorecard" chapter="Brief" kicker="The tape" title="The tape, at a glance" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
             <div className="index-grid">
               <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" slug="spx" assetBaseHref={assetBaseHref} />
               <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" slug="nasdaq" assetBaseHref={assetBaseHref} />
@@ -438,18 +430,30 @@ export default function DailyTape({
               <IndexCard item={market["BTC-USD"]} chart={dailyReport.session_charts["BTC-USD"]} name="Bitcoin" short="BTC" slug="bitcoin" assetBaseHref={assetBaseHref} currency digits={0} />
               <IndexCard item={market["ETH-USD"]} chart={dailyReport.session_charts["ETH-USD"]} name="Ethereum" short="ETH" slug="ethereum" assetBaseHref={assetBaseHref} currency digits={0} />
             </div>
-
-            {regimeTimeline.length > 0 && (
-              <section className="regime-history" id="regime" aria-labelledby="regime-title">
-                <div className="regime-history__head">
-                  <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Regime history</span></p>
-                  <h3 id="regime-title">How the tape has read</h3>
-                  <p>Today&apos;s regime in the context of recent sessions. Select a day to see its inputs.</p>
-                </div>
-                <RegimeStrip entries={regimeTimeline} hrefBase={regimeHrefBase} rule={dailyReport.regime_history?.rule} />
-              </section>
-            )}
           </section>
+        </section>
+
+        <Chapter
+          id="overview"
+          number="01"
+          title="Overview"
+          dek="How today fits the recent run of sessions, and the markets you follow."
+          contents={[
+            ...(regimeTimeline.length ? [["regime", "Regime history"] as [string, string]] : []),
+            ...(hasArchiveContext ? [["context", "Historical context"] as [string, string]] : []),
+            ...(!archived ? [["watchlist", "Your watchlist"] as [string, string]] : []),
+          ]}
+        >
+          {regimeTimeline.length > 0 && (
+            <section className="report-subsection regime-history" id="regime" aria-labelledby="regime-title">
+              <div className="regime-history__head">
+                <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Regime history</span></p>
+                <h3 id="regime-title">How the tape has read</h3>
+                <p>Today&apos;s regime in the context of recent sessions. Select a day to see its inputs.</p>
+              </div>
+              <RegimeStrip entries={regimeTimeline} hrefBase={regimeHrefBase} rule={dailyReport.regime_history?.rule} />
+            </section>
+          )}
 
           {hasArchiveContext && archiveComparison && (
             <section className="report-subsection archive-context" id="context" aria-labelledby="context-title">
@@ -491,7 +495,7 @@ export default function DailyTape({
           id="leadership"
           number="02"
           title="Leadership & participation"
-          dek="What is actually participating in the move, and is it holding underneath?"
+          dek="What is actually participating in the move?"
           contents={[
             ["sectors", "Sector leadership"],
             ...(hasRelativeStrength ? [["relative-strength", "Relative strength"] as [string, string]] : []),

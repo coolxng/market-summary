@@ -62,3 +62,11 @@
   .mentions span { grid-column: 1; grid-row: 2; }
   .mentions strong { grid-row: 1 / span 2; align-self: center; }
 }
+
+/* Broadsheet: open quote block and rule strips instead of boxes. */
+.quote { padding: 16px 0 0; border: 0; border-top: 3px solid var(--ink); background: transparent; }
+.performance, .stats { gap: 0; border: 0; border-block: 1px solid var(--line); border-top-color: var(--ink); }
+.performance, .stats { column-gap: clamp(16px, 2vw, 32px); }
+.performance > div, .stats > div { border: 0; padding-left: 0; padding-right: 0; }
+.stats { margin-top: -1px; border-top-color: var(--line); }
+.footer { margin-top: 0; border-top: 0; }
