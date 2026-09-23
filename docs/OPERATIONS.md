@@ -21,6 +21,7 @@ The close and morning publications are intentionally separate Railway cron servi
 | `GITHUB_TOKEN` | Railway | Commits generated artifacts |
 | `GITHUB_BRANCH` | Railway | Branch the crons commit to (default `main`) |
 | `DISCORD_WEBHOOK_URL` | Railway | Optional delivery channel |
+| `DAILY_TAPE_CONTACT_EMAIL` | Railway | Contact email added to the User-Agent for bls.gov only; BLS returns 403 without one. Kept out of the repository |
 | `DAILY_TAPE_DISABLED_FEEDS` | Railway | Optional comma-separated feed ids to skip |
 | `MARKET_SUMMARY_REGENERATE` | Railway | Manual-only override to rebuild the latest completed Close Tape session; remove after validation |
 | `PLAUSIBLE_DOMAIN` | GitHub repository variable | Optional, cookieless analytics |
