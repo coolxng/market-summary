@@ -1,102 +1,144 @@
 <div align="center">
 
-<img src="./public/logo.png" alt="The Daily Tape favicon" width="92" />
+<img src="./public/logo.png" alt="The Daily Tape logo" width="92" />
 
 # The Daily Tape
 
-**Automated market-close intelligence for the latest completed U.S. trading session.**
+**A daily U.S. market briefing: the setup before the open and the full read after the close.**
 
-[Open the live dashboard](https://coolxng.github.io/market-summary/)
+### [Open the live dashboard →](https://coolxng.github.io/market-summary/)
 
 [![Deploy GitHub Pages](https://github.com/coolxng/market-summary/actions/workflows/deploy-pages.yml/badge.svg)](https://github.com/coolxng/market-summary/actions/workflows/deploy-pages.yml)
 
 </div>
 
 <p align="center">
-  <img src="./assets/screenshots/The-daily-tape.png" alt="The Daily Tape market overview, regime monitor, and scorecard" width="900" />
+  <img src="./assets/screenshots/The-daily-tape.png" alt="Close Tape home page split diagonally between the light and dark themes, showing the headline, regime monitor, takeaways and index scorecard" width="900" />
 </p>
 
-## Overview
+<p align="center">
+  <a href="https://coolxng.github.io/market-summary/">Live Dashboard</a> ·
+  <a href="https://coolxng.github.io/market-summary/morning/">Morning Tape</a> ·
+  <a href="https://coolxng.github.io/market-summary/reports/">Archive</a> ·
+  <a href="https://coolxng.github.io/market-summary/feed.xml">RSS</a>
+</p>
 
-**Market Summary** is an automated data pipeline and static web dashboard that turns the latest completed U.S. trading session into a compact daily report called **The Daily Tape**.
+The Daily Tape has two editions: the **Morning Tape** before the open and the **Close Tape** after the session.
 
-Instead of stopping at raw quotes, it combines index performance, market breadth, sector leadership, mega-cap and semiconductor moves, rates, the dollar, commodities, global equities, crypto, intraday price paths, and market commentary in one report.
+> **Publishes every U.S. trading day.** Morning Tape at about 7:45 AM CT. Close Tape from about 3:30 PM CT, after the 3:00 PM CT close.
 
-It is built for fast end-of-session review: **what moved, where leadership came from, how broad the move was, and what matters next.**
+## Why The Daily Tape?
 
-| Area | Implementation |
-| --- | --- |
-| Market data | Yahoo Finance through `yfinance` |
-| Report generation | Python |
-| Frontend | Next.js 16, React 19, TypeScript |
-| Production automation | Railway cron job |
-| Static deployment | GitHub Pages |
-| Narrative layer | Claude Sonnet 5, with deterministic fallback copy in the generator |
+The Daily Tape puts indexes, sectors, rates, breadth, crypto, releases and headlines on one page, so you do not have to check each separately.
 
-## What it tracks
+- **See the whole market, not just the S&P 500:** sectors, rates, commodities, global equities and crypto beside the indexes.
+- **Tell broad moves from concentrated ones:** participation and equal-weight checks show how many names carried the move.
+- **See leadership and cross-asset signals together:** sector ranks and mega-caps next to yields, credit and the dollar.
+- **Come back later:** every completed session is permanently archived.
 
-- **Market scorecard:** S&P 500, Nasdaq Composite, Dow Jones, Russell 2000, VIX, 10-year Treasury yield, DXY, Bitcoin and Ethereum.
-- **Sector leadership:** all 11 S&P sector ETFs ranked by session return, plus relative strength versus SPY over 1D, 5D and 1M for sectors and tracked large caps.
-- **Market internals:** sectors advancing, equal weight versus cap weight (1D/5D/1M), sector ETFs above their 20/50/200-day averages, 20-session highs and lows, and a 20-session sector advance/decline line. Every measure names its tracked universe; exchange-wide NYSE/Nasdaq breadth is listed as not covered rather than approximated.
-- **Rates and credit:** Cboe yield indexes for the session, the official U.S. Treasury par curve (including 2Y, 2s10s, 3M–10Y, 5s30s and real yields), actual ICE BofA credit spreads from FRED, and bond ETFs clearly labeled as price proxies.
-- **Regime history:** 60 sessions of Constructive / Mixed / Defensive classifications. Days published in an archived issue are shown as published; other days are reconstructed with the same rule and labeled.
-- **Verified catalysts:** Federal Reserve, BLS and BEA releases first, then an exact allowlist of reputable publishers. Every item has a source, link and timestamp, and none is presented as the cause of a move.
-- **Market calendar:** U.S. economic releases (actual, consensus and previous as published), Treasury auctions, tracked earnings and NYSE market-structure dates for the current and next session, in Central Time.
-- **Mega-cap and semiconductor leadership:** AAPL, MSFT, NVDA, AMZN, META, SNDK, AMD, INTC and MU.
-- **Cross-asset context:** gold, crude oil, major global equity indexes, Bitcoin, Ethereum, Solana and XRP, each labeled with its own local session date.
-- **Data health:** a freshness and status strip (Verified / Partial / Some feeds unavailable / Limited) and a per-source feed list on every issue.
+## Follow along
 
-## Daily workflow
+- **Bookmark** the [live dashboard](https://coolxng.github.io/market-summary/). It always opens on the latest Close Tape.
+- **Subscribe** to the [RSS feed](https://coolxng.github.io/market-summary/feed.xml) for each new Close Tape.
+- **Install it as an app.** In Safari on iPhone or iPad, tap Share, then Add to Home Screen. In Chrome on Android, use the install or add-to-home-screen option in the browser menu.
 
-- **Morning Tape (`/morning/`):** index futures with freshness and delay labels, overnight Asia and Europe, the official Treasury curve, the dollar, commodities, crypto, today's calendar, overnight catalysts and a short observed-only "What matters today".
-- **Close Tape (`/`):** the end-of-session report.
-- **Asset pages (`/assets/<slug>/`):** interactive 1D / 5D / 1M / 3M / YTD / 1Y charts with pointer, touch and keyboard inspection, session range, moving averages, tagged catalysts and recent archive sessions.
-- **Archive (`/reports/`):** permanent dated issues with search by date, headline, sector or ticker, a regime filter, previous/next navigation and historical comparisons.
-- **Watchlist:** up to 20 tracked assets stored only in the browser.
-- **Delivery and sharing:** Discord posts for new issues only, RSS, an installable PWA that never serves stale market data offline, and permanent share links for key sections.
-- **Keyboard:** press `?` on any page for shortcuts.
-
-### Production services
-
-The close and morning publications are intentionally separate Railway cron services:
-
-- `railway.toml` runs the Close Tape in both possible UTC slots and `railway_cron.py` keeps only the **3 PM America/Chicago** slot. This handles daylight-saving changes automatically.
-- `railway.morning.toml` runs the Morning Tape in both possible UTC slots and `morning_cron.py` keeps only the **7 AM America/Chicago** slot.
-- Manual runs can bypass the local-time guards with `MARKET_SUMMARY_FORCE=1` or `MORNING_TAPE_FORCE=1`.
-- For a deliberate live-provider validation of an already-published Close Tape session, temporarily pair `MARKET_SUMMARY_FORCE=1` with `MARKET_SUMMARY_REGENERATE=1`. Remove the regeneration flag after the test.
-- Both publishers commit generated JSON artifacts back to the configured `GITHUB_BRANCH`.
-
-## Historical report archive
-
-The Daily Tape keeps a permanent archive of completed trading sessions so past reports can be revisited, shared, and referenced later.
-
-- **Latest live dashboard:** https://coolxng.github.io/market-summary/
-- **Report archive:** https://coolxng.github.io/market-summary/reports/
-- **Example archived session:** https://coolxng.github.io/market-summary/reports/2026-09-18/
-- Every completed trading session gets its own permanent `/reports/YYYY-MM-DD/` page.
-- Each archived session preserves a JSON snapshot that the current Next.js report UI renders.
+The app never stores pages or report data offline, so it cannot show a stale session. Offline, it shows a notice.
 
 ## Product tour
 
 ### Market overview
 
-The opening view condenses the session into one headline, a regime monitor, key takeaways, and the primary index scorecard. It is designed to answer the broad market question before the reader moves into individual sectors or names.
+A headline, a regime monitor (risk appetite, participation, rates, dollar), three takeaways and an index scorecard tell you what kind of session it was.
 
 ### Sector leadership
 
-<p align="center">
-  <img src="./assets/screenshots/Where-the-tape.png" alt="The Daily Tape sector leadership ranking with breadth checks" width="900" />
-</p>
+All 11 sector ETFs are ranked by session return. Relative strength against SPY over 1D, 5D and 1M shows which leaders are persistent and which are one-day moves.
 
-All 11 sector ETFs are ranked by session return and paired with breadth checks. That makes it easier to distinguish a broad move from an index move carried by a small group of large stocks.
-
-### The Leadership Engine
+### Leadership Engine
 
 <p align="center">
-  <img src="./assets/screenshots/The-Leadership-engine.png" alt="The Daily Tape sector leadership ranking with breadth checks" width="900" />
+  <img src="./assets/screenshots/leadership-engine.png" alt="Leadership Engine: nine mega-cap stock cards ordered by market cap, each with daily return, return versus the Nasdaq, close, day range and a five-minute session price path" width="900" />
 </p>
 
-Shows Stock prices at close.
+Nine of the largest U.S.-listed growth stocks (NVDA, AAPL, GOOGL, MSFT, AMZN, META, AVGO, TSLA, MU), ordered by market cap. Each card shows return versus the Nasdaq, close, day range and session path; a summary names the strongest and weakest. That shows whether mega-cap leadership moved together or split. It is an unweighted sample, not index contribution.
+
+### Morning Tape
+
+<p align="center">
+  <img src="./assets/screenshots/morning-tape.png" alt="Morning Tape: data health panel, What matters today summary, U.S. index futures versus the prior close, and overnight Asia and Europe markets" width="900" />
+</p>
+
+U.S. futures versus the prior close, overnight Asia and Europe, the Treasury curve, the dollar, commodities, crypto, today's calendar and overnight catalysts. Quotes older than 90 minutes are marked delayed.
+
+### Asset pages
+
+<p align="center">
+  <img src="./assets/screenshots/asset-page.png" alt="S&P 500 asset page with its one-day price chart hovered at 11:55 AM CT, showing the tooltip with the index level at that time" width="900" />
+</p>
+
+Each of the 89 tracked assets has a page with a 1D to 1Y chart you can inspect by pointer, touch or keyboard, plus its session and 52-week range, 20-, 50- and 200-day averages, tagged catalysts and recent archived sessions.
+
+### Archive and search
+
+<p align="center">
+  <img src="./assets/screenshots/archive.png" alt="Report archive: dated sessions with headline, regime tag, S&P 500, Nasdaq, VIX and sectors-up figures, under a search field and a regime filter" width="900" />
+</p>
+
+Every completed session has a permanent page at `/reports/YYYY-MM-DD/`. Search by date, headline, sector or ticker, filter by regime, and step between sessions to compare them.
+
+### Watchlist
+
+Save up to 20 tracked assets. The list is stored only in your browser.
+
+### Keyboard shortcuts
+
+Press `?` on any page for its shortcuts: `/` searches, `A` opens the archive, `←` `→` step between sessions, and single letters jump to sections.
+
+## What it tracks
+
+- **Markets:** S&P 500, Nasdaq Composite, Dow, VIX, 10-year yield, DXY, Bitcoin and Ethereum.
+- **Sectors and leadership:** 11 sector ETFs, relative strength versus SPY, and nine mega-cap leaders.
+- **Internals:** participation measured on named, tracked universes.
+- **Rates and credit:** Cboe yield indexes, the official Treasury curve and actual credit spreads.
+- **Macro calendar and catalysts:** releases, auctions, earnings and source-linked developments.
+- **Cross-asset:** gold, crude oil, global indexes, Bitcoin, Ethereum, Solana and XRP, each with its own session date.
+- **Data health:** a status for each issue and source.
+
+<details>
+<summary><b>Regime history</b></summary>
+
+60 sessions of Constructive, Mixed and Defensive classifications. Days published in an archived issue are shown as published; other days are reconstructed from daily closes with the same rule and labeled as reconstructed.
+
+</details>
+
+<details>
+<summary><b>Internals</b></summary>
+
+Sectors advancing, equal versus cap weight (1D, 5D, 1M), sector ETFs above their 20-, 50- and 200-day averages, 20-session highs and lows, and a sector advance/decline line. Every measure names its tracked universe. Exchange-wide NYSE and Nasdaq breadth is listed as not covered rather than approximated.
+
+</details>
+
+<details>
+<summary><b>Rates and credit</b></summary>
+
+Cboe yield indexes and the official Treasury par curve (2Y, 2s10s, 3M to 10Y, 5s30s, real yields). Credit uses actual ICE BofA option-adjusted spreads from FRED. Bond ETFs are labeled as price proxies, not spreads.
+
+</details>
+
+<details>
+<summary><b>Macro calendar and catalysts</b></summary>
+
+U.S. releases (actual, consensus, previous), Treasury auctions, tracked earnings and NYSE market-structure dates for today and the next session, in Central Time. Catalysts come first from the Federal Reserve, BLS and BEA, then from an exact allowlist of publishers.
+
+</details>
+
+## How the data works
+
+- Every verified catalyst carries its source, link and timestamp, and none is presented as the cause of a move.
+- Unavailable values are stored as null, not zero, and shown as unavailable.
+- Prices must pass sanity bounds, and rows from a different session than the report are rejected.
+- Each source reports its status, and every issue has a data health strip (Verified, Partial, Some feeds unavailable or Limited).
+- If the narrative model is unavailable or disabled, the report uses deterministic copy built from the same data. Figures always come from the data, not the model.
 
 ## How it works
 
@@ -130,35 +172,19 @@ GitHub Pages workflow
 Next.js static export → live dashboard
 ```
 
-## Configuration
-
-| Variable | Where | Purpose |
-| --- | --- | --- |
-| `ANTHROPIC_API_KEY` | Railway | Optional narrative rewording; the report falls back to deterministic copy without it |
-| `GITHUB_TOKEN` | Railway | Commits generated artifacts |
-| `GITHUB_BRANCH` | Railway | Branch the crons commit to (default `main`) |
-| `DISCORD_WEBHOOK_URL` | Railway | Optional delivery channel |
-| `DAILY_TAPE_DISABLED_FEEDS` | Railway | Optional comma-separated feed ids to skip |
-| `MARKET_SUMMARY_REGENERATE` | Railway | Manual-only override to rebuild the latest completed Close Tape session; remove after validation |
-| `PLAUSIBLE_DOMAIN` | GitHub repository variable | Optional, cookieless analytics |
-
-No keys are needed for the calendar, catalyst, Treasury or FRED feeds.
-
-More detail: [data providers](docs/DATA_PROVIDERS.md), [delivery](docs/DELIVERY.md), [analytics](docs/ANALYTICS.md).
-
-## Development
-
-```bash
-python -m unittest -v          # fully offline; no test touches the network
-npm run lint
-npm run build:pages            # static export to ./out
-python scripts/validate_export.py
-```
+| Area | Implementation |
+| --- | --- |
+| Market data | Yahoo Finance through `yfinance`, with Stooq as a fallback for core indexes |
+| Report generation | Python |
+| Frontend | Next.js 16, React 19, TypeScript |
+| Scheduled publishing | Railway cron jobs |
+| Hosting | GitHub Pages |
+| Narrative layer | Claude Sonnet 5, with deterministic fallback copy |
 
 ## Data notes
 
-Market data is sourced through `yfinance` and therefore depends on upstream availability and data quality. The generator applies sanity bounds, rejects rows from a different session than the report, stores unavailable values as null rather than zero, and records every source's status in the report. Those checks are not a guarantee that every upstream quote is error-free.
+Data quality depends on upstream availability. Validation does not guarantee every upstream quote is error-free, so verify important market information independently before making financial decisions.
 
-When Anthropic is enabled, narrative text is machine-generated from the report context. Important market information should still be verified against primary or institutional sources before it is used for financial decisions.
+The Daily Tape is informational only and is not financial advice.
 
 © 2026 coolxng. All rights reserved.
