@@ -364,7 +364,7 @@ export default function DailyTape({
             <div className="hero-copy">
               <div className="opening-meta">
                 <p className="issue-line">
-                  <span className="issue-line__edition">{archived ? "Archived Daily Tape" : "Daily Market Intelligence"}</span>
+                  <span className="issue-line__edition">{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span>
                   <span>Issue {issue}</span>
                   <time dateTime={dailyReport.session_date} title={`Previous close to latest close: ${dateRange}`}>{shareDate}</time>
                   {!archived && <PublicationBanner compact className="issue-line__publication" sessionDate={dailyReport.session_date} generatedAt={dailyReport.generated_at} />}
