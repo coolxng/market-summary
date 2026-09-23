@@ -45,10 +45,7 @@ The Daily Tape puts indexes, sectors, rates, breadth, crypto, releases and headl
 The app never stores pages or report data offline, so it cannot show a stale session. Offline, it shows a notice.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./assets/screenshots/mobile-close-tape-dark.png" />
-    <img src="./assets/screenshots/mobile-close-tape-light.png" alt="Close Tape in an iPhone frame: site header, verified-quotes indicator, session headline and summary" width="300" />
-  </picture>
+  <img src="./assets/screenshots/mobile-close-tape.png" alt="Close Tape in Safari on an iPhone: site header, data status, session headline and summary" width="300" />
 </p>
 
 ## Product tour
