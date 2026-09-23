@@ -1173,7 +1173,15 @@ footer {
   .report-nav__edition span { font-size: 8px; }
   .report-nav__edition b { font-size: 10px; }
   .report-nav__end { display: none; }
-  .report-nav ol { padding-right: 24px; -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent); }
+  .report-nav ol {
+    --fade-start: 0px; --fade-end: 0px;
+    padding: 0 16px 0 4px; scroll-padding-inline: 12px 16px; scroll-snap-type: x proximity; overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+    mask-image: linear-gradient(to right, transparent, #000 var(--fade-start), #000 calc(100% - var(--fade-end)), transparent);
+  }
+  .report-nav ol[data-more-start] { --fade-start: 24px; }
+  .report-nav ol[data-more-end] { --fade-end: 32px; }
+  .report-nav li { scroll-snap-align: start; }
   .report-nav ol a { min-height: 44px; }
   .archive-banner__body { flex-direction: column; align-items: stretch; padding: 18px; }
   .archive-banner__latest { text-align: center; }
