@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import snapshot from "../../morning_snapshot.json";
-import report from "../../report_snapshot.json";
+import snapshot from "../../data/morning_snapshot.json";
+import report from "../../data/report_snapshot.json";
 import MorningTape, { type MorningSnapshot } from "./MorningTape";
 import { reportHeadline } from "../lib/archive";
 import type { DailyReport } from "../lib/report";

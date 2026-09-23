@@ -1,10 +1,10 @@
 [build]
 builder = "DOCKERFILE"
 dockerfilePath = "Dockerfile.railway"
-watchPatterns = ["**", "!/report_snapshot.json", "!/public/reports/**/report.json", "!/morning_snapshot.json", "!/public/morning/latest.json"]
+watchPatterns = ["**", "!/data/report_snapshot.json", "!/public/reports/**/report.json", "!/data/morning_snapshot.json", "!/public/morning/latest.json"]
 
 [deploy]
-startCommand = "python morning_cron.py"
+startCommand = "python pipeline/morning_cron.py"
 # Railway cron schedules are UTC. Run both possible UTC slots and let
 # morning_cron.py's America/Chicago guard select the 7 AM local slot.
 cronSchedule = "45 12,13 * * 1-5"

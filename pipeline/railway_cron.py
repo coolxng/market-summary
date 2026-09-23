@@ -18,7 +18,7 @@ REPOSITORY = os.environ.get("GITHUB_REPOSITORY", "coolxng/market-summary")
 BRANCH = os.environ.get("GITHUB_BRANCH", "main")
 GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 SITE_URL = os.environ.get("MARKET_SUMMARY_URL", "https://coolxng.github.io/market-summary/")
-BASE_ARTIFACTS = (Path("report_snapshot.json"),)
+BASE_ARTIFACTS = (Path("data/report_snapshot.json"),)
 CENTRAL_TZ = ZoneInfo("America/Chicago")
 PUBLISH_RETRY_START = datetime.time(15, 25)
 PUBLISH_RETRY_END = datetime.time(16, 29, 59)
@@ -114,10 +114,10 @@ def remote_blob_sha(path):
 
 def remote_snapshot():
     encoded_branch = urllib.parse.quote(BRANCH, safe="")
-    result = api_request("GET", f"/contents/report_snapshot.json?ref={encoded_branch}")
+    result = api_request("GET", f"/contents/data/report_snapshot.json?ref={encoded_branch}")
     content = result.get("content", "").replace("\n", "")
     if not content:
-        raise RuntimeError("Remote report_snapshot.json did not include file content.")
+        raise RuntimeError("Remote data/report_snapshot.json did not include file content.")
     return json.loads(base64.b64decode(content).decode("utf-8"))
 
 
@@ -267,7 +267,7 @@ def main():
         require_environment()
         if already_published_for_local_date():
             return
-        run([sys.executable, "generate_report.py"])
+        run([sys.executable, "pipeline/generate_report.py"])
         run([sys.executable, "-m", "unittest", "-v"], env=test_environment())
         snapshot = validate_artifacts()
         publish_result = commit_artifacts(snapshot)

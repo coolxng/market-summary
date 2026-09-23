@@ -6,12 +6,12 @@ Owner-facing notes for running The Daily Tape. The product-facing overview lives
 
 The close and morning publications are intentionally separate Railway cron services. Railway cron schedules are in UTC, so each service runs in every UTC slot that can map to its local publish time, and a local-time guard in Python keeps only the right one. This handles daylight-saving changes automatically.
 
-- `railway.toml` runs the Close Tape every 15 minutes from 20:00 to 22:45 UTC on weekdays (`*/15 20-22 * * 1-5`). `railway_cron.py` only proceeds inside the **3:25 to 4:29 PM America/Chicago** publish window, so the first attempt is at 3:30 PM CT and later slots act as retries. Once the remote `report_snapshot.json` already has today's session date, retries exit without API or market-data work.
+- `railway.toml` runs the Close Tape every 15 minutes from 20:00 to 22:45 UTC on weekdays (`*/15 20-22 * * 1-5`). `railway_cron.py` only proceeds inside the **3:25 to 4:29 PM America/Chicago** publish window, so the first attempt is at 3:30 PM CT and later slots act as retries. Once the remote `data/report_snapshot.json` already has today's session date, retries exit without API or market-data work.
 - `railway.morning.toml` runs the Morning Tape at 12:45 and 13:45 UTC on weekdays (`45 12,13 * * 1-5`). `morning_cron.py` keeps only the slot that falls in the **7 AM America/Chicago** hour, so it publishes at 7:45 AM CT.
 - Manual runs can bypass the local-time guards with `MARKET_SUMMARY_FORCE=1` or `MORNING_TAPE_FORCE=1`.
 - For a deliberate live-provider validation of an already-published Close Tape session, temporarily pair `MARKET_SUMMARY_FORCE=1` with `MARKET_SUMMARY_REGENERATE=1`. Remove the regeneration flag after the test.
 - `MARKET_SUMMARY_PAUSED=1` makes the Close Tape service exit without API usage.
-- Both publishers commit generated JSON artifacts back to the configured `GITHUB_BRANCH`. The Close Tape writes `report_snapshot.json` and `public/reports/YYYY-MM-DD/report.json`; the Morning Tape writes `morning_snapshot.json` and `public/morning/latest.json`. Those paths are excluded from Railway's build watch patterns so artifact commits do not trigger rebuilds.
+- Both publishers commit generated JSON artifacts back to the configured `GITHUB_BRANCH`. The Close Tape writes `data/report_snapshot.json` and `public/reports/YYYY-MM-DD/report.json`; the Morning Tape writes `data/morning_snapshot.json` and `public/morning/latest.json`. Those paths are excluded from Railway's build watch patterns so artifact commits do not trigger rebuilds.
 
 ## Configuration
 

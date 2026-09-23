@@ -245,7 +245,7 @@ def resolve_completed_sessions(now=None, session_dates=None):
     return completed_dates[-1], completed_dates[-2]
 
 
-def snapshot_session_date(snapshot_path="report_snapshot.json"):
+def snapshot_session_date(snapshot_path="data/report_snapshot.json"):
     path = Path(snapshot_path)
     if not path.exists():
         return None
@@ -257,7 +257,7 @@ def snapshot_session_date(snapshot_path="report_snapshot.json"):
         return None
 
 
-def has_new_session(session_date, snapshot_path="report_snapshot.json"):
+def has_new_session(session_date, snapshot_path="data/report_snapshot.json"):
     existing_session = snapshot_session_date(snapshot_path)
     return existing_session is None or session_date > existing_session
 
@@ -1132,7 +1132,7 @@ def fmt_date(dt, include_day=True):
 # ─────────────────────────────────────────────
 # REPORT SNAPSHOT GENERATOR
 # ─────────────────────────────────────────────
-def generate_html(now=None, snapshot_path="report_snapshot.json", archive_root="public/reports"):
+def generate_html(now=None, snapshot_path="data/report_snapshot.json", archive_root="public/reports"):
     session_date, previous_session_date = resolve_completed_sessions(now)
     if not has_new_session(session_date, snapshot_path):
         if not regenerate_existing_session():

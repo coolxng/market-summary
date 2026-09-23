@@ -1,4 +1,4 @@
-import report from "../../report_snapshot.json";
+import report from "../../data/report_snapshot.json";
 import { assetCatalog, isYieldAsset, logoUrl, type AssetDefinition } from "./assets";
 import { quoteRow, verified, type DailyReport } from "./report";
 import { formatBpsFromPoints, formatNumber, formatPct, toneClass } from "./format";
