@@ -266,5 +266,16 @@ class CatalystProviderTests(unittest.TestCase):
         self.assertIn("PermissionError", feed["error"])
 
 
+class ContactEmailUserAgentTests(unittest.TestCase):
+    def test_contact_email_is_sent_only_to_bls(self):
+        with mock.patch.dict(os.environ, {"DAILY_TAPE_CONTACT_EMAIL": "tape@example.com"}):
+            self.assertEqual(data_providers.user_agent_for("https://www.bls.gov/feed/bls_latest.rss"), "TheDailyTape/1.0 (tape@example.com)")
+            self.assertEqual(data_providers.user_agent_for("https://www.federalreserve.gov/feeds/speeches.xml"), data_providers.USER_AGENT)
+
+    def test_default_user_agent_without_contact_email(self):
+        with mock.patch.dict(os.environ, {"DAILY_TAPE_CONTACT_EMAIL": ""}):
+            self.assertEqual(data_providers.user_agent_for("https://www.bls.gov/feed/bls_latest.rss"), data_providers.USER_AGENT)
+
+
 if __name__ == "__main__":
     unittest.main()
