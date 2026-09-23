@@ -1297,11 +1297,6 @@ footer {
   .footer-meta { justify-content: flex-start; margin-top: 30px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
-  .publication-banner--building .publication-banner__dot { animation: none !important; }
-}
-
 /* Broadsheet responsive */
 @media (max-width: 1080px) {
   .comparison-strip > div:nth-child(odd), .macro-reference > div:nth-child(odd) { padding-left: 0; }
