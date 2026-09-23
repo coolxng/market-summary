@@ -1,23 +1,860 @@
 {
   "report_type": "morning_tape",
-  "market_date": null,
-  "generated_at": null,
-  "status": "awaiting_first_run",
+  "market_date": "2026-09-23",
+  "trading_day": true,
+  "previous_session": "2026-09-22",
+  "generated_at": "2026-09-23T08:47:25.748989-04:00",
+  "status": "ready",
   "data_quality": {
-    "valid": 0,
-    "total": 0,
-    "coverage_pct": 0,
-    "delayed": [],
-    "feeds": []
+    "valid": 16,
+    "total": 16,
+    "coverage_pct": 100.0,
+    "delayed": [
+      "2YY=F"
+    ],
+    "feeds": [
+      {
+        "id": "fair_economy_economic",
+        "name": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "status": "ok",
+        "as_of": "2026-09-23T12:47:28.438918+00:00",
+        "error": null
+      },
+      {
+        "id": "treasury_auctions",
+        "name": "U.S. Treasury upcoming auctions",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "status": "ok",
+        "as_of": "2026-09-23T12:47:28.853719+00:00",
+        "error": null
+      },
+      {
+        "id": "yahoo_earnings",
+        "name": "Yahoo Finance company calendar (tracked names)",
+        "source_url": "https://finance.yahoo.com/calendar/earnings",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.286961+00:00",
+        "error": null
+      },
+      {
+        "id": "market_structure",
+        "name": "NYSE and expiration rules",
+        "source_url": "https://www.nyse.com/markets/hours-calendars",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.287043+00:00",
+        "error": null
+      },
+      {
+        "id": "fed_monetary",
+        "name": "Federal Reserve press releases (monetary policy)",
+        "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.359294+00:00",
+        "error": null
+      },
+      {
+        "id": "fed_speeches",
+        "name": "Federal Reserve speeches",
+        "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.391093+00:00",
+        "error": null
+      },
+      {
+        "id": "bls_releases",
+        "name": "U.S. Bureau of Labor Statistics releases",
+        "source_url": "https://www.bls.gov/feed/bls_latest.rss",
+        "status": "unavailable",
+        "as_of": "2026-09-23T12:47:29.417807+00:00",
+        "error": "U.S. Bureau of Labor Statistics releases unavailable (PermissionError)."
+      },
+      {
+        "id": "bea_releases",
+        "name": "U.S. Bureau of Economic Analysis releases",
+        "source_url": "https://apps.bea.gov/rss/rss.xml",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.473046+00:00",
+        "error": null
+      },
+      {
+        "id": "yahoo_news",
+        "name": "Yahoo Finance news search (allowlisted publishers)",
+        "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.989814+00:00",
+        "error": null
+      },
+      {
+        "id": "treasury_curve",
+        "name": "U.S. Treasury yields via FRED",
+        "source_url": "https://fred.stlouisfed.org/",
+        "status": "ok",
+        "as_of": "2026-09-23T12:49:33.871257+00:00",
+        "error": null
+      }
+    ]
   },
-  "futures": {},
-  "cross_asset": {},
-  "global_markets": {},
-  "treasury_rates": null,
-  "market_calendar": null,
-  "verified_catalysts": null,
-  "what_matters_today": [],
+  "futures": {
+    "ES=F": {
+      "name": "S&P 500 E-mini futures",
+      "symbol": "ES=F",
+      "price": 7823.5,
+      "reference_close": 7831.75,
+      "reference_date": "2026-09-22",
+      "pct_change": -0.11,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "NQ=F": {
+      "name": "Nasdaq 100 E-mini futures",
+      "symbol": "NQ=F",
+      "price": 30949.0,
+      "reference_close": 31028.5,
+      "reference_date": "2026-09-22",
+      "pct_change": -0.26,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "YM=F": {
+      "name": "Dow E-mini futures",
+      "symbol": "YM=F",
+      "price": 52142.0,
+      "reference_close": 52279.0,
+      "reference_date": "2026-09-22",
+      "pct_change": -0.26,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "RTY=F": {
+      "name": "Russell 2000 E-mini futures",
+      "symbol": "RTY=F",
+      "price": 2900.1001,
+      "reference_close": 2914.1001,
+      "reference_date": "2026-09-22",
+      "pct_change": -0.48,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    }
+  },
+  "cross_asset": {
+    "^VIX": {
+      "name": "Cboe Volatility Index",
+      "note": "Previous close until the cash session opens.",
+      "symbol": "^VIX",
+      "price": 14.29,
+      "reference_close": 14.87,
+      "reference_date": "2026-09-21",
+      "pct_change": -3.9,
+      "timestamp": "2026-09-23T08:30:00-04:00",
+      "age_minutes": 17,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "2YY=F": {
+      "name": "CBOT 2-Year yield futures",
+      "proxy": true,
+      "note": "Futures proxy for the 2-year yield, not the cash Treasury yield.",
+      "symbol": "2YY=F",
+      "price": 4.422,
+      "reference_close": 4.422,
+      "reference_date": "2026-09-22",
+      "pct_change": 0.0,
+      "timestamp": "2026-09-22T14:45:00-04:00",
+      "age_minutes": 1082,
+      "stale": false,
+      "delayed": true,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "^TNX": {
+      "name": "10-Year Treasury yield index (Cboe)",
+      "note": "Updates during U.S. hours only.",
+      "symbol": "^TNX",
+      "price": 4.986,
+      "reference_close": 4.963,
+      "reference_date": "2026-09-21",
+      "pct_change": 0.46,
+      "timestamp": "2026-09-23T08:30:00-04:00",
+      "age_minutes": 17,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "DX-Y.NYB": {
+      "name": "U.S. Dollar Index",
+      "symbol": "DX-Y.NYB",
+      "price": 100.96,
+      "reference_close": 100.43,
+      "reference_date": "2026-09-21",
+      "pct_change": 0.53,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "GC=F": {
+      "name": "Gold futures",
+      "symbol": "GC=F",
+      "price": 4342.5,
+      "reference_close": 4376.3999,
+      "reference_date": "2026-09-22",
+      "pct_change": -0.77,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "CL=F": {
+      "name": "WTI crude futures",
+      "symbol": "CL=F",
+      "price": 90.81,
+      "reference_close": 94.59,
+      "reference_date": "2026-09-22",
+      "pct_change": -4.0,
+      "timestamp": "2026-09-23T08:35:00-04:00",
+      "age_minutes": 12,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "BTC-USD": {
+      "name": "Bitcoin",
+      "symbol": "BTC-USD",
+      "price": 85471.3984,
+      "reference_close": 85471.3984,
+      "reference_date": "2026-09-22",
+      "pct_change": 0.0,
+      "timestamp": "2026-09-23T08:45:00-04:00",
+      "age_minutes": 2,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "ETH-USD": {
+      "name": "Ethereum",
+      "symbol": "ETH-USD",
+      "price": 2721.1299,
+      "reference_close": 2721.1299,
+      "reference_date": "2026-09-22",
+      "pct_change": 0.0,
+      "timestamp": "2026-09-23T08:45:00-04:00",
+      "age_minutes": 2,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    }
+  },
+  "global_markets": {
+    "^N225": {
+      "name": "Nikkei 225",
+      "region": "Asia",
+      "symbol": "^N225",
+      "price": 65200.2383,
+      "reference_close": 65018.9492,
+      "reference_date": "2026-09-17",
+      "pct_change": 0.28,
+      "timestamp": "2026-09-18T02:25:00-04:00",
+      "age_minutes": 7582,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "^HSI": {
+      "name": "Hang Seng",
+      "region": "Asia",
+      "symbol": "^HSI",
+      "price": 24834.1191,
+      "reference_close": 24834.1191,
+      "reference_date": "2026-09-22",
+      "pct_change": 0.0,
+      "timestamp": "2026-09-23T04:05:00-04:00",
+      "age_minutes": 282,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "^STOXX50E": {
+      "name": "Euro Stoxx 50",
+      "region": "Europe",
+      "symbol": "^STOXX50E",
+      "price": 6291.6099,
+      "reference_close": 6291.6099,
+      "reference_date": "2026-09-22",
+      "pct_change": 0.0,
+      "timestamp": "2026-09-23T08:30:00-04:00",
+      "age_minutes": 17,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    },
+    "^FTSE": {
+      "name": "FTSE 100",
+      "region": "Europe",
+      "symbol": "^FTSE",
+      "price": 10686.5098,
+      "reference_close": 10686.5098,
+      "reference_date": "2026-09-22",
+      "pct_change": 0.0,
+      "timestamp": "2026-09-23T08:30:00-04:00",
+      "age_minutes": 17,
+      "stale": false,
+      "delayed": false,
+      "source": "Yahoo Finance via yfinance",
+      "error": null
+    }
+  },
+  "treasury_rates": {
+    "id": "treasury_curve",
+    "name": "U.S. Treasury yields via FRED",
+    "source_url": "https://fred.stlouisfed.org/",
+    "status": "ok",
+    "as_of": "2026-09-23T12:49:33.871257+00:00",
+    "items": [],
+    "error": null,
+    "curve": {
+      "as_of": "2026-09-21",
+      "previous_date": "2026-09-18",
+      "tenors": {
+        "3m": {
+          "value": 4.17,
+          "change_bp": 3.0
+        },
+        "2y": {
+          "value": 4.76,
+          "change_bp": 0.0
+        },
+        "5y": {
+          "value": 4.83,
+          "change_bp": -3.0
+        },
+        "10y": {
+          "value": 4.96,
+          "change_bp": -5.0
+        },
+        "20y": {
+          "value": 5.33,
+          "change_bp": -5.0
+        },
+        "30y": {
+          "value": 5.29,
+          "change_bp": -5.0
+        }
+      }
+    },
+    "spreads": {
+      "2s10s": {
+        "value_bp": 20.0,
+        "change_bp": -5.0
+      },
+      "3m10y": {
+        "value_bp": 79.0,
+        "change_bp": -8.0
+      },
+      "5s30s": {
+        "value_bp": 46.0,
+        "change_bp": -2.0
+      }
+    },
+    "real": {
+      "as_of": "2026-09-21",
+      "previous_date": "2026-09-18",
+      "tenors": {
+        "5y": {
+          "value": 2.5,
+          "change_bp": -5.0
+        },
+        "10y": {
+          "value": 2.62,
+          "change_bp": -6.0
+        },
+        "30y": {
+          "value": 3.02,
+          "change_bp": -7.0
+        }
+      }
+    },
+    "real_source_url": "https://fred.stlouisfed.org/",
+    "fallback": "fred"
+  },
+  "market_calendar": {
+    "window": {
+      "current_session": "2026-09-23",
+      "next_session": "2026-09-24",
+      "display_time_zone": "America/Chicago"
+    },
+    "items": [
+      {
+        "date": "2026-09-23",
+        "time": "8:45 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-23T08:45:00-05:00",
+        "source_time": "9:45 AM",
+        "source_time_zone": "ET",
+        "title": "Flash Manufacturing PMI",
+        "category": "Business surveys",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": "53.6",
+        "previous": "53.2",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": "8:45 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-23T08:45:00-05:00",
+        "source_time": "9:45 AM",
+        "source_time_zone": "ET",
+        "title": "Flash Services PMI",
+        "category": "Business surveys",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": "55.8",
+        "previous": "56.8",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": "9:05 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-23T09:05:00-05:00",
+        "source_time": "10:05 AM",
+        "source_time_zone": "ET",
+        "title": "FOMC Member Barr Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": "9:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-23T09:30:00-05:00",
+        "source_time": "10:30 AM",
+        "source_time_zone": "ET",
+        "title": "Crude Oil Inventories",
+        "category": "Energy",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": "-0.7M",
+        "previous": "-0.6M",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": "11:00 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-23T11:00:00-05:00",
+        "source_time": "12:00 PM",
+        "source_time_zone": "ET",
+        "title": "FOMC Member Goolsbee Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": null,
+        "time_status": "tbd",
+        "title": "1-Year 10-Month Note auction (reopening)",
+        "category": "Treasury auction",
+        "kind": "auction",
+        "country": "United States",
+        "importance": null,
+        "detail": "Offering $28B \u00b7 CUSIP 91282CRD5",
+        "source": "U.S. Treasury Fiscal Data",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": null,
+        "time_status": "tbd",
+        "title": "17-Week Bill auction",
+        "category": "Treasury auction",
+        "kind": "auction",
+        "country": "United States",
+        "importance": null,
+        "detail": "Offering $72B \u00b7 CUSIP 912797WR4",
+        "source": "U.S. Treasury Fiscal Data",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-23",
+        "time": null,
+        "time_status": "tbd",
+        "title": "5-Year Note auction",
+        "category": "Treasury auction",
+        "kind": "auction",
+        "country": "United States",
+        "importance": null,
+        "detail": "Offering $70B \u00b7 CUSIP 91282CRN3",
+        "source": "U.S. Treasury Fiscal Data",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "session": "current"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "3:10 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T03:10:00-05:00",
+        "source_time": "4:10 AM",
+        "source_time_zone": "ET",
+        "title": "FOMC Member Williams Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "7:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T07:30:00-05:00",
+        "source_time": "8:30 AM",
+        "source_time_zone": "ET",
+        "title": "Current Account",
+        "category": "Economic data",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": "-258B",
+        "previous": "-227B",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "7:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T07:30:00-05:00",
+        "source_time": "8:30 AM",
+        "source_time_zone": "ET",
+        "title": "FOMC Member Barkin Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "7:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T07:30:00-05:00",
+        "source_time": "8:30 AM",
+        "source_time_zone": "ET",
+        "title": "Unemployment Claims",
+        "category": "Employment",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Medium",
+        "actual": null,
+        "consensus": "201K",
+        "previous": "196K",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "7:50 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T07:50:00-05:00",
+        "source_time": "8:50 AM",
+        "source_time_zone": "ET",
+        "title": "FOMC Member Hammack Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "9:00 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T09:00:00-05:00",
+        "source_time": "10:00 AM",
+        "source_time_zone": "ET",
+        "title": "New Home Sales",
+        "category": "Housing",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": "615K",
+        "previous": "607K",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "9:10 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T09:10:00-05:00",
+        "source_time": "10:10 AM",
+        "source_time_zone": "ET",
+        "title": "FOMC Member Paulson Speaks",
+        "category": "Central bank",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": null,
+        "previous": null,
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": "9:30 AM CT",
+        "time_status": "scheduled",
+        "starts_at": "2026-09-24T09:30:00-05:00",
+        "source_time": "10:30 AM",
+        "source_time_zone": "ET",
+        "title": "Natural Gas Storage",
+        "category": "Energy",
+        "kind": "economic",
+        "country": "United States",
+        "importance": "Low",
+        "actual": null,
+        "consensus": "50B",
+        "previous": "44B",
+        "source": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": null,
+        "time_status": "tbd",
+        "title": "4-Week Bill auction (reopening)",
+        "category": "Treasury auction",
+        "kind": "auction",
+        "country": "United States",
+        "importance": null,
+        "detail": "Offering $90B \u00b7 CUSIP 912797VN4",
+        "source": "U.S. Treasury Fiscal Data",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": null,
+        "time_status": "tbd",
+        "title": "7-Year Note auction",
+        "category": "Treasury auction",
+        "kind": "auction",
+        "country": "United States",
+        "importance": null,
+        "detail": "Offering $44B \u00b7 CUSIP 91282CRM5",
+        "source": "U.S. Treasury Fiscal Data",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "session": "next"
+      },
+      {
+        "date": "2026-09-24",
+        "time": null,
+        "time_status": "tbd",
+        "title": "8-Week Bill auction (reopening)",
+        "category": "Treasury auction",
+        "kind": "auction",
+        "country": "United States",
+        "importance": null,
+        "detail": "Offering $85B \u00b7 CUSIP 912797VY0",
+        "source": "U.S. Treasury Fiscal Data",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "session": "next"
+      }
+    ],
+    "feeds": [
+      {
+        "id": "fair_economy_economic",
+        "name": "Forex Factory Economic Calendar",
+        "source_url": "https://www.forexfactory.com/calendar",
+        "status": "ok",
+        "as_of": "2026-09-23T12:47:28.438918+00:00",
+        "error": null
+      },
+      {
+        "id": "treasury_auctions",
+        "name": "U.S. Treasury upcoming auctions",
+        "source_url": "https://fiscaldata.treasury.gov/datasets/upcoming-auctions/",
+        "status": "ok",
+        "as_of": "2026-09-23T12:47:28.853719+00:00",
+        "error": null
+      },
+      {
+        "id": "yahoo_earnings",
+        "name": "Yahoo Finance company calendar (tracked names)",
+        "source_url": "https://finance.yahoo.com/calendar/earnings",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.286961+00:00",
+        "error": null
+      },
+      {
+        "id": "market_structure",
+        "name": "NYSE and expiration rules",
+        "source_url": "https://www.nyse.com/markets/hours-calendars",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.287043+00:00",
+        "error": null
+      }
+    ],
+    "note": "Scheduled events are listed with their source. Importance is shown only when the provider supplies it; none is inferred."
+  },
+  "verified_catalysts": {
+    "window": {
+      "start": "2026-09-22T16:00:00-04:00",
+      "end": "2026-09-23T08:47:25.748989-04:00"
+    },
+    "items": [],
+    "feeds": [
+      {
+        "id": "fed_monetary",
+        "name": "Federal Reserve press releases (monetary policy)",
+        "source_url": "https://www.federalreserve.gov/feeds/press_monetary.xml",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.359294+00:00",
+        "error": null
+      },
+      {
+        "id": "fed_speeches",
+        "name": "Federal Reserve speeches",
+        "source_url": "https://www.federalreserve.gov/feeds/speeches.xml",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.391093+00:00",
+        "error": null
+      },
+      {
+        "id": "bls_releases",
+        "name": "U.S. Bureau of Labor Statistics releases",
+        "source_url": "https://www.bls.gov/feed/bls_latest.rss",
+        "status": "unavailable",
+        "as_of": "2026-09-23T12:47:29.417807+00:00",
+        "error": "U.S. Bureau of Labor Statistics releases unavailable (PermissionError)."
+      },
+      {
+        "id": "bea_releases",
+        "name": "U.S. Bureau of Economic Analysis releases",
+        "source_url": "https://apps.bea.gov/rss/rss.xml",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.473046+00:00",
+        "error": null
+      },
+      {
+        "id": "yahoo_news",
+        "name": "Yahoo Finance news search (allowlisted publishers)",
+        "source_url": "https://finance.yahoo.com/topic/stock-market-news/",
+        "status": "empty",
+        "as_of": "2026-09-23T12:47:29.989814+00:00",
+        "error": null
+      }
+    ],
+    "label": "Source-linked developments published during this window. Listed as context; not claimed causes of market moves."
+  },
+  "what_matters_today": [
+    {
+      "label": "Futures",
+      "text": "S&P 500 E-mini futures -0.11% versus the Sep 22 daily close. Widest index move: Russell 2000 E-mini futures -0.48%."
+    },
+    {
+      "label": "Overnight",
+      "text": "Nikkei 225 +0.28%; Hang Seng +0.00%; Euro Stoxx 50 +0.00%; FTSE 100 +0.00%."
+    },
+    {
+      "label": "Calendar",
+      "text": "Flash Manufacturing PMI at 8:45 AM CT and 4 more scheduled U.S. releases."
+    },
+    {
+      "label": "Rates",
+      "text": "Official 10-year Treasury 4.96% as of Sep 21; 2s10s +20 bps."
+    }
+  ],
   "notes": [
-    "The Morning Tape populates after its first scheduled pre-market generation."
+    "Futures and extended-hours moves are compared with the latest completed daily reference close.",
+    "Official Treasury yields are the latest published end-of-day par curve, labeled with their own date.",
+    "The 2-year futures row is a labeled proxy, not the cash 2-year Treasury yield.",
+    "Stale or delayed quotes stay labeled and do not receive an implied current-session move.",
+    "Calendar items and catalysts are context only; they are not presented as causes of market moves.",
+    "The Morning Tape is a pre-market orientation, not a forecast or trading recommendation."
   ]
 }
