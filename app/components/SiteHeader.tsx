@@ -3,30 +3,32 @@ import MobileNav from "./MobileNav";
 
 export type SiteSection = "close" | "morning" | "reports" | "search" | "asset";
 
-type NavLink = { href: string; label: string; current?: boolean };
+export type NavLink = { href: string; label: string; current?: boolean };
 
 /**
  * Shared masthead for every route. `root` is the relative path back to the site
  * root ("./", "../", "../../") so links stay correct under the GitHub Pages
  * base path and in local dev without one.
+ *
+ * The masthead only carries site-level destinations (links that change the
+ * page). In-report chapter links live in the separate ReportNav bar, so the two
+ * never mix; `reportLinks` only feeds the mobile menu's second group.
  */
 export default function SiteHeader({
   root,
   current,
-  sectionLinks = [],
+  reportLinks = [],
 }: {
   root: string;
   current: SiteSection;
-  sectionLinks?: Array<[id: string, label: string]>;
+  reportLinks?: NavLink[];
 }) {
   const routes: NavLink[] = [
     { href: root, label: "Close", current: current === "close" },
     { href: `${root}morning/`, label: "Morning", current: current === "morning" },
-    { href: `${root}reports/`, label: "Archive", current: current === "reports" },
+    { href: `${root}reports/`, label: "Reports", current: current === "reports" },
     { href: `${root}search/`, label: "Search", current: current === "search" },
   ];
-  const anchors: NavLink[] = sectionLinks.map(([id, label]) => ({ href: `#${id}`, label }));
-  const links = [...anchors, ...routes.filter((route) => !(anchors.length && route.current))];
 
   return (
     <header className="site-header">
@@ -34,13 +36,13 @@ export default function SiteHeader({
         <span className="brand-mark" style={{ backgroundImage: `url("${root}logo.png")` }} aria-hidden="true" />
         <span>THE DAILY TAPE</span>
       </a>
-      <nav className="site-nav" aria-label="Primary">
-        {links.map((link) => (
+      <nav className="site-nav" aria-label="Site">
+        {routes.map((link) => (
           <a key={link.href} href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</a>
         ))}
       </nav>
       <div className="site-header__tools">
-        <MobileNav links={links} />
+        <MobileNav routes={routes} reportLinks={reportLinks} />
         <ThemeToggle />
       </div>
     </header>

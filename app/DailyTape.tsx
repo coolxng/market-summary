@@ -2,6 +2,8 @@ import ShareSummaryButton from "./components/ShareSummaryButton";
 import DeliveryPanel from "./components/DeliveryPanel";
 import WatchlistPanel, { type WatchAsset } from "./components/WatchlistPanel";
 import SiteHeader from "./components/SiteHeader";
+import ReportNav, { type ReportChapter } from "./components/ReportNav";
+import Breadcrumbs from "./components/Breadcrumbs";
 import PublicationBanner from "./components/PublicationBanner";
 import KeyboardShortcuts from "./components/KeyboardShortcuts";
 import PriceChart from "./components/PriceChart";
@@ -28,13 +30,16 @@ import { classifyRegime, REGIME_LABEL, type RegimeEntry } from "./lib/regime";
 
 export type { DailyReport } from "./lib/report";
 
-const sections: Array<[string, string]> = [
-  ["brief", "The brief"],
-  ["scorecard", "Scorecard"],
-  ["catalysts", "Catalysts"],
-  ["sectors", "Sectors"],
-  ["macro", "Macro"],
-  ["calendar", "Calendar"],
+// Five numbered chapters plus the opening brief. IDs here are chapter anchors;
+// the older section anchors (#scorecard, #sectors, #macro, #rates, #calendar,
+// #ahead …) are kept on the subsections inside them so shared links still work.
+const chapters: ReportChapter[] = [
+  { id: "brief", label: "Brief" },
+  { id: "overview", label: "Overview", number: "01" },
+  { id: "leadership", label: "Leadership", number: "02" },
+  { id: "drivers", label: "Drivers", number: "03" },
+  { id: "cross-asset", label: "Macro", number: "04" },
+  { id: "next-session", label: "Ahead", number: "05" },
 ];
 
 const globalMarkets = [
@@ -151,12 +156,38 @@ function Signal({ label, value, note, tone }: { label: string; value: string; no
 
 const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/").replace(/\/$/, "");
 
-function SectionHeading({ id, number, kicker, title, children, share }: { id?: string; number: string; kicker: string; title: React.ReactNode; children?: React.ReactNode; share?: { url: string; title: string } }) {
+type Share = { url: string; title: string };
+
+/** Subsection heading. The kicker names the parent chapter so deep links keep their context. */
+function SectionHeading({ id, chapter, kicker, title, children, share, lead = false }: { id?: string; chapter: string; kicker: string; title: React.ReactNode; children?: React.ReactNode; share?: Share; lead?: boolean }) {
   return (
-    <div className="section-heading">
-      <div><p className="section-kicker">{number} / {kicker}</p><h2 id={id ? `${id}-title` : undefined}>{title}</h2></div>
+    <div className={`section-heading${lead ? " section-heading--lead" : ""}`}>
+      <div>
+        <p className="section-kicker"><span className="section-kicker__chapter">{chapter}</span><span>{kicker}</span></p>
+        <h3 id={id ? `${id}-title` : undefined}>{title}</h3>
+      </div>
       {(children || share) && <div className="section-heading__aside">{children && <p>{children}</p>}{share && <SectionShare url={share.url} title={share.title} />}</div>}
     </div>
+  );
+}
+
+/** A primary report chapter: heavy rule, numbered title, and an in-chapter contents list. */
+function Chapter({ id, number, title, dek, contents, children, className = "" }: { id: string; number: string; title: string; dek: string; contents: Array<[anchor: string, label: string]>; children: React.ReactNode; className?: string }) {
+  return (
+    <section className={`report-chapter ${className}`.trim()} id={id} aria-labelledby={`${id}-title`}>
+      <header className="report-chapter__header">
+        <p className="report-chapter__number"><span className="visually-hidden">Chapter </span>{number}</p>
+        <div className="report-chapter__title">
+          <h2 id={`${id}-title`}>{title}</h2>
+          <p>{dek}</p>
+        </div>
+        <nav className="report-chapter__contents" aria-label={`${title}: sections`}>
+          <span aria-hidden="true">In this chapter</span>
+          <ul>{contents.map(([anchor, label]) => <li key={anchor}><a href={`#${anchor}`}>{label}</a></li>)}</ul>
+        </nav>
+      </header>
+      <div className="report-chapter__body">{children}</div>
+    </section>
   );
 }
 
@@ -293,23 +324,46 @@ export default function DailyTape({
   const shareDate = formatSessionDate(dailyReport.session_date, { month: "short", day: "numeric", year: "numeric" });
   const shareFor = (anchor: string, section: string) => ({ url: `${permalink}#${anchor}`, title: `The Daily Tape · ${shareDate} · ${section}` });
 
+  const editionShort = formatSessionDate(dailyReport.session_date, { month: "short", day: "numeric" });
+  const editionLong = formatSessionDate(dailyReport.session_date, { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+  const reportLinks = chapters.map(({ id, label }) => ({ href: `#${id}`, label }));
+  const hasRelativeStrength = Boolean(dailyReport.relative_strength?.rows?.length);
+  const hasArchiveContext = Boolean(archived && archiveComparison && archiveComparison.sampleSize > 0);
+
   return (
     <main id="main">
-      <SiteHeader root={siteRoot} current={archived ? "reports" : "close"} sectionLinks={sections} />
+      <SiteHeader root={siteRoot} current={archived ? "reports" : "close"} reportLinks={reportLinks} />
+      <ReportNav
+        chapters={chapters}
+        edition={`${editionShort} close`}
+        archived={archived}
+        latestHref={archived ? siteRoot : undefined}
+      />
 
       <div className="page" id="top">
-        <section className="hero" id="brief">
-          <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
+        <section className="report-opening" id="brief" aria-label={`The brief: ${archived ? "archived" : "latest"} Daily Tape for ${editionLong}`}>
           {archived && (
-            <nav className="archive-session-nav" aria-label="Archived session navigation">
-              <span>{previousReportHref ? <a href={previousReportHref} rel="prev">← Previous session</a> : <i>Earliest archived session</i>}</span>
-              <a href={archiveHref}>All reports</a>
-              <span>{nextReportHref ? <a href={nextReportHref} rel="next">Next session →</a> : <i>Latest archived session</i>}</span>
-            </nav>
+            <div className="archive-banner">
+              <Breadcrumbs items={[{ label: "Close Tape", href: siteRoot }, { label: "Reports", href: archiveHref }, { label: shareDate }]} />
+              <div className="archive-banner__body" role="note">
+                <div>
+                  <span className="archive-banner__label">Archived edition</span>
+                  <strong>You are reading the {editionLong} close.</strong>
+                  <p>Figures are exactly as published after that session and are never revised. The current report lives on the Close Tape.</p>
+                </div>
+                <a className="archive-banner__latest" href={siteRoot}>Go to the latest Daily Tape →</a>
+              </div>
+              <nav className="archive-session-nav" aria-label="Archived session navigation">
+                <span>{previousReportHref ? <a href={previousReportHref} rel="prev">← Previous session</a> : <i>Earliest archived session</i>}</span>
+                <a href={archiveHref}>All reports</a>
+                <span>{nextReportHref ? <a href={nextReportHref} rel="next">Next session →</a> : <i>Latest archived session</i>}</span>
+              </nav>
+            </div>
           )}
+          <div className="issue-line"><span>{archived ? "ARCHIVED DAILY TAPE" : "DAILY MARKET INTELLIGENCE"}</span><span><b>ISSUE</b> {issue}</span><span><b>SESSION</b> {dateRange.toUpperCase()}</span></div>
           {!archived && <PublicationBanner sessionDate={dailyReport.session_date} generatedAt={dailyReport.generated_at} />}
           <DataStatus sessionDate={dailyReport.session_date} quality={quality} />
-          <div className="hero-grid">
+          <div className="hero-grid hero">
             <div className="hero-copy">
               <p className="section-kicker">THE ONE-LINE READ</p>
               <h1>
@@ -352,282 +406,360 @@ export default function DailyTape({
               />
             </aside>
           </div>
+
+          <div className="digest-strip" role="group" aria-label="Three-point market digest">
+            <article><span>01 / MARKET</span><strong>{riskTone} close</strong><p>S&amp;P {formatPct(sp?.pct_change)}; Nasdaq {formatPct(nasdaq?.pct_change)}; VIX ended at {formatNumber(vix?.end_price)}.</p></article>
+            <article><span>02 / LEADERSHIP</span><strong>{topSector && bottomSector ? `${sectorLabel(topSector[0])} over ${sectorLabel(bottomSector[0])}` : "Sector data unavailable"}</strong><p>{topSector && bottomSector ? `A ${Math.abs(topSector[1] - bottomSector[1]).toFixed(2)}-point spread separated the best and worst sectors.` : "Sector returns were not verified."}</p></article>
+            <article><span>03 / INTERNALS</span><strong>{breadthTone} breadth</strong><p>{capWeightMessage}</p></article>
+          </div>
         </section>
 
-        <section className="digest-strip" aria-label="Three-point market digest">
-          <article><span>01 / MARKET</span><strong>{riskTone} close</strong><p>S&amp;P {formatPct(sp?.pct_change)}; Nasdaq {formatPct(nasdaq?.pct_change)}; VIX ended at {formatNumber(vix?.end_price)}.</p></article>
-          <article><span>02 / LEADERSHIP</span><strong>{topSector && bottomSector ? `${sectorLabel(topSector[0])} over ${sectorLabel(bottomSector[0])}` : "Sector data unavailable"}</strong><p>{topSector && bottomSector ? `A ${Math.abs(topSector[1] - bottomSector[1]).toFixed(2)}-point spread separated the best and worst sectors.` : "Sector returns were not verified."}</p></article>
-          <article><span>03 / INTERNALS</span><strong>{breadthTone} breadth</strong><p>{capWeightMessage}</p></article>
-        </section>
-
-        {regimeTimeline.length > 0 && (
-          <section className="regime-history" id="regime" aria-labelledby="regime-title">
-            <div className="regime-history__head">
-              <p className="section-kicker">REGIME HISTORY</p>
-              <h2 id="regime-title">How the tape has read</h2>
+        <Chapter
+          id="overview"
+          number="01"
+          title="Market overview"
+          dek="Where markets closed, how the tape has read lately, and the assets you follow."
+          contents={[
+            ["scorecard", "Scorecard"],
+            ...(regimeTimeline.length ? [["regime", "Regime history"] as [string, string]] : []),
+            ...(hasArchiveContext ? [["context", "Historical context"] as [string, string]] : []),
+            ...(!archived ? [["watchlist", "Your watchlist"] as [string, string]] : []),
+          ]}
+        >
+          <section className="report-subsection scorecard" id="scorecard" aria-labelledby="scorecard-title">
+            <SectionHeading id="scorecard" chapter="Overview" kicker="Scorecard" title="The tape, at a glance" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
+            <div className="index-grid">
+              <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" slug="spx" assetBaseHref={assetBaseHref} />
+              <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" slug="nasdaq" assetBaseHref={assetBaseHref} />
+              <IndexCard item={market["^DJI"]} chart={dailyReport.session_charts["^DJI"]} name="Dow Jones" short="DJIA" slug="dow" assetBaseHref={assetBaseHref} />
+              <IndexCard item={market["^VIX"]} chart={dailyReport.session_charts["^VIX"]} name="CBOE Volatility" short="VIX" slug="vix" assetBaseHref={assetBaseHref} />
+              <IndexCard item={market["^TNX"]} chart={dailyReport.session_charts["^TNX"]} name="10-Year Treasury" short="10Y" slug="us-10y" assetBaseHref={assetBaseHref} suffix="%" />
+              <IndexCard item={market["DX-Y.NYB"]} chart={dailyReport.session_charts["DX-Y.NYB"]} name="U.S. Dollar Index" short="DXY" slug="dxy" assetBaseHref={assetBaseHref} />
+              <IndexCard item={market["BTC-USD"]} chart={dailyReport.session_charts["BTC-USD"]} name="Bitcoin" short="BTC" slug="bitcoin" assetBaseHref={assetBaseHref} currency digits={0} />
+              <IndexCard item={market["ETH-USD"]} chart={dailyReport.session_charts["ETH-USD"]} name="Ethereum" short="ETH" slug="ethereum" assetBaseHref={assetBaseHref} currency digits={0} />
             </div>
-            <RegimeStrip entries={regimeTimeline} hrefBase={regimeHrefBase} rule={dailyReport.regime_history?.rule} />
+
+            {regimeTimeline.length > 0 && (
+              <section className="regime-history" id="regime" aria-labelledby="regime-title">
+                <div className="regime-history__head">
+                  <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Regime history</span></p>
+                  <h3 id="regime-title">How the tape has read</h3>
+                  <p>Today&apos;s regime in the context of recent sessions. Select a day to see its inputs.</p>
+                </div>
+                <RegimeStrip entries={regimeTimeline} hrefBase={regimeHrefBase} rule={dailyReport.regime_history?.rule} />
+              </section>
+            )}
           </section>
-        )}
 
-        {archived && archiveComparison && archiveComparison.sampleSize > 0 && (
-          <section className="archive-context section-block" aria-labelledby="context-title">
-            <div className="section-heading">
-              <div><p className="section-kicker">HISTORICAL CONTEXT</p><h2 id="context-title">How this session compared</h2></div>
-              <p>Context is calculated only from earlier archived Daily Tape sessions, so the comparison never uses future data.</p>
-            </div>
-            <div className="archive-context-grid">
-              <article>
-                <span>BREADTH VS PRIOR AVG</span>
-                <strong>{formatPp(archiveComparison.breadthDelta, 1)}</strong>
-                <p>{archiveComparison.breadthAverage == null ? "Prior breadth unavailable." : `Prior ${archiveComparison.sampleSize}-session average: ${archiveComparison.breadthAverage.toFixed(1)}%`}</p>
-              </article>
-              <article>
-                <span>VIX SAMPLE RANK</span>
-                <strong>{archiveComparison.vixPercentile == null ? "—" : `${archiveComparison.vixPercentile.toFixed(0)}%`}</strong>
-                <p>Percentile rank within the current plus prior archived-session sample.</p>
-              </article>
-              <article>
-                <span>REGIME STREAK</span>
-                <strong>{archiveComparison.regimeStreak || "—"}</strong>
-                <p>Consecutive archived sessions with the same regime classification.</p>
-              </article>
-              <article>
-                <span>LEADERSHIP STREAK</span>
-                <strong>{archiveComparison.topSector ? archiveComparison.topSectorStreak : "—"}</strong>
-                <p>{archiveComparison.topSector ? `${archiveComparison.topSector} ranked first in ${archiveComparison.topSectorStreak} consecutive archived session${archiveComparison.topSectorStreak === 1 ? "" : "s"} and ${archiveComparison.topSectorLedCount} of the last ${archiveComparison.topSectorWindow}.` : "Sector ranking unavailable."}</p>
-              </article>
-              <article>
-                <span>S&amp;P 5-SESSION</span>
-                <strong className={toneClass(archiveComparison.sp500FiveSessionReturn)}>{formatPct(archiveComparison.sp500FiveSessionReturn)}</strong>
-                <p>{archiveComparison.sp500FiveSessionReturn == null ? "Needs five consecutive archived sessions." : "Compounded from five archived Daily Tape session returns."}</p>
-              </article>
-            </div>
-          </section>
-        )}
-
-        <section className="scorecard section-block" id="scorecard" aria-labelledby="scorecard-title">
-          <SectionHeading id="scorecard" number="01" kicker="SCORECARD" title="The tape, at a glance" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
-          <div className="index-grid">
-            <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" slug="spx" assetBaseHref={assetBaseHref} />
-            <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" slug="nasdaq" assetBaseHref={assetBaseHref} />
-            <IndexCard item={market["^DJI"]} chart={dailyReport.session_charts["^DJI"]} name="Dow Jones" short="DJIA" slug="dow" assetBaseHref={assetBaseHref} />
-            <IndexCard item={market["^VIX"]} chart={dailyReport.session_charts["^VIX"]} name="CBOE Volatility" short="VIX" slug="vix" assetBaseHref={assetBaseHref} />
-            <IndexCard item={market["^TNX"]} chart={dailyReport.session_charts["^TNX"]} name="10-Year Treasury" short="10Y" slug="us-10y" assetBaseHref={assetBaseHref} suffix="%" />
-            <IndexCard item={market["DX-Y.NYB"]} chart={dailyReport.session_charts["DX-Y.NYB"]} name="U.S. Dollar Index" short="DXY" slug="dxy" assetBaseHref={assetBaseHref} />
-            <IndexCard item={market["BTC-USD"]} chart={dailyReport.session_charts["BTC-USD"]} name="Bitcoin" short="BTC" slug="bitcoin" assetBaseHref={assetBaseHref} currency digits={0} />
-            <IndexCard item={market["ETH-USD"]} chart={dailyReport.session_charts["ETH-USD"]} name="Ethereum" short="ETH" slug="ethereum" assetBaseHref={assetBaseHref} currency digits={0} />
-          </div>
-        </section>
-
-        {!archived && <WatchlistPanel assets={watchAssets} assetBaseHref={assetBaseHref} sessionLabel={formatSessionDate(dailyReport.session_date, { month: "short", day: "numeric" })} />}
-
-        <section className="section-block catalyst-section" id="catalysts" aria-labelledby="catalysts-title">
-          <SectionHeading id="catalysts" number="02" kicker="VERIFIED CATALYSTS" title="On the record">
-            Developments published between the prior close and this report, from official sources first and allowlisted publishers second. Listed as context, never as the cause of a move.
-          </SectionHeading>
-          <CatalystList catalysts={catalysts} assetBaseHref={assetBaseHref} />
-        </section>
-
-        <section className="thesis section-block" aria-label="Interpretation">
-          <div className="thesis-label"><span>INTERPRETATION</span><span>BASED ON OBSERVED DATA</span></div>
-          <blockquote>“{thesisQuote}”</blockquote>
-          <p>{editorial?.regime.observed ?? capWeightMessage} Interpretation reflects price relationships; no event catalyst is inferred.</p>
-        </section>
-
-        <section className="section-block" id="sectors" aria-labelledby="sectors-title">
-          <SectionHeading id="sectors" number="03" kicker="LEADERSHIP" title="Where the tape actually moved" share={shareFor("sectors", "Sector leadership")}>All 11 sector ETFs ranked by session return, with weighting and participation checks.</SectionHeading>
-          <div className="comparison-strip" aria-label="Market breadth comparison">
-            <div><span>CAP-WEIGHTED (SPY)</span><strong className={toneClass(breadth.spy_pct_change)}>{breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)}</strong></div>
-            <div><span>EQUAL-WEIGHT (RSP)</span><strong className={toneClass(breadth.rsp_pct_change)}>{breadth.rsp_pct_change == null ? "Unavailable" : formatPct(breadth.rsp_pct_change)}</strong></div>
-            <div><span>ADVANCING / DECLINING</span><strong>{breadth.advances} / {breadth.declines}</strong></div>
-            <div><span>POSITIVE SECTORS</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div>
-          </div>
-          {editorial && <p className="section-read">{editorial.sector_leadership.observed} <strong>Interpretation:</strong> {editorial.sector_leadership.interpretation}</p>}
-          <div className="sector-board">
-            {sectorEntries.map(([name, value], index) => {
-              const symbol = sectorSymbol(name);
-              const asset = symbol ? assetBySymbol[symbol] : undefined;
-              return (
-                <div className="sector-row" key={name}>
-                  <span className="rank">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="sector-name">{asset ? <a href={`${assetBaseHref}${asset.slug}/`}>{name}</a> : name}</span>
-                  <div className="bar-track" aria-hidden="true"><span className={value >= 0 ? "bar-positive" : "bar-negative"} style={{ width: `${Math.max(5, (Math.abs(value) / sectorAbsMax) * 100)}%` }} /></div>
-                  <strong className={toneClass(value)}>{formatPct(value)}</strong>
-                </div>
-              );
-            })}
-          </div>
-          <RelativeStrength rows={dailyReport.relative_strength?.rows} assetBaseHref={assetBaseHref} />
-        </section>
-
-        <section className="section-block internals-section" id="internals" aria-labelledby="internals-title">
-          <SectionHeading id="internals" number="04" kicker="MARKET INTERNALS" title="Is the move holding underneath?" share={shareFor("internals", "Market internals")}>
-            Participation measured across stated, tracked universes. None of these is presented as NYSE or Nasdaq constituent breadth.
-          </SectionHeading>
-          <MarketInternals report={dailyReport} />
-        </section>
-
-        <section className="section-block" id="mega-cap" aria-labelledby="mega-cap-title">
-          <SectionHeading id="mega-cap" number="05" kicker="MEGA-CAP & AI" title="The leadership engine">Close, session range, daily return, and the latest verified price path for the market’s most-watched technology names.</SectionHeading>
-          {editorial && <p className="section-read">{editorial.megacap_leadership.observed} <strong>Interpretation:</strong> {editorial.megacap_leadership.interpretation}</p>}
-          <div className="mega-grid">
-            {megaCaps.map(({ ticker, name, item, chartValues, chartAxis: axis, chartSource }) => (
-              <article className="mega-card" key={ticker}>
-                <div className="mega-head">
-                  <div className="company-id">
-                    {/* eslint-disable-next-line @next/next/no-img-element -- static export; decorative remote logo */}
-                    <img loading="lazy" width={34} height={34} src={`https://s3-symbol-logo.tradingview.com/${megaCapLogoSlugs[ticker]}--big.svg`} alt="" />
-                    <div><strong>{ticker}</strong><span>{name}</span></div>
-                  </div>
-                  <strong className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "UNAVAILABLE"}</strong>
-                </div>
-                <p>{decodeText(dailyReport.narrative.megacap_descriptions[ticker] ?? "")}</p>
-                <div className="mega-price">{item ? `$${formatNumber(item.end_price)}` : "—"}</div>
-                {item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session local-session--warn">Session {formatSessionDate(item.session_date, { month: "short", day: "numeric" })} · not the report session</small>}
-                <a className="asset-card-link" href={`${assetBaseHref}${ticker.toLowerCase()}/`}>Open asset →</a>
-                <div className="mega-range">
-                  <span>DAY LOW <b>{item?.day_low != null ? `$${formatNumber(item.day_low)}` : "—"}</b></span>
-                  <span>DAY HIGH <b>{item?.day_high != null ? `$${formatNumber(item.day_high)}` : "—"}</b></span>
-                </div>
-                <div className="mega-chart">
-                  <div className="mega-chart-meta"><span>REGULAR SESSION</span><small>{chartSource === "intraday_5m" ? "5 MIN" : chartSource ? "OPEN / CLOSE" : "UNAVAILABLE"}</small></div>
-                  <Sparkline values={chartValues} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(`${ticker} session`, chartValues)} />
-                  <div className="mega-axis" aria-hidden="true">{axis.map((time, index) => <span key={`${ticker}-${time}-${index}`}>{time}</span>)}</div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="macro-grid section-block" id="macro" aria-labelledby="macro-title">
-          <div className="macro-copy">
-            <p className="section-kicker">06 / MACRO PULSE</p>
-            <h2 id="macro-title">
-              {tenYearChange == null ? "Yields unverified." : tenYearChange < 0 ? "Yields eased." : tenYearChange > 0 ? "Yields rose." : "Yields held."}<br />
-              {!oil ? "Oil unverified." : oil.pct_change > 0 ? "Oil gained." : oil.pct_change < 0 ? "Oil fell." : "Oil held."}
-            </h2>
-            <p>{editorial ? <>{editorial.macro_read.observed} <strong>Interpretation:</strong> {editorial.macro_read.interpretation}</> : `The ten-year yield moved ${formatBpsFromPoints(tenYearChange)} to ${formatNumber(tenYear?.end_price)}%. DXY changed ${formatPct(dxy?.pct_change)}.`}</p>
-            <div className="breadth-meter"><div className="meter-head"><span>POSITIVE SECTOR SHARE</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div><div className="meter-track" aria-hidden="true"><span style={{ width: `${breadth.positive_sector_share}%` }} /></div><small>Cap-weighted S&amp;P {breadth.spy_pct_change == null ? "unavailable" : formatPct(breadth.spy_pct_change)} vs. equal weight {breadth.rsp_pct_change == null ? "unavailable" : formatPct(breadth.rsp_pct_change)}</small></div>
-          </div>
-          <div className="chart-panel">
-            <div className="chart-header"><span>S&amp;P 500 / REGULAR SESSION</span><strong>{formatNumber(sp?.end_price)}</strong></div>
-            <PriceChart
-              points={spPoints}
-              name="S&P 500 regular session"
-              format={{ digits: 2 }}
-              stroke={(sp?.pct_change ?? 0) >= 0 ? "var(--up)" : "var(--down)"}
-              size="panel"
-            />
-            <div className="chart-stats"><div><span>DAY LOW</span><strong>{formatNumber(sp?.day_low)}</strong></div><div><span>DAY HIGH</span><strong>{formatNumber(sp?.day_high)}</strong></div><div><span>NASDAQ 1D</span><strong className={toneClass(nasdaq?.pct_change)}>{formatPct(nasdaq?.pct_change)}</strong></div></div>
-          </div>
-        </section>
-
-        <section className="section-block rates-section" id="rates" aria-labelledby="rates-title">
-          <SectionHeading id="rates" number="07" kicker="RATES & CREDIT" title="The cost-of-capital board">
-            Session yields, the official Treasury curve, actual credit spreads and bond ETF proxies, each labeled with its source and date.
-          </SectionHeading>
-          <RatesCredit report={dailyReport} assetBaseHref={assetBaseHref} />
-        </section>
-
-        <section className="section-block decision-section" aria-labelledby="decision-title">
-          <SectionHeading id="decision" number="08" kicker="DECISION SUMMARY" title="Three decisions, not another essay">The move, the cross-asset read, and the marker that matters next.</SectionHeading>
-          <div className="decision-rows">{decisionSummary.map(([label, body], index) => <article key={label}><span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><p>{body}</p></article>)}</div>
-        </section>
-
-        <section className="section-block global-section" aria-labelledby="global-title">
-          <SectionHeading id="global" number="09" kicker="GLOBAL CHECK" title="A split tape beyond Wall Street">Regional closes, daily direction, and each market’s latest verified path. Local closing times differ from New York.</SectionHeading>
-          <div className="global-table" role="table" aria-label="Global market performance">
-            <div className="global-row table-head" role="row"><span role="columnheader">MARKET</span><span role="columnheader">REGION</span><span role="columnheader">CLOSE</span><span role="columnheader">1D</span><span role="columnheader">PATH</span></div>
-            {globalMarkets.map(([symbol, name, region]) => {
-              const item = verified(market[symbol]);
-              const chart = dailyReport.session_charts[symbol];
-              const values = item && chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
-              return (
-                <div className="global-row" role="row" key={symbol}>
-                  <strong role="cell">{name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">Local close {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</strong><span role="cell">{region}</span>
-                  <span role="cell">{item ? formatNumber(item.end_price) : "—"}</span>
-                  <strong role="cell" className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "Unavailable"}</strong>
-                  <div role="cell" className="global-spark"><Sparkline values={values} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(name, values)} /></div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="section-block digital-section" aria-labelledby="digital-title">
-          <SectionHeading id="digital" number="10" kicker="DIGITAL ASSETS" title="The liquidity read">Crypto trades around the clock; each move is measured over the reported session.</SectionHeading>
-          <div className="digital-grid">
-            {cryptoMarkets.map(([symbol, name, ticker, narrativeKey]) => {
-              const item = verified(market[symbol]);
-              const chart = dailyReport.session_charts[symbol];
-              const values = item && chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
-              const asset = assetBySymbol[symbol];
-              return (
-                <article className="digital-card" key={symbol}>
-                  <div className="digital-head"><span>{ticker}</span><strong className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "UNAVAILABLE"}</strong></div>
-                  <div className="digital-price">{item ? `$${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}` : "—"}</div>
-                  <span className="digital-name">{name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">UTC day {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</span>
-                  {asset && <a className="asset-card-link" href={`${assetBaseHref}${asset.slug}/`}>Open asset →</a>}
-                  <div className="digital-chart">
-                    <div className="digital-chart-meta"><span>VERIFIED PATH</span><small>{chart?.source === "intraday_5m" ? "5 MIN" : chart?.source === "daily_5d_fallback" ? "5 DAY" : "UNAVAILABLE"}</small></div>
-                    <Sparkline values={values} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(name, values, values[0] < 10 ? 4 : 0)} />
-                  </div>
-                  <p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey] ?? "")}</p>
+          {hasArchiveContext && archiveComparison && (
+            <section className="report-subsection archive-context" id="context" aria-labelledby="context-title">
+              <SectionHeading id="context" chapter="Overview" kicker="Historical context" title="How this session compared">Context is calculated only from earlier archived Daily Tape sessions, so the comparison never uses future data.</SectionHeading>
+              <div className="archive-context-grid">
+                <article>
+                  <span>BREADTH VS PRIOR AVG</span>
+                  <strong>{formatPp(archiveComparison.breadthDelta, 1)}</strong>
+                  <p>{archiveComparison.breadthAverage == null ? "Prior breadth unavailable." : `Prior ${archiveComparison.sampleSize}-session average: ${archiveComparison.breadthAverage.toFixed(1)}%`}</p>
                 </article>
-              );
-            })}
+                <article>
+                  <span>VIX SAMPLE RANK</span>
+                  <strong>{archiveComparison.vixPercentile == null ? "—" : `${archiveComparison.vixPercentile.toFixed(0)}%`}</strong>
+                  <p>Percentile rank within the current plus prior archived-session sample.</p>
+                </article>
+                <article>
+                  <span>REGIME STREAK</span>
+                  <strong>{archiveComparison.regimeStreak || "—"}</strong>
+                  <p>Consecutive archived sessions with the same regime classification.</p>
+                </article>
+                <article>
+                  <span>LEADERSHIP STREAK</span>
+                  <strong>{archiveComparison.topSector ? archiveComparison.topSectorStreak : "—"}</strong>
+                  <p>{archiveComparison.topSector ? `${archiveComparison.topSector} ranked first in ${archiveComparison.topSectorStreak} consecutive archived session${archiveComparison.topSectorStreak === 1 ? "" : "s"} and ${archiveComparison.topSectorLedCount} of the last ${archiveComparison.topSectorWindow}.` : "Sector ranking unavailable."}</p>
+                </article>
+                <article>
+                  <span>S&amp;P 5-SESSION</span>
+                  <strong className={toneClass(archiveComparison.sp500FiveSessionReturn)}>{formatPct(archiveComparison.sp500FiveSessionReturn)}</strong>
+                  <p>{archiveComparison.sp500FiveSessionReturn == null ? "Needs five consecutive archived sessions." : "Compounded from five archived Daily Tape session returns."}</p>
+                </article>
+              </div>
+            </section>
+          )}
+
+          {!archived && <WatchlistPanel assets={watchAssets} assetBaseHref={assetBaseHref} sessionLabel={editionShort} />}
+        </Chapter>
+
+        <Chapter
+          id="leadership"
+          number="02"
+          title="Leadership & participation"
+          dek="What is actually participating in the move, and is it holding underneath?"
+          contents={[
+            ["sectors", "Sector leadership"],
+            ...(hasRelativeStrength ? [["relative-strength", "Relative strength"] as [string, string]] : []),
+            ["internals", "Market internals"],
+          ]}
+        >
+          <section className="report-subsection" id="sectors" aria-labelledby="sectors-title">
+            <SectionHeading id="sectors" chapter="Leadership" kicker="Sector leadership" title="Where the tape actually moved" share={shareFor("sectors", "Sector leadership")}>All 11 sector ETFs ranked by session return, with weighting and participation checks.</SectionHeading>
+            <div className="comparison-strip" aria-label="Market breadth comparison">
+              <div><span>CAP-WEIGHTED (SPY)</span><strong className={toneClass(breadth.spy_pct_change)}>{breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)}</strong></div>
+              <div><span>EQUAL-WEIGHT (RSP)</span><strong className={toneClass(breadth.rsp_pct_change)}>{breadth.rsp_pct_change == null ? "Unavailable" : formatPct(breadth.rsp_pct_change)}</strong></div>
+              <div><span>ADVANCING / DECLINING</span><strong>{breadth.advances} / {breadth.declines}</strong></div>
+              <div><span>POSITIVE SECTORS</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div>
+            </div>
+            {editorial && <p className="section-read">{editorial.sector_leadership.observed} <strong>Interpretation:</strong> {editorial.sector_leadership.interpretation}</p>}
+            <div className="sector-board">
+              {sectorEntries.map(([name, value], index) => {
+                const symbol = sectorSymbol(name);
+                const asset = symbol ? assetBySymbol[symbol] : undefined;
+                return (
+                  <div className="sector-row" key={name}>
+                    <span className="rank">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="sector-name">{asset ? <a href={`${assetBaseHref}${asset.slug}/`}>{name}</a> : name}</span>
+                    <div className="bar-track" aria-hidden="true"><span className={value >= 0 ? "bar-positive" : "bar-negative"} style={{ width: `${Math.max(5, (Math.abs(value) / sectorAbsMax) * 100)}%` }} /></div>
+                    <strong className={toneClass(value)}>{formatPct(value)}</strong>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <div className={hasRelativeStrength ? "report-grid report-grid--split" : "report-grid"}>
+            {hasRelativeStrength && (
+              <section className="report-subsection" id="relative-strength" aria-labelledby="relative-strength-title">
+                <SectionHeading id="relative-strength" chapter="Leadership" kicker="Relative strength" title="Who is actually outperforming?" share={shareFor("relative-strength", "Relative strength")}>Persistent leaders versus one-day winners, measured against SPY.</SectionHeading>
+                <RelativeStrength rows={dailyReport.relative_strength?.rows} assetBaseHref={assetBaseHref} />
+              </section>
+            )}
+            <section className="report-subsection internals-section" id="internals" aria-labelledby="internals-title">
+              <SectionHeading id="internals" chapter="Leadership" kicker="Market internals" title="Is the move holding underneath?" share={shareFor("internals", "Market internals")}>
+                Participation measured across stated, tracked universes. None of these is presented as NYSE or Nasdaq constituent breadth.
+              </SectionHeading>
+              <MarketInternals report={dailyReport} />
+            </section>
           </div>
-        </section>
+        </Chapter>
 
-        <section className="section-block calendar-section" id="calendar" aria-labelledby="calendar-title">
-          <SectionHeading id="calendar" number="11" kicker="MARKET CALENDAR" title="What’s on the tape">
-            {archived ? "Scheduled events as recorded when this issue was published. " : ""}U.S. releases, Treasury auctions, tracked earnings and market-structure dates for this session and the next. Times in Central Time.
-          </SectionHeading>
-          <MarketCalendarList calendar={calendar} currentLabel="Report session" />
-        </section>
+        <Chapter
+          id="drivers"
+          number="03"
+          title="What drove the tape"
+          dek="The verified context around the session, the read it supports, and the names that set the pace."
+          contents={[["catalysts", "Verified catalysts"], ["interpretation", "Interpretation"], ["mega-cap", "Mega-cap & AI"]]}
+        >
+          <section className="report-subsection catalyst-section" id="catalysts" aria-labelledby="catalysts-title">
+            <SectionHeading id="catalysts" chapter="Drivers" kicker="Verified catalysts" title="On the record" share={shareFor("catalysts", "Verified catalysts")}>
+              Developments published between the prior close and this report, from official sources first and allowlisted publishers second. Listed as context, never as the cause of a move.
+            </SectionHeading>
+            <CatalystList catalysts={catalysts} assetBaseHref={assetBaseHref} />
+          </section>
 
-        <section className="section-block ahead" id="ahead" aria-labelledby="ahead-title">
-          <SectionHeading id="ahead" number="12" kicker="FORWARD LOOK" title="What can break the setup">Variables to monitor next, framed as conditions rather than predictions.</SectionHeading>
-          {editorial && <ul className="ahead-watch">{editorial.watchlist.map((item) => <li key={item}>{item}</li>)}</ul>}
-          <div className="ahead-grid">{outlookItems.map(([number, title, bullets]) => <details key={number}><summary><span>{number}</span><strong>{title}</strong><i aria-hidden="true">+</i></summary><ul>{bullets.slice(0, 2).map((bullet) => <li key={bullet}>{decodeText(bullet)}</li>)}</ul></details>)}</div>
-        </section>
+          <section className="thesis" id="interpretation" aria-labelledby="interpretation-title">
+            <div className="thesis-label"><span id="interpretation-title">INTERPRETATION</span><span>BASED ON OBSERVED DATA</span></div>
+            <blockquote>“{thesisQuote}”</blockquote>
+            <p>{editorial?.regime.observed ?? capWeightMessage} Interpretation reflects price relationships; no event catalyst is inferred.</p>
+          </section>
 
-        <section className="macro-reference" aria-label="Macro reference">
-          <div><span>13W T-BILL</span><strong>{tBill ? `${formatNumber(tBill.end_price)}%` : "—"}</strong><small>{formatBpsFromPoints(tBill?.abs_change)}</small></div>
-          <div><span>GOLD</span><strong>{gold ? `$${formatNumber(gold.end_price)}` : "—"}</strong><small className={toneClass(gold?.pct_change)}>{formatPct(gold?.pct_change)}</small></div>
-          <div><span>WTI CRUDE</span><strong>{oil ? `$${formatNumber(oil.end_price)}` : "—"}</strong><small className={toneClass(oil?.pct_change)}>{formatPct(oil?.pct_change)}</small></div>
-          <div><span>RUSSELL 2000</span><strong>{formatNumber(russell?.end_price)}</strong><small className={toneClass(russell?.pct_change)}>{formatPct(russell?.pct_change)}</small></div>
-        </section>
+          <section className="report-subsection" id="mega-cap" aria-labelledby="mega-cap-title">
+            <SectionHeading id="mega-cap" chapter="Drivers" kicker="Mega-cap & AI" title="The leadership engine" share={shareFor("mega-cap", "Mega-cap & AI")}>Close, session range, daily return, and the latest verified price path for the market’s most-watched technology names.</SectionHeading>
+            {editorial && <p className="section-read">{editorial.megacap_leadership.observed} <strong>Interpretation:</strong> {editorial.megacap_leadership.interpretation}</p>}
+            <div className="mega-grid">
+              {megaCaps.map(({ ticker, name, item, chartValues, chartAxis: axis, chartSource }) => (
+                <article className="mega-card" key={ticker}>
+                  <div className="mega-head">
+                    <div className="company-id">
+                      {/* eslint-disable-next-line @next/next/no-img-element -- static export; decorative remote logo */}
+                      <img loading="lazy" width={34} height={34} src={`https://s3-symbol-logo.tradingview.com/${megaCapLogoSlugs[ticker]}--big.svg`} alt="" />
+                      <div><strong>{ticker}</strong><span>{name}</span></div>
+                    </div>
+                    <strong className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "UNAVAILABLE"}</strong>
+                  </div>
+                  <p>{decodeText(dailyReport.narrative.megacap_descriptions[ticker] ?? "")}</p>
+                  <div className="mega-price">{item ? `$${formatNumber(item.end_price)}` : "—"}</div>
+                  {item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session local-session--warn">Session {formatSessionDate(item.session_date, { month: "short", day: "numeric" })} · not the report session</small>}
+                  <div className="mega-range">
+                    <span>DAY LOW <b>{item?.day_low != null ? `$${formatNumber(item.day_low)}` : "—"}</b></span>
+                    <span>DAY HIGH <b>{item?.day_high != null ? `$${formatNumber(item.day_high)}` : "—"}</b></span>
+                    <a className="asset-card-link" href={`${assetBaseHref}${ticker.toLowerCase()}/`}>Open asset →</a>
+                  </div>
+                  <div className="mega-chart">
+                    <div className="mega-chart-meta"><span>REGULAR SESSION</span><small>{chartSource === "intraday_5m" ? "5 MIN" : chartSource ? "OPEN / CLOSE" : "UNAVAILABLE"}</small></div>
+                    <Sparkline values={chartValues} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(`${ticker} session`, chartValues)} />
+                    <div className="mega-axis" aria-hidden="true">{axis.map((time, index) => <span key={`${ticker}-${time}-${index}`}>{time}</span>)}</div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        </Chapter>
 
-        {!archived && <DeliveryPanel feedHref="./feed.xml" />}
+        <Chapter
+          id="cross-asset"
+          number="04"
+          title="Cross-asset & macro"
+          dek="Yields, oil, the dollar, credit, overseas closes and crypto: the read beyond U.S. equities."
+          contents={[["macro", "Macro pulse"], ["rates", "Rates & credit"], ["global", "Global check"], ["digital", "Digital assets"]]}
+        >
+          <section className="report-subsection macro-grid" id="macro" aria-labelledby="macro-title">
+            <div className="macro-copy">
+              <p className="section-kicker"><span className="section-kicker__chapter">Macro</span><span>Macro pulse</span></p>
+              <h3 id="macro-title">
+                {tenYearChange == null ? "Yields unverified." : tenYearChange < 0 ? "Yields eased." : tenYearChange > 0 ? "Yields rose." : "Yields held."}<br />
+                {!oil ? "Oil unverified." : oil.pct_change > 0 ? "Oil gained." : oil.pct_change < 0 ? "Oil fell." : "Oil held."}
+              </h3>
+              <p>{editorial ? <>{editorial.macro_read.observed} <strong>Interpretation:</strong> {editorial.macro_read.interpretation}</> : `The ten-year yield moved ${formatBpsFromPoints(tenYearChange)} to ${formatNumber(tenYear?.end_price)}%. DXY changed ${formatPct(dxy?.pct_change)}.`}</p>
+              <div className="breadth-meter"><div className="meter-head"><span>POSITIVE SECTOR SHARE</span><strong>{breadth.positive_sector_share.toFixed(1)}%</strong></div><div className="meter-track" aria-hidden="true"><span style={{ width: `${breadth.positive_sector_share}%` }} /></div><small>Cap-weighted S&amp;P {breadth.spy_pct_change == null ? "unavailable" : formatPct(breadth.spy_pct_change)} vs. equal weight {breadth.rsp_pct_change == null ? "unavailable" : formatPct(breadth.rsp_pct_change)}</small></div>
+              <SectionShare {...shareFor("macro", "Macro pulse")} />
+            </div>
+            <div className="chart-panel">
+              <div className="chart-header"><span>S&amp;P 500 / REGULAR SESSION</span><strong>{formatNumber(sp?.end_price)}</strong></div>
+              <PriceChart
+                points={spPoints}
+                name="S&P 500 regular session"
+                format={{ digits: 2 }}
+                stroke={(sp?.pct_change ?? 0) >= 0 ? "var(--up)" : "var(--down)"}
+                size="panel"
+              />
+              <div className="chart-stats"><div><span>DAY LOW</span><strong>{formatNumber(sp?.day_low)}</strong></div><div><span>DAY HIGH</span><strong>{formatNumber(sp?.day_high)}</strong></div><div><span>NASDAQ 1D</span><strong className={toneClass(nasdaq?.pct_change)}>{formatPct(nasdaq?.pct_change)}</strong></div></div>
+            </div>
+          </section>
 
-        <aside className="method-note" id="data-health" aria-label="Data freshness, sources and methodology">
-          <div><span>DATA FRESHNESS</span><strong>Through {formatSessionDate(dailyReport.session_date)} close</strong><small>Generated {generatedLabel}</small></div>
-          <div className="method-note__body">
-            <p>Daily figures compare the latest completed U.S. session with the immediately preceding trading-session close. “Breadth” is the share of the 11 S&amp;P sector ETFs that finished higher. Market data comes from Yahoo Finance via yfinance, with Stooq as a fallback for core indexes. Calendar and catalyst sources are listed separately below; unavailable feeds are shown, not filled in.</p>
-            <FeedHealthList feeds={allFeeds} />
+          <section className="report-subsection rates-section" id="rates" aria-labelledby="rates-title">
+            <SectionHeading id="rates" chapter="Macro" kicker="Rates & credit" title="The cost-of-capital board" share={shareFor("rates", "Rates & credit")}>
+              Session yields, the official Treasury curve, actual credit spreads and bond ETF proxies, each labeled with its source and date.
+            </SectionHeading>
+            <RatesCredit report={dailyReport} assetBaseHref={assetBaseHref} />
+          </section>
+
+          <section className="report-subsection global-section" id="global" aria-labelledby="global-title">
+            <SectionHeading id="global" chapter="Macro" kicker="Global check" title="A split tape beyond Wall Street" share={shareFor("global", "Global check")}>Regional closes, daily direction, and each market’s latest verified path. Local closing times differ from New York.</SectionHeading>
+            <div className="global-table" role="table" aria-label="Global market performance">
+              <div className="global-row table-head" role="row"><span role="columnheader">MARKET</span><span role="columnheader">REGION</span><span role="columnheader">CLOSE</span><span role="columnheader">1D</span><span role="columnheader">PATH</span></div>
+              {globalMarkets.map(([symbol, name, region]) => {
+                const item = verified(market[symbol]);
+                const chart = dailyReport.session_charts[symbol];
+                const values = item && chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
+                return (
+                  <div className="global-row" role="row" key={symbol}>
+                    <strong role="cell">{name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">Local close {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</strong><span role="cell">{region}</span>
+                    <span role="cell">{item ? formatNumber(item.end_price) : "—"}</span>
+                    <strong role="cell" className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "Unavailable"}</strong>
+                    <div role="cell" className="global-spark"><Sparkline values={values} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(name, values)} /></div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="report-subsection digital-section" id="digital" aria-labelledby="digital-title">
+            <SectionHeading id="digital" chapter="Macro" kicker="Digital assets" title="The liquidity read" share={shareFor("digital", "Digital assets")}>Crypto trades around the clock; each move is measured over the reported session.</SectionHeading>
+            <div className="digital-grid">
+              {cryptoMarkets.map(([symbol, name, ticker, narrativeKey]) => {
+                const item = verified(market[symbol]);
+                const chart = dailyReport.session_charts[symbol];
+                const values = item && chart?.closes?.length && chart.closes.length >= 3 ? chart.closes : [];
+                const asset = assetBySymbol[symbol];
+                return (
+                  <article className="digital-card" key={symbol}>
+                    <div className="digital-head"><span>{ticker}</span><strong className={toneClass(item?.pct_change)}>{item ? formatPct(item.pct_change) : "UNAVAILABLE"}</strong></div>
+                    <div className="digital-price">{item ? `$${formatNumber(item.end_price, item.end_price < 10 ? 4 : 0)}` : "—"}</div>
+                    <span className="digital-name">{name}{item?.session_date && item.session_date !== dailyReport.session_date && <small className="local-session">UTC day {formatSessionDate(item.session_date, { month: "short", day: "numeric" })}</small>}</span>
+                    {asset && <a className="asset-card-link" href={`${assetBaseHref}${asset.slug}/`}>Open asset →</a>}
+                    <div className="digital-chart">
+                      <div className="digital-chart-meta"><span>VERIFIED PATH</span><small>{chart?.source === "intraday_5m" ? "5 MIN" : chart?.source === "daily_5d_fallback" ? "5 DAY" : "UNAVAILABLE"}</small></div>
+                      <Sparkline values={values} positive={(item?.pct_change ?? 0) >= 0} label={pathLabel(name, values, values[0] < 10 ? 4 : 0)} />
+                    </div>
+                    <p>{decodeText(dailyReport.narrative.crypto_descriptions[narrativeKey] ?? "")}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        </Chapter>
+
+        <Chapter
+          id="next-session"
+          number="05"
+          title="Next session"
+          dek="What matters next: the decisions this close sets up, the scheduled events, and what could break the setup."
+          contents={[["decision", "Decision summary"], ["calendar", "Market calendar"], ["ahead", "Forward look"]]}
+          className="report-chapter--ahead"
+        >
+          <div className="report-grid report-grid--agenda">
+            <section className="report-subsection decision-section" id="decision" aria-labelledby="decision-title">
+              <SectionHeading id="decision" chapter="Ahead" kicker="Decision summary" title="Three decisions, not another essay" share={shareFor("decision", "Decision summary")}>The move, the cross-asset read, and the marker that matters next.</SectionHeading>
+              <div className="decision-rows">{decisionSummary.map(([label, body], index) => <article key={label}><span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><p>{body}</p></article>)}</div>
+            </section>
+            <section className="report-subsection calendar-section" id="calendar" aria-labelledby="calendar-title">
+              <SectionHeading id="calendar" chapter="Ahead" kicker="Market calendar" title="What’s on the tape" share={shareFor("calendar", "Market calendar")}>
+                {archived ? "Scheduled events as recorded when this issue was published. " : ""}U.S. releases, Treasury auctions, tracked earnings and market-structure dates for this session and the next. Times in Central Time.
+              </SectionHeading>
+              <MarketCalendarList calendar={calendar} currentLabel="Report session" />
+            </section>
           </div>
-          <div className={`quality-badge ${dataStatusLabel(quality).tone}`}>
-            <span>DATA STATUS</span>
-            <strong>{dataStatusLabel(quality).label.toUpperCase()}{quality ? ` · ${quality.coverage_pct.toFixed(1)}%` : ""}</strong>
-            <small>{quality?.issues.length ? quality.issues.slice(0, 4).join("; ") : quality ? "No market-data issues flagged" : "Health metadata was not recorded for this issue"}</small>
-          </div>
-        </aside>
 
-        <footer><div><strong>THE DAILY TAPE</strong><span>Signal over noise.</span><a href={archiveHref}>Report archive</a><KeyboardShortcuts
-          bindings={{
-            "/": { kind: "href", href: searchHref, label: "Search assets and archive" },
-            a: { kind: "href", href: archiveHref, label: "Report archive" },
-            h: { kind: "anchor", id: "top", label: "Top of the report" },
-            s: { kind: "anchor", id: "sectors", label: "Sector leadership" },
-            m: { kind: "anchor", id: "macro", label: "Macro pulse" },
-            c: { kind: "anchor", id: "calendar", label: "Market calendar" },
-            ...(archived ? {} : { w: { kind: "anchor" as const, id: "watchlist", label: "Your watchlist" } }),
-            ...(previousReportHref ? { ArrowLeft: { kind: "href" as const, href: previousReportHref, label: "Previous archived session" } } : {}),
-            ...(nextReportHref ? { ArrowRight: { kind: "href" as const, href: nextReportHref, label: "Next archived session" } } : {}),
-          }}
-        /></div><div className="footer-meta"><span>DATA: YAHOO FINANCE + LISTED SOURCES</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div></footer>
+          <section className="report-subsection ahead" id="ahead" aria-labelledby="ahead-title">
+            <SectionHeading id="ahead" chapter="Ahead" kicker="Forward look" title="What can break the setup" share={shareFor("ahead", "Forward look")}>Variables to monitor next, framed as conditions rather than predictions.</SectionHeading>
+            {editorial && <ul className="ahead-watch">{editorial.watchlist.map((item) => <li key={item}>{item}</li>)}</ul>}
+            <div className="ahead-grid">{outlookItems.map(([number, title, bullets]) => <details key={number}><summary><span>{number}</span><strong>{title}</strong><i aria-hidden="true">+</i></summary><ul>{bullets.slice(0, 2).map((bullet) => <li key={bullet}>{decodeText(bullet)}</li>)}</ul></details>)}</div>
+          </section>
+        </Chapter>
+
+        <section className="report-endmatter" id="reference" aria-labelledby="reference-title">
+          <div className="report-endmatter__head">
+            <h2 id="reference-title">Reference &amp; methodology</h2>
+            <p>Supporting reference levels, delivery options, and where every number on this page comes from.</p>
+          </div>
+
+          <div className="macro-reference" role="group" aria-label="Macro reference">
+            <div><span>13W T-BILL</span><strong>{tBill ? `${formatNumber(tBill.end_price)}%` : "—"}</strong><small>{formatBpsFromPoints(tBill?.abs_change)}</small></div>
+            <div><span>GOLD</span><strong>{gold ? `$${formatNumber(gold.end_price)}` : "—"}</strong><small className={toneClass(gold?.pct_change)}>{formatPct(gold?.pct_change)}</small></div>
+            <div><span>WTI CRUDE</span><strong>{oil ? `$${formatNumber(oil.end_price)}` : "—"}</strong><small className={toneClass(oil?.pct_change)}>{formatPct(oil?.pct_change)}</small></div>
+            <div><span>RUSSELL 2000</span><strong>{formatNumber(russell?.end_price)}</strong><small className={toneClass(russell?.pct_change)}>{formatPct(russell?.pct_change)}</small></div>
+          </div>
+
+          {!archived && <DeliveryPanel feedHref="./feed.xml" />}
+
+          <aside className="method-note" id="data-health" aria-label="Data freshness, sources and methodology">
+            <div><span>DATA FRESHNESS</span><strong>Through {formatSessionDate(dailyReport.session_date)} close</strong><small>Generated {generatedLabel}</small></div>
+            <div className="method-note__body">
+              <p>Daily figures compare the latest completed U.S. session with the immediately preceding trading-session close. “Breadth” is the share of the 11 S&amp;P sector ETFs that finished higher. Market data comes from Yahoo Finance via yfinance, with Stooq as a fallback for core indexes. Calendar and catalyst sources are listed separately below; unavailable feeds are shown, not filled in.</p>
+              <FeedHealthList feeds={allFeeds} />
+            </div>
+            <div className={`quality-badge ${dataStatusLabel(quality).tone}`}>
+              <span>DATA STATUS</span>
+              <strong>{dataStatusLabel(quality).label.toUpperCase()}{quality ? ` · ${quality.coverage_pct.toFixed(1)}%` : ""}</strong>
+              <small>{quality?.issues.length ? quality.issues.slice(0, 4).join("; ") : quality ? "No market-data issues flagged" : "Health metadata was not recorded for this issue"}</small>
+            </div>
+          </aside>
+        </section>
+
+        <footer>
+          <div>
+            <strong>THE DAILY TAPE</strong>
+            <span>Signal over noise.</span>
+            <nav className="footer-nav" aria-label="Footer">
+              <a href={siteRoot}>Latest Close Tape</a>
+              <a href={archiveHref}>All reports</a>
+              <a href={searchHref}>Search</a>
+              <a href="#top">Back to top ↑</a>
+            </nav>
+            <KeyboardShortcuts
+              bindings={{
+                "/": { kind: "href", href: searchHref, label: "Search assets and archive" },
+                a: { kind: "href", href: archiveHref, label: "Report archive" },
+                h: { kind: "anchor", id: "top", label: "Top of the report" },
+                o: { kind: "anchor", id: "overview", label: "Market overview" },
+                s: { kind: "anchor", id: "sectors", label: "Sector leadership" },
+                m: { kind: "anchor", id: "macro", label: "Macro pulse" },
+                c: { kind: "anchor", id: "calendar", label: "Market calendar" },
+                ...(archived ? {} : { w: { kind: "anchor" as const, id: "watchlist", label: "Your watchlist" } }),
+                ...(previousReportHref ? { ArrowLeft: { kind: "href" as const, href: previousReportHref, label: "Previous archived session" } } : {}),
+                ...(nextReportHref ? { ArrowRight: { kind: "href" as const, href: nextReportHref, label: "Next archived session" } } : {}),
+              }}
+            />
+          </div>
+          <div className="footer-meta"><span>DATA: YAHOO FINANCE + LISTED SOURCES</span><span>FACT-BASED SUMMARY</span><span>REFRESHED {generatedLabel.toUpperCase()}</span></div>
+        </footer>
       </div>
     </main>
   );

@@ -44,9 +44,9 @@ export default function DeliveryPanel({ feedHref }: { feedHref: string }) {
   };
 
   return (
-    <section className="delivery-panel section-block" aria-label="Daily Tape delivery">
-      <div className="section-heading">
-        <div><p className="section-kicker">DELIVERY</p><h2>Make it part of the routine</h2></div>
+    <section className="delivery-panel" id="delivery" aria-labelledby="delivery-title">
+      <div className="report-endmatter__subhead">
+        <h3 id="delivery-title"><span>Delivery</span> Make it part of the routine</h3>
         <p>Follow the archive feed or install The Daily Tape as an app. No account is required.</p>
       </div>
       <div className="delivery-grid">

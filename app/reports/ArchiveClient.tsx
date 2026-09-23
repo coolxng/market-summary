@@ -2,6 +2,7 @@
 
 import { useDeferredValue, useMemo, useState } from "react";
 import SiteHeader from "../components/SiteHeader";
+import Breadcrumbs from "../components/Breadcrumbs";
 import RegimeStrip from "../components/RegimeStrip";
 import KeyboardShortcuts from "../components/KeyboardShortcuts";
 import { REGIME_LABEL, type RegimeEntry, type RegimeKey } from "../lib/regime";
@@ -71,6 +72,7 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
 
       <div className={styles.page}>
         <section className={styles.hero}>
+          <Breadcrumbs items={[{ label: "Close Tape", href: "../" }, { label: "Reports" }]} />
           <div className={styles.issueLine}>
             <span>HISTORICAL MARKET INTELLIGENCE</span>
             <span><b>ARCHIVED</b> {reports.length} SESSION{reports.length === 1 ? "" : "S"}</span>

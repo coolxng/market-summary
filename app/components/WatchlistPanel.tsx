@@ -89,10 +89,13 @@ export default function WatchlistPanel({ assets, assetBaseHref, sessionLabel }: 
   const remove = (slug: string) => setWatchlist(writeWatchlist(readWatchlist().filter((item) => item !== slug)));
 
   return (
-    <section className="watchlist-panel section-block" id="watchlist" aria-labelledby="watchlist-title">
+    <section className="watchlist-panel report-subsection report-utility" id="watchlist" aria-labelledby="watchlist-title">
       <div className="section-heading">
-        <div><p className="section-kicker">YOUR TAPE</p><h2 id="watchlist-title">Your watchlist</h2></div>
-        <p>Pin up to {WATCHLIST_MAX} tracked markets on this device. Stored only in this browser; nothing is sent anywhere, and the published report is unchanged.</p>
+        <div>
+          <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Your tape · Personal</span></p>
+          <h3 id="watchlist-title">Your watchlist</h3>
+        </div>
+        <div className="section-heading__aside"><p>Pin up to {WATCHLIST_MAX} tracked markets on this device. Stored only in this browser; nothing is sent anywhere, and the published report is unchanged.</p></div>
       </div>
 
       <div className="watchlist-controls">
