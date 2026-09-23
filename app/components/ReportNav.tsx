@@ -34,12 +34,17 @@ export default function ReportNav({
       // way down the visible area below the sticky bars.
       const line = navBottom + (window.innerHeight - navBottom) * 0.25;
       let current: string | null = null;
+      let currentElement: HTMLElement | null = null;
       for (const chapter of chapters) {
         const element = document.getElementById(chapter.id);
-        if (element && element.getBoundingClientRect().top <= line) current = chapter.id;
+        if (element && element.getBoundingClientRect().top <= line) {
+          current = chapter.id;
+          currentElement = element;
+        }
       }
-      const atEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
-      if (atEnd) current = chapters.at(-1)?.id ?? current;
+      // Below the final chapter (reference, methodology, footer) no chapter is
+      // current; the end matter is intentionally not part of the chapter list.
+      if (current === chapters.at(-1)?.id && currentElement && currentElement.getBoundingClientRect().bottom <= line) current = null;
       setActive(current);
       setScrolled(window.scrollY > window.innerHeight * 0.9);
     };
