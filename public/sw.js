@@ -5,7 +5,7 @@
 //   network, and only fall back to a static "you're offline" page;
 // - caches only content-hashed build assets and brand icons, which never
 //   change under the same URL.
-const VERSION = "daily-tape-v2";
+const VERSION = "daily-tape-v3";
 const SCOPE = new URL(self.registration.scope).pathname;
 const OFFLINE_URL = `${SCOPE}offline.html`;
 const PRECACHE = [OFFLINE_URL, `${SCOPE}icon-192.png`, `${SCOPE}logo.png`];

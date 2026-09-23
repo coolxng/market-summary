@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import PWARegister from "./components/PWARegister";
 import AnalyticsEvents from "./components/AnalyticsEvents";
+import MotionController from "./components/MotionController";
 import { THEME_COLORS, THEME_STORAGE_KEY } from "./lib/theme";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <body>
         <a className="skip-link" href="#main">Skip to content</a>
         <PWARegister />
+        <MotionController />
         {analyticsDomain && (
           <>
             {/* Cookieless Plausible, loaded only when a domain is configured at build time. */}

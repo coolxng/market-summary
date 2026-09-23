@@ -188,11 +188,6 @@ main > div > section:first-child > .crumbs { margin-bottom: 28px; }
 .ticker-strip__row b { font-weight: 700; }
 .ticker-strip__row a:hover span { color: var(--accent); }
 @keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media (prefers-reduced-motion: reduce) {
-  .ticker-strip { overflow-x: auto; scrollbar-width: none; }
-  .ticker-strip__track { animation: none; }
-  .ticker-strip__row[aria-hidden] { display: none; }
-}
 
 /* Circular asset mark (logo or symbol letters). */
 .asset-logo { display: inline-grid; flex: none; place-items: center; overflow: hidden; border-radius: 50%; color: var(--ink-soft); background: var(--panel-solid); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink) 14%, transparent); font-family: var(--font-data); font-weight: 800; letter-spacing: .02em; }
@@ -210,7 +205,6 @@ main > div > section:first-child > .crumbs { margin-bottom: 28px; }
 .rolling-number__column > span { display: block; height: 1.1em; text-align: center; }
 .rolling-number__sizer { visibility: hidden; }
 .rolling-number__char { display: inline-block; line-height: 1.1; }
-@media (prefers-reduced-motion: reduce) { .rolling-number__column { transition: none; } }
 
 .page { width: var(--page-width); margin: 0 auto; }
 .report-opening { padding-top: 28px; }
@@ -1301,11 +1295,6 @@ footer {
   .ahead details ul { padding: 0 24px 28px 80px; }
   footer { display: block; }
   .footer-meta { justify-content: flex-start; margin-top: 30px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; }
-  .publication-banner--building .publication-banner__dot { animation: none !important; }
 }
 
 /* Broadsheet responsive */

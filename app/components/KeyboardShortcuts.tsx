@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { smoothScrollToElement } from "../lib/smoothScroll";
 
 export type ShortcutTarget =
   | { kind: "href"; href: string }
@@ -43,8 +44,7 @@ export default function KeyboardShortcuts({ bindings }: { bindings: Record<strin
         element.focus();
         return;
       }
-      const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      element.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+      smoothScrollToElement(element);
       if (!element.hasAttribute("tabindex")) element.setAttribute("tabindex", "-1");
       element.focus({ preventScroll: true });
     };
