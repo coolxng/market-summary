@@ -428,3 +428,10 @@
     justify-content: flex-start;
   }
 }
+
+/* Broadsheet: the issue strip is a quiet kicker line, not a boxed band. */
+.issueLine { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin-top: 4px; padding: 0; border: 0; background: transparent; color: var(--ink-soft); font-size: 10px; font-weight: 900; letter-spacing: .15em; }
+.issueLine > * + *::before { content: "·"; margin: 0 10px; color: var(--line); font-weight: 400; }
+.issueLine > span:last-child { justify-self: auto; }
+.footer { margin-top: 0; border-top: 0; }
+.searchField input, .selectField select { background: transparent; }

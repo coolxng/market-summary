@@ -66,3 +66,14 @@
 .note > div { display: grid; gap: 14px; }
 @media (max-width: 1000px) { .ratesGrid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 700px) { .ratesGrid { grid-template-columns: 1fr; } }
+
+/* Broadsheet: the issue strip is a quiet kicker line, not a boxed band. */
+.issueLine { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 0; margin-top: 4px; padding: 0; border: 0; background: transparent; color: var(--ink-soft); font-size: 10px; font-weight: 900; letter-spacing: .15em; }
+.issueLine > * + *::before { content: "·"; margin: 0 10px; color: var(--line); font-weight: 400; }
+.issueLine > span:last-child { justify-self: auto; }
+.footer { margin-top: 0; border-top: 0; }
+.heroGrid { padding-top: clamp(40px, 5vw, 72px); }
+.health { padding: 16px 0 0; border: 0; border-top: 3px solid var(--ink); background: transparent; }
+.quoteGrid, .ratesGrid { gap: clamp(36px, 3.4vw, 52px) clamp(24px, 2.6vw, 40px); border: 0; }
+.quoteGrid article, .ratesGrid > div { padding: 16px 0 0; border: 0; border-top: 1px solid var(--ink); background: transparent; }
+.quoteGrid article:hover { box-shadow: inset 0 2px 0 var(--accent); }

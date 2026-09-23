@@ -10,7 +10,7 @@ const SCHEDULED: PublicationIndicator = {
   meta: "30 min after U.S. market close",
 };
 
-export default function PublicationBanner({ sessionDate, generatedAt }: { sessionDate: string; generatedAt: string }) {
+export default function PublicationBanner({ sessionDate, generatedAt, compact = false, className = "" }: { sessionDate: string; generatedAt: string; compact?: boolean; className?: string }) {
   const [now, setNow] = useState<Date | null>(null);
 
   useEffect(() => {
@@ -24,6 +24,18 @@ export default function PublicationBanner({ sessionDate, generatedAt }: { sessio
   }, []);
 
   const status = now ? getPublicationIndicator(now, sessionDate, new Date(generatedAt)) : SCHEDULED;
+
+  // One-line form for the report bar and the opening metadata line.
+  if (compact) {
+    return (
+      <span className={`publication-compact publication-compact--${status.mode} ${className}`.trim()} role="status" title={status.meta}>
+        <i className="publication-banner__dot" aria-hidden="true" />
+        <span className="publication-compact__label">{status.label}</span>
+        <strong>{status.value}</strong>
+        <span className="visually-hidden">. {status.meta}</span>
+      </span>
+    );
+  }
 
   return (
     <div className={`publication-banner publication-banner--${status.mode}`} role="status">

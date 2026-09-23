@@ -20,16 +20,26 @@ export function marketSources(quality: DataQuality | undefined) {
   return keys.map((key) => SOURCE_NAMES[key] ?? key).join(" · ");
 }
 
-/** Compact trust strip shown under the masthead. */
+/**
+ * One-line trust indicator under the issue line. Quiet when every quote
+ * verified; louder as coverage degrades, and a boxed alert when limited.
+ */
 export default function DataStatus({ sessionDate, quality }: { sessionDate: string; quality: DataQuality | undefined }) {
   const status = dataStatusLabel(quality);
+  const through = formatSessionDate(sessionDate, { month: "short", day: "numeric" });
+  const counts = quality ? `${quality.valid}/${quality.total} quotes verified` : null;
   return (
-    <dl className="data-status" aria-label="Data freshness and status">
-      <div><dt>Data freshness</dt><dd>Through {formatSessionDate(sessionDate, { month: "short", day: "numeric", year: "numeric" })} close</dd></div>
-      <div><dt>Data status</dt><dd className={`data-status__value data-status__value--${status.tone}`}>{status.label}{quality ? ` · ${quality.valid}/${quality.total} quotes` : ""}</dd></div>
-      <div><dt>Market data</dt><dd>{marketSources(quality)}</dd></div>
-      <div><dd><a href="#data-health">Source detail ↓</a></dd></div>
-    </dl>
+    <p className={`data-status data-status--${status.tone}`} role={status.tone === "bad" ? "alert" : undefined}>
+      <i className="data-status__dot" aria-hidden="true" />
+      {status.tone === "muted"
+        ? <span className="data-status__label">Data status not recorded</span>
+        : <>
+            {counts && <span className="data-status__count">{counts}</span>}
+            {status.tone !== "good" && <span className="data-status__label">{status.label}</span>}
+          </>}
+      <span className="data-status__meta">Through {through} close · {marketSources(quality)}</span>
+      <a href="#data-health">Source details ↓</a>
+    </p>
   );
 }
 
