@@ -2,7 +2,7 @@
 
 import SiteHeader from "../components/SiteHeader";
 import Breadcrumbs from "../components/Breadcrumbs";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./search.module.css";
 import AssetLogo from "../components/AssetLogo";
 import { sparkPoints } from "../lib/chart";
@@ -19,6 +19,10 @@ export default function SearchClient({
   reports: SearchReport[];
 }) {
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    setQuery(new URLSearchParams(window.location.search).get("q") ?? "");
+  }, []);
 
   const normalized = query.trim().toLowerCase();
   const assetResults = useMemo(() => {

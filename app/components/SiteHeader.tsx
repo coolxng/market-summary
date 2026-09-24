@@ -28,8 +28,12 @@ export default function SiteHeader({
     { href: `${root}morning/`, label: "Pre-Market", current: current === "morning" },
     { href: `${root}reports/`, label: "Archive", current: current === "reports" },
     { href: `${root}assets/`, label: "Assets", current: current === "asset" },
-    { href: `${root}search/`, label: "Search", current: current === "search" },
   ];
+  const searchRoute: NavLink = {
+    href: `${root}search/`,
+    label: "Search",
+    current: current === "search",
+  };
 
   return (
     <header className="site-header">
@@ -42,8 +46,22 @@ export default function SiteHeader({
           <a key={link.href} href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</a>
         ))}
       </nav>
+      <form className="site-search" action={searchRoute.href} method="get" role="search">
+        <svg className="site-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4 4" />
+        </svg>
+        <input
+          type="search"
+          name="q"
+          placeholder="Search reports, assets..."
+          aria-label="Search reports and assets"
+          autoComplete="off"
+          enterKeyHint="search"
+        />
+      </form>
       <div className="site-header__tools">
-        <MobileNav routes={routes} reportLinks={reportLinks} />
+        <MobileNav routes={[...routes, searchRoute]} reportLinks={reportLinks} />
         <ThemeToggle />
       </div>
     </header>
