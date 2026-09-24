@@ -103,8 +103,8 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 0;
-  /* Align the bar's contents with the page column below it. */
-  padding: 0 max(16px, (100% - var(--page-width)) / 2);
+  /* Keep the masthead controls at the viewport edges; the search stays centered. */
+  padding: 0 18px;
   color: var(--ink);
   background: color-mix(in srgb, var(--paper) 94%, transparent);
   border-bottom: 1px solid var(--line);
@@ -122,21 +122,30 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
   position: absolute;
   left: 50%;
   top: 50%;
+  width: clamp(320px, 26vw, 420px);
+  height: 42px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  transform: translate(-50%, -50%);
+}
+.site-search__field {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: clamp(300px, 24vw, 380px);
-  height: 42px;
+  width: 100%;
+  height: 100%;
   padding: 0 14px;
   border: 1px solid var(--line);
   border-radius: 11px;
   color: var(--ink-soft);
   background: color-mix(in srgb, var(--panel-solid) 78%, transparent);
-  transform: translate(-50%, -50%);
+  cursor: text;
   transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
 }
-.site-search:hover { border-color: color-mix(in srgb, var(--ink-soft) 55%, var(--line)); }
-.site-search:focus-within {
+.site-search__field:hover { border-color: color-mix(in srgb, var(--ink-soft) 55%, var(--line)); }
+.site-search:focus-within .site-search__field {
   border-color: color-mix(in srgb, var(--ink) 42%, var(--line));
   background: var(--panel-solid);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--ink) 8%, transparent);
@@ -149,10 +158,12 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
   stroke: currentColor;
   stroke-width: 2;
   stroke-linecap: round;
+  pointer-events: none;
 }
 .site-search input {
   min-width: 0;
   width: 100%;
+  height: 100%;
   border: 0;
   outline: 0;
   color: var(--ink);
@@ -160,6 +171,7 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
   font: inherit;
   font-size: 13px;
   line-height: 1;
+  cursor: text;
   -webkit-appearance: none;
   appearance: none;
 }
@@ -1210,11 +1222,11 @@ footer {
   box-shadow: 0 0 0 100vmax #151512; clip-path: inset(0 -100vmax);
 }
 
-@media (max-width: 1440px) {
+@media (max-width: 1540px) {
   .site-header { grid-template-columns: 1fr auto; }
   .site-nav { display: none; }
   .mobile-nav { display: block; }
-  .site-search { width: clamp(280px, 34vw, 360px); }
+  .site-search { width: clamp(300px, 38vw, 420px); }
 }
 
 @media (max-width: 760px) {
