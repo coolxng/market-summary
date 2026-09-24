@@ -69,7 +69,7 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
 
   return (
     <main id="main">
-      <SiteHeader root="../" current="reports" />
+      <SiteHeader root="../" current="reports" slashShortcut={false} />
 
       <div className={styles.page}>
         <section className={styles.hero}>

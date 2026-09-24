@@ -1,5 +1,6 @@
 import ThemeToggle from "./ThemeToggle";
 import MobileNav from "./MobileNav";
+import HeaderSearch from "./HeaderSearch";
 
 export type SiteSection = "close" | "morning" | "reports" | "search" | "asset";
 
@@ -18,10 +19,13 @@ export default function SiteHeader({
   root,
   current,
   reportLinks = [],
+  slashShortcut = true,
 }: {
   root: string;
   current: SiteSection;
   reportLinks?: NavLink[];
+  /** False on pages whose own filter box already owns "/"; the bar then answers only to Ctrl/Cmd+K. */
+  slashShortcut?: boolean;
 }) {
   const routes: NavLink[] = [
     { href: root, label: "Today", current: current === "close" },
@@ -46,22 +50,8 @@ export default function SiteHeader({
           <a key={link.href} href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</a>
         ))}
       </nav>
-      <form className="site-search" action={searchRoute.href} method="get" role="search">
-        <label className="site-search__field">
-          <svg className="site-search__icon" viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="6.5" />
-            <path d="m16 16 4 4" />
-          </svg>
-          <input
-            type="search"
-            name="q"
-            placeholder="Search reports, assets..."
-            aria-label="Search reports and assets"
-            autoComplete="off"
-            enterKeyHint="search"
-          />
-        </label>
-      </form>
+      {/* The search page has its own large search box, so the masthead bar would only duplicate it. */}
+      {current !== "search" && <HeaderSearch root={root} slashShortcut={slashShortcut} />}
       <div className="site-header__tools">
         <MobileNav routes={[...routes, searchRoute]} reportLinks={reportLinks} />
         <ThemeToggle />
