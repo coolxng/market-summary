@@ -50,10 +50,12 @@ export default function SiteHeader({
           <a key={link.href} href={link.href} aria-current={link.current ? "page" : undefined}>{link.label}</a>
         ))}
       </nav>
-      {/* The search page has its own large search box, so the masthead bar would only duplicate it. */}
-      {current !== "search" && <HeaderSearch root={root} slashShortcut={slashShortcut} />}
+      {/* Stands in for the site links, in their place, when they collapse on narrower screens. */}
+      <MobileNav routes={[...routes, searchRoute]} reportLinks={reportLinks} />
       <div className="site-header__tools">
-        <MobileNav routes={[...routes, searchRoute]} reportLinks={reportLinks} />
+        {/* Centered over the whole header on wide screens; an icon beside the theme toggle on narrow ones.
+            The search page has its own large search box, so the masthead one would only duplicate it. */}
+        {current !== "search" && <HeaderSearch root={root} slashShortcut={slashShortcut} />}
         <ThemeToggle />
       </div>
     </header>

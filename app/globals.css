@@ -180,20 +180,8 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
 }
 .site-search input::placeholder { color: var(--ink-soft); opacity: .88; }
 .site-search input::-webkit-search-cancel-button { display: none; }
-.site-search__hint {
-  flex: none;
-  padding: 3px 7px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  color: var(--ink-soft);
-  font-family: var(--font-data);
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-.site-search__hint, .site-search__clear { animation: site-search-pop .16s ease both; }
-.site-search:focus-within .site-search__hint { opacity: .6; }
+.site-search__toggle { display: none; }
+.site-search__clear { animation: site-search-pop .16s ease both; }
 @keyframes site-search-pop { from { opacity: 0; transform: scale(.8); } }
 .site-search__clear {
   display: grid;
@@ -268,7 +256,7 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
 .site-search__option--all[aria-selected="true"] span { transform: translateX(3px); }
 @media (prefers-reduced-motion: reduce) {
   .site-search__panel, .site-search__option, .site-search__option--all span { transition: none; }
-  .site-search__hint, .site-search__clear { animation: none; }
+  .site-search__clear, .site-search[data-revealed] .site-search__field { animation: none; }
 }
 .site-header__tools { justify-self: end; display: flex; align-items: center; gap: 14px; }
 .theme-toggle { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px 0 4px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink-soft); background: transparent; cursor: pointer; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; transition: border-color .2s ease, color .2s ease; }
@@ -278,11 +266,14 @@ html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--repor
 .theme-only-ink { display: none; }
 :root[data-theme="ink"] .theme-only-ink { display: inline; }
 :root[data-theme="ink"] .theme-only-paper { display: none; }
-.mobile-nav { position: relative; display: none; }
-.mobile-nav summary { padding: 7px 10px; border: 1px solid var(--line); color: var(--ink); cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: .1em; list-style: none; text-transform: uppercase; }
+/* Takes the collapsed links' place beside the brand, behind the same divider. */
+.mobile-nav { position: relative; display: none; justify-self: start; margin-left: 24px; padding-left: 24px; }
+.mobile-nav::before { content: ""; position: absolute; top: 5px; bottom: 5px; left: 0; width: 1px; background: var(--line); }
+.mobile-nav summary { display: inline-flex; align-items: center; height: 34px; padding: 0 16px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: .1em; list-style: none; text-transform: uppercase; transition: border-color .2s ease, color .2s ease; }
+.mobile-nav summary:hover { border-color: var(--ink); }
 .mobile-nav summary::-webkit-details-marker { display: none; }
 .mobile-nav[open] summary { border-color: var(--accent); color: var(--accent); }
-.mobile-nav__panel { position: absolute; top: calc(100% + 12px); right: 0; z-index: 60; display: grid; width: min(300px, calc(100vw - 32px)); max-height: calc(100dvh - var(--site-header-h) - 24px); overflow-y: auto; padding: 6px 0 10px; border: 1px solid var(--line); border-top: 2px solid var(--accent); background: var(--paper); box-shadow: var(--shadow); }
+.mobile-nav__panel { position: absolute; top: calc(100% + 15px); left: 24px; z-index: 60; display: grid; width: min(300px, calc(100vw - 32px)); max-height: calc(100dvh - var(--site-header-h) - 24px); overflow-y: auto; padding: 6px 0 10px; border: 1px solid var(--line); border-top: 2px solid var(--accent); background: var(--paper); box-shadow: var(--shadow); }
 .mobile-nav__panel nav { display: grid; }
 .mobile-nav__panel nav + nav { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line); }
 .mobile-nav__label { margin: 0; padding: 12px 18px 6px; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .14em; text-transform: uppercase; }
@@ -1323,18 +1314,47 @@ footer {
 }
 
 @media (max-width: 1399px) {
-  .site-header { grid-template-columns: 1fr auto; }
+  .site-header { grid-template-columns: auto 1fr auto; }
   .site-nav { display: none; }
   .mobile-nav { display: block; }
-  .site-search { width: clamp(300px, 38vw, 420px); }
+  /* The centered search now has to clear the brand and the Menu pill instead of the links. */
+  .site-header { --masthead-clear: 352px; }
+}
+
+/* Too narrow to center a usable bar past the Menu pill: collapse it to an icon
+   beside the theme toggle that expands into a full-width bar over the header. */
+@media (max-width: 999px) {
+  .site-search { position: static; width: auto; height: auto; transform: none; }
+  .site-search__toggle { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--line); border-radius: 50%; color: var(--ink); background: transparent; cursor: pointer; transition: border-color .2s ease; }
+  .site-search__toggle:hover { border-color: var(--ink); }
+  .site-search__toggle .site-search__icon { flex-basis: 17px; width: 17px; height: 17px; }
+  .site-search:not([data-revealed]) .site-search__field { display: none; }
+  .site-search[data-revealed] .site-search__toggle { visibility: hidden; }
+  .site-search[data-revealed] .site-search__field {
+    position: absolute;
+    z-index: 2;
+    top: 50%;
+    right: 12px;
+    left: 12px;
+    width: auto;
+    height: 42px;
+    background: var(--panel-solid);
+    transform: translateY(-50%);
+    animation: site-search-expand .26s cubic-bezier(.2, .8, .2, 1) both;
+  }
+  .site-search__panel { right: 12px; left: 12px; width: auto; transform: translateY(-6px) scale(.985); }
+  .site-search__panel[data-open] { transform: none; }
+}
+@keyframes site-search-expand {
+  from { opacity: .3; clip-path: inset(0 0 0 calc(100% - 42px) round 11px); }
+  to { opacity: 1; clip-path: inset(0 round 11px); }
 }
 
 @media (max-width: 760px) {
   :root { --site-header-h: 58px; --report-nav-h: 46px; }
-  .site-header { grid-template-columns: 1fr auto; }
+  .site-header { grid-template-columns: auto 1fr auto; }
   .site-nav { display: none; }
   .mobile-nav { display: block; }
-  .site-search { display: none; }
   .report-nav__inner { grid-template-columns: auto minmax(0, 1fr); gap: 0; padding: 0 0 0 16px; }
   .report-nav__edition { flex-direction: column; gap: 1px; padding-right: 12px; }
   .report-nav__edition span { font-size: 8px; }
@@ -1436,6 +1456,11 @@ footer {
   .brand-mark { flex-basis: 24px; width: 24px; height: 24px; border-radius: 6px; }
   .theme-toggle { width: 34px; padding: 0; justify-content: center; }
   .theme-toggle__label { display: none; }
+  .mobile-nav { margin-left: 10px; padding-left: 10px; }
+  .site-header__tools { gap: 8px; }
+  .mobile-nav summary { padding: 0 13px; }
+  /* Too little room to hang the menu off the button; span the screen under the header instead. */
+  .mobile-nav__panel { position: fixed; top: calc(var(--site-header-h) + 8px); right: 16px; left: 16px; width: auto; }
   .hero-grid { padding: 32px 0 56px; gap: 44px; }
   .issue-line { font-size: 9px; letter-spacing: .12em; }
   .issue-line > * + *::before { margin: 0 7px; }
@@ -1490,4 +1515,9 @@ footer {
   .index-card { min-height: 0; }
   .index-card .sparkline { height: 64px; }
   .ahead details ul { padding: 0 8px 24px 56px; }
+}
+
+/* Smallest phones: a slightly tighter wordmark keeps Menu, search and theme controls from touching. */
+@media (max-width: 400px) {
+  .brand { gap: 8px; font-size: 13px; letter-spacing: .05em; }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { flushSync } from "react-dom";
 import AssetLogo from "./AssetLogo";
 import type { AssetSummary } from "../lib/assetSummary";
 
@@ -79,12 +80,15 @@ type Option =
  */
 export default function HeaderSearch({ root, slashShortcut }: { root: string; slashShortcut: boolean }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
   const listId = useId();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const [index, setIndex] = useState<SearchIndex | null>(null);
   const [failed, setFailed] = useState(false);
+  // Narrow screens show only a search icon; this is true while it is expanded into the full bar.
+  const [revealed, setRevealed] = useState(false);
 
   const searchHref = `${root}search/`;
   const normalized = query.trim().toLowerCase();
@@ -118,6 +122,14 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
   const close = () => {
     setOpen(false);
     setActive(-1);
+    setRevealed(false);
+  };
+
+  // Rendered synchronously so the input exists to take focus inside the same
+  // tap, which is what lets mobile browsers raise the keyboard.
+  const reveal = () => {
+    flushSync(() => setRevealed(true));
+    inputRef.current?.focus();
   };
 
   // "/" (where the page doesn't already own it) and Ctrl/Cmd+K jump to the bar.
@@ -126,12 +138,14 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const input = inputRef.current;
-      if (!input || input.getClientRects().length === 0) return;
+      const compact = (toggleRef.current?.getClientRects().length ?? 0) > 0;
+      if (!input || (!compact && input.getClientRects().length === 0)) return;
       const commandK = (event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "k";
       const slash = slashShortcut && event.key === "/" && !event.ctrlKey && !event.metaKey && !event.altKey;
       if (!commandK && !slash) return;
       if (slash && (event.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true'], [role='group'], dialog")) return;
       event.preventDefault();
+      if (compact) flushSync(() => setRevealed(true));
       input.focus();
       input.select();
     };
@@ -199,8 +213,15 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
       action={searchHref}
       method="get"
       role="search"
+      data-revealed={revealed ? "" : undefined}
       onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) close(); }}
     >
+      <button ref={toggleRef} type="button" className="site-search__toggle" aria-label="Search reports and assets" onClick={reveal}>
+        <svg className="site-search__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="11" cy="11" r="6.5" />
+          <path d="m16 16 4 4" />
+        </svg>
+      </button>
       <label className="site-search__field">
         <svg className="site-search__icon" viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="11" cy="11" r="6.5" />
@@ -231,19 +252,27 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
           }}
           onKeyDown={onKeyDown}
         />
-        {query
-          ? (
-            <button
-              type="button"
-              className="site-search__clear"
-              aria-label="Clear search"
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => { setQuery(""); setActive(-1); inputRef.current?.focus(); }}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8 8 8M16 8l-8 8" /></svg>
-            </button>
-          )
-          : <kbd className="site-search__hint" aria-hidden="true">{slashShortcut ? "/" : "Ctrl K"}</kbd>}
+        {(query || revealed) && (
+          <button
+            type="button"
+            className="site-search__clear"
+            aria-label={query ? "Clear search" : "Close search"}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              if (query) {
+                setQuery("");
+                setActive(-1);
+                inputRef.current?.focus();
+              } else {
+                close();
+                inputRef.current?.blur();
+                toggleRef.current?.focus();
+              }
+            }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 8 8 8M16 8l-8 8" /></svg>
+          </button>
+        )}
       </label>
 
       <div className="site-search__panel" id={listId} role="listbox" aria-label="Search suggestions" data-open={expanded ? "" : undefined} aria-hidden={!expanded}>
