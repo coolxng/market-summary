@@ -1291,7 +1291,7 @@ def generate_html(now=None, snapshot_path="data/report_snapshot.json", archive_r
         for ticker, (name, category) in EXTRA_ASSETS.items()
     )
 
-    history_symbols = [entry["symbol"] for entry in asset_catalog] + ["SPY", "RSP", "QQQ", "IWM", "HYG", "LQD", "TIP", "^FVX", "^TYX"]
+    history_symbols = [entry["symbol"] for entry in asset_catalog] + ["SPY", "RSP", "QQQ", "IWM", "HYG", "LQD", "TIP", "^IRX", "^FVX", "^TYX"]
     asset_history = fetch_history_bundle(history_symbols, session_date)
 
     spy_history = asset_history.get("SPY", {})

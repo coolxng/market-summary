@@ -123,7 +123,7 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
   const price = (value: number | null | undefined) => value == null ? "—" : `${asset.pricePrefix ?? ""}${formatNumber(value, digits)}${asset.priceSuffix ?? ""}`;
   const move = (value: number | null) => asYield ? formatBpsFromPoints(value) : formatPct(value);
 
-  const ranges: Array<{ key: RangeKey; points: ChartPoint[]; note: string }> = [
+  const allRanges: Array<{ key: RangeKey; points: ChartPoint[]; note: string }> = [
     {
       key: "1D",
       points: dayPoints,
@@ -131,7 +131,10 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
     },
     ...(["5D", "1M", "3M", "YTD", "1Y"] as const).map((key) => ({ key, points: sliceHistory(historyUsable, key), note: "Daily closes" })),
   ];
-  const initial: RangeKey = dayPoints.length >= 3 ? "1D" : ranges.find((range) => range.key === "1M" && range.points.length > 1) ? "1M" : "1D";
+  // Offer only ranges with a drawable path; if none has one, keep them all so the chart's empty state explains why.
+  const drawable = allRanges.filter((range) => range.points.length > 1);
+  const ranges = drawable.length ? drawable : allRanges;
+  const initial: RangeKey = dayPoints.length >= 3 ? "1D" : ranges.some((range) => range.key === "1M") ? "1M" : ranges[0].key;
 
   const performance: Array<[string, number | null]> = [
     ["1D", asYield ? row?.abs_change ?? null : dayMove],
