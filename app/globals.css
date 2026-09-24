@@ -1129,8 +1129,11 @@ kbd { display: inline-block; min-width: 18px; margin-left: 4px; padding: 1px 5px
 .asset-range__buttons { display: flex; border: 1px solid var(--line); }
 /* Chart-side price readout for single-column layouts, where the hero quote scrolls away. */
 .asset-range__readout { display: none; }
+.asset-range__action { display: none; }
 @media (max-width: 900px) {
   .asset-range__readout { display: block; margin-bottom: 14px; }
+  .asset-range { position: relative; }
+  .asset-range__action { position: absolute; z-index: 1; top: 20px; right: 22px; display: block; }
   .asset-range__readout > span { display: block; color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .12em; }
   .asset-range__readout strong { display: block; margin-top: 6px; font-family: var(--font-data); font-size: 34px; font-weight: 650; letter-spacing: -.03em; }
   .asset-range__readout b { display: block; margin-top: 4px; font-family: var(--font-data); font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -1143,9 +1146,12 @@ kbd { display: inline-block; min-width: 18px; margin-left: 4px; padding: 1px 5px
 .watch-toggle { width: 100%; padding: 10px 14px; border: 1px solid var(--line); color: var(--ink); background: transparent; cursor: pointer; font-size: 10px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
 .watch-toggle:hover:not(:disabled), .watch-toggle[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
 .watch-toggle:disabled { opacity: .5; cursor: default; }
+.watch-toggle--compact { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border-radius: 50%; transition: border-color .2s ease, color .2s ease; }
+.watch-toggle--compact svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .watch-toggle__note { display: block; margin-top: 8px; color: var(--ink-soft); font-size: 9px; }
 @media (max-width: 650px) {
   .asset-range { padding: 18px 14px 14px; }
+  .asset-range__action { top: 14px; right: 12px; }
   .asset-range__bar { flex-direction: column; align-items: stretch; }
   .asset-range__buttons button { flex: 1; min-width: 0; padding: 0; }
   .price-chart svg { height: 230px; }

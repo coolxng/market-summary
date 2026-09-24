@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import PriceChart from "../../components/PriceChart";
 import RollingNumber from "../../components/RollingNumber";
 import type { ChartPoint } from "../../lib/chart";
@@ -31,6 +31,7 @@ export default function AssetRangeChart({
   changeUnit = "pct",
   dayBase,
   latest,
+  action,
 }: {
   name: string;
   ranges: Array<{ key: RangeKey; points: ChartPoint[]; note: string }>;
@@ -41,6 +42,8 @@ export default function AssetRangeChart({
   dayBase?: number | null;
   /** Latest close, shown in the phone readout when nothing is inspected. */
   latest?: number | null;
+  /** Control pinned to the chart's top-right corner in single-column layouts (the watchlist toggle). */
+  action?: ReactNode;
 }) {
   const [selected, setSelected] = useState<RangeKey>(initial);
   const active = ranges.find((range) => range.key === selected) ?? ranges[0];
@@ -66,6 +69,7 @@ export default function AssetRangeChart({
 
   return (
     <div className="asset-range">
+      {action && <div className="asset-range__action">{action}</div>}
       <div className="asset-range__readout" aria-hidden="true">
         <span>{hovered ? hovered.label.toUpperCase() : selected === "1D" ? "LATEST CLOSE" : `LATEST · ${selected}`}</span>
         <strong><RollingNumber value={readoutPrice} /></strong>

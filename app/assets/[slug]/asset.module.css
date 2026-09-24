@@ -92,3 +92,9 @@
   .yearRangeBar { gap: 12px; }
   .yearRangeBar > strong { font-size: 13px; }
 }
+
+/* Single column: the chart carries its own price readout (it stays in view while scrubbing)
+   and a compact watchlist button, so the hero quote would only repeat them. */
+@media (max-width: 900px) {
+  .quote { display: none; }
+}

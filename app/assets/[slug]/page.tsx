@@ -193,7 +193,7 @@ export default async function AssetPage({ params }: { params: Promise<{ slug: st
         </section>
 
         <section className={styles.chartSection} aria-label={`${asset.name} price chart`}>
-          <AssetRangeChart name={asset.name} ranges={ranges} initial={initial} format={format} changeUnit={asYield ? "bps" : "pct"} dayBase={row?.prev_close} latest={row?.end_price} />
+          <AssetRangeChart name={asset.name} ranges={ranges} initial={initial} format={format} changeUnit={asYield ? "bps" : "pct"} dayBase={row?.prev_close} latest={row?.end_price} action={<WatchToggle slug={asset.slug} name={asset.name} compact />} />
         </section>
         </AssetHoverProvider>
 

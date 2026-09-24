@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { readWatchlist, subscribeWatchlist, WATCHLIST_MAX, writeWatchlist } from "../lib/watchlist";
 
-export default function WatchToggle({ slug, name }: { slug: string; name: string }) {
+/** `compact` draws an icon-only round button (+ / ✓) for tight spots such as the phone chart header. */
+export default function WatchToggle({ slug, name, compact = false }: { slug: string; name: string; compact?: boolean }) {
   const [list, setList] = useState<string[] | null>(null);
 
   useEffect(() => {
@@ -22,6 +23,15 @@ export default function WatchToggle({ slug, name }: { slug: string; name: string
     const current = readWatchlist();
     setList(writeWatchlist(current.includes(slug) ? current.filter((item) => item !== slug) : [...current, slug]));
   };
+
+  if (compact) {
+    const label = watched ? `Remove ${name} from watchlist` : full ? `Watchlist is full (${WATCHLIST_MAX})` : `Add ${name} to watchlist`;
+    return (
+      <button type="button" className="watch-toggle watch-toggle--compact" onClick={toggle} disabled={list === null || full} aria-pressed={watched} aria-label={label} title={label}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">{watched ? <path d="m6 12.5 4 4 8-9" /> : <path d="M12 6v12M6 12h12" />}</svg>
+      </button>
+    );
+  }
 
   return (
     <>
