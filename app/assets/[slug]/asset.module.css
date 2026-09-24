@@ -97,4 +97,8 @@
    and a compact watchlist button, so the hero quote would only repeat them. */
 @media (max-width: 900px) {
   .quote { display: none; }
+  /* With the quote gone the hero ends at the summary line; the chart card's own border
+     does the separating, so drop the rule and most of the space around it. */
+  .hero { padding-bottom: 0; border-bottom: 0; }
+  .chartSection { padding-top: 28px; }
 }
