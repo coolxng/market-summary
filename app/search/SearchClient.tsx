@@ -2,7 +2,7 @@
 
 import SiteHeader from "../components/SiteHeader";
 import Breadcrumbs from "../components/Breadcrumbs";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import styles from "./search.module.css";
 import AssetLogo from "../components/AssetLogo";
 import { sparkPoints } from "../lib/chart";
@@ -11,6 +11,18 @@ import type { AssetSummary } from "../lib/assetSummary";
 export type SearchAsset = AssetSummary;
 export type SearchReport = { date: string; displayDate: string; headline: string };
 
+function subscribeToLocation() {
+  return () => {};
+}
+
+function readLocationQuery() {
+  return new URLSearchParams(window.location.search).get("q") ?? "";
+}
+
+function readServerQuery() {
+  return "";
+}
+
 export default function SearchClient({
   assets,
   reports,
@@ -18,11 +30,9 @@ export default function SearchClient({
   assets: SearchAsset[];
   reports: SearchReport[];
 }) {
-  const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    setQuery(new URLSearchParams(window.location.search).get("q") ?? "");
-  }, []);
+  const locationQuery = useSyncExternalStore(subscribeToLocation, readLocationQuery, readServerQuery);
+  const [queryOverride, setQueryOverride] = useState<string | null>(null);
+  const query = queryOverride ?? locationQuery;
 
   const normalized = query.trim().toLowerCase();
   const assetResults = useMemo(() => {
@@ -55,7 +65,7 @@ export default function SearchClient({
               autoFocus
               type="search"
               value={query}
-              onChange={(event) => setQuery(event.target.value)}
+              onChange={(event) => setQueryOverride(event.target.value)}
               placeholder="Search NVDA, Technology, 2026-09-18…"
               aria-label="Search The Daily Tape"
             />
