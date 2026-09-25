@@ -11,7 +11,7 @@
   --up: #167447;
   --down: #c3412d;
   --shadow: 0 18px 50px rgba(28, 25, 18, .08);
-  --font-data: var(--font-inter), "Helvetica Neue", Arial, sans-serif;
+  --font-data: var(--font-dm-sans), "Helvetica Neue", Arial, sans-serif;
   --serif: Georgia, "Times New Roman", serif;
   /* Layout system */
   --page-max: 1500px;

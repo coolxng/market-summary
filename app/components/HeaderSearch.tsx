@@ -247,8 +247,10 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
           onChange={(event) => {
             setQuery(event.target.value);
             setOpen(true);
-            // Typing pre-selects the best match so Enter jumps straight to it.
-            setActive(event.target.value.trim() ? 0 : -1);
+            // Keep the combobox input as the active focus target while typing.
+            // Automatically assigning aria-activedescendant here can make browsers
+            // scroll the document toward the sticky suggestion list on each keypress.
+            setActive(-1);
           }}
           onKeyDown={onKeyDown}
         />
