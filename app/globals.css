@@ -93,6 +93,9 @@ button { font: inherit; }
 ::selection { color: #111; background: var(--accent); }
 /* Pages with the report bar stack two sticky layers above anchor targets. */
 html:has(.report-nav) { --anchor-offset: calc(var(--site-header-h) + var(--report-nav-h) + 28px); }
+/* The masthead search sits inside the sticky header, so the scroll padding always
+   reads it as obscured and every keystroke scrolls the page up trying to reveal it. */
+html:has(.site-search:focus-within) { scroll-padding-top: 0; }
 
 .site-header {
   /* Right edge of the last desktop nav link plus a gap; the centered search must stay clear of it. */
