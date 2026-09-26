@@ -12,8 +12,8 @@ const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display
 // cut of Gelasio, a Georgia metric clone, sits ahead of Georgia in --serif so numbers use lining figures.
 const serifFigures = localFont({
   src: [
-    { path: "./fonts/gelasio-figures-400.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/gelasio-figures-700.woff2", weight: "700", style: "normal" },
+    { path: "../public/fonts/gelasio-figures-400.woff2", weight: "400", style: "normal" },
+    { path: "../public/fonts/gelasio-figures-700.woff2", weight: "700", style: "normal" },
   ],
   variable: "--font-serif-figures",
   display: "swap",
