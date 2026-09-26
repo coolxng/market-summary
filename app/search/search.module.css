@@ -2,8 +2,8 @@
 .hero { padding: 32px 0 60px; border-bottom: 1px solid var(--line); }
 .hero > nav { margin-bottom: 52px; }
 .hero > p { margin: 0 0 16px; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
-.hero h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(52px, 7vw, 92px); line-height: .92; letter-spacing: -.055em; font-weight: 500; }
-.hero > span { display: block; max-width: 720px; margin-top: 20px; color: var(--ink-soft); font-family: Georgia, serif; font-size: 18px; line-height: 1.55; }
+.hero h1 { margin: 0; font-family: var(--serif); font-size: clamp(52px, 7vw, 92px); line-height: .92; letter-spacing: -.055em; font-weight: 500; }
+.hero > span { display: block; max-width: 720px; margin-top: 20px; color: var(--ink-soft); font-family: var(--serif); font-size: 18px; line-height: 1.55; }
 .searchBox { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; max-width: 900px; margin-top: 38px; padding: 0 16px; border: 1px solid var(--ink); background: var(--panel); }
 .searchBox > span { color: var(--accent); font-size: 20px; font-weight: 900; }
 .searchBox input { min-height: 56px; width: 100%; border: 0; outline: 0; color: var(--ink); background: transparent; font: inherit; font-size: 16px; }
@@ -17,7 +17,7 @@
 .list a > div strong, .list a > div span { display: block; }
 .list a > div strong { font-size: 11px; }
 .list a > div span { margin-top: 4px; color: var(--ink-soft); font-size: 8px; }
-.list a p { margin: 0; color: var(--ink); font-family: Georgia, serif; font-size: 15px; line-height: 1.4; }
+.list a p { margin: 0; color: var(--ink); font-family: var(--serif); font-size: 15px; line-height: 1.4; }
 .list a > b { justify-self: end; font-size: 8px; text-transform: uppercase; }
 .list a.assetRow { grid-template-columns: auto minmax(0, 1fr) 80px auto; gap: 14px; min-height: 68px; }
 .assetName { min-width: 0; }
@@ -30,7 +30,7 @@
 .assetQuote b { font-size: 11px; }
 .arrow { justify-self: end; color: var(--ink-soft); font-size: 15px; font-style: normal; transition: transform .2s ease, color .2s ease; }
 .list a:hover .arrow { color: var(--accent); transform: translateX(3px); }
-.empty { color: var(--ink-soft); font-family: Georgia, serif; }
+.empty { color: var(--ink-soft); font-family: var(--serif); }
 @media (max-width: 900px) { .results { grid-template-columns: 1fr; } }
 @media (max-width: 650px) {
   .page { width: min(100% - 32px, 1280px); }

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { DM_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import PWARegister from "./components/PWARegister";
 import AnalyticsEvents from "./components/AnalyticsEvents";
@@ -7,6 +8,18 @@ import MotionController from "./components/MotionController";
 import { THEME_COLORS, THEME_STORAGE_KEY } from "./lib/theme";
 
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
+// Georgia only ships old-style figures (3, 4, 5, 7, 9 drop below the baseline). This digits-only
+// cut of Gelasio, a Georgia metric clone, sits ahead of Georgia in --serif so numbers use lining figures.
+const serifFigures = localFont({
+  src: [
+    { path: "./fonts/gelasio-figures-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/gelasio-figures-700.woff2", weight: "700", style: "normal" },
+  ],
+  variable: "--font-serif-figures",
+  display: "swap",
+  adjustFontFallback: false,
+  declarations: [{ prop: "unicode-range", value: "U+0030-0039" }],
+});
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://coolxng.github.io/market-summary/";
 const appleTouchIconUrl = new URL("apple-touch-icon.png", siteUrl).toString();
@@ -56,7 +69,7 @@ const websiteSchema = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={dmSans.variable} suppressHydrationWarning>
+    <html lang="en" className={`${dmSans.variable} ${serifFigures.variable}`} suppressHydrationWarning>
       <head>
         <meta name="theme-color" content={THEME_COLORS.paper} />
         <script
