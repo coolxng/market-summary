@@ -129,7 +129,7 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
   // tap, which is what lets mobile browsers raise the keyboard.
   const reveal = () => {
     flushSync(() => setRevealed(true));
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   };
 
   // "/" (where the page doesn't already own it) and Ctrl/Cmd+K jump to the bar.
@@ -146,7 +146,7 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
       if (slash && (event.target as HTMLElement | null)?.closest("input, textarea, select, [contenteditable='true'], [role='group'], dialog")) return;
       event.preventDefault();
       if (compact) flushSync(() => setRevealed(true));
-      input.focus();
+      input.focus({ preventScroll: true });
       input.select();
     };
     window.addEventListener("keydown", onKey, true);
@@ -264,7 +264,7 @@ export default function HeaderSearch({ root, slashShortcut }: { root: string; sl
               if (query) {
                 setQuery("");
                 setActive(-1);
-                inputRef.current?.focus();
+                inputRef.current?.focus({ preventScroll: true });
               } else {
                 close();
                 inputRef.current?.blur();
