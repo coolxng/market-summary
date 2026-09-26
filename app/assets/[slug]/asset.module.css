@@ -4,8 +4,8 @@
 .crumbs a:hover { color: var(--accent); }
 .kicker { margin: 0 0 16px; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .16em; }
 .heroGrid { display: grid; grid-template-columns: 1.4fr .6fr; gap: 56px; align-items: end; }
-.hero h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(48px, 7vw, 92px); line-height: .94; letter-spacing: -.055em; font-weight: 500; }
-.sub { max-width: 700px; margin: 20px 0 0; color: var(--ink-soft); font-family: Georgia, "Times New Roman", serif; font-size: 18px; line-height: 1.55; }
+.hero h1 { margin: 0; font-family: var(--serif); font-size: clamp(48px, 7vw, 92px); line-height: .94; letter-spacing: -.055em; font-weight: 500; }
+.sub { max-width: 700px; margin: 20px 0 0; color: var(--ink-soft); font-family: var(--serif); font-size: 18px; line-height: 1.55; }
 .quote { padding: 22px; border: 1px solid var(--line); background: var(--panel); }
 .quote > span, .stats span, .sourceNote span, .performance span { display: block; color: var(--ink-soft); font-size: 8px; font-weight: 900; letter-spacing: .13em; }
 .quote > strong { display: block; margin-top: 12px; font-size: clamp(34px, 4vw, 54px); font-weight: 650; letter-spacing: -.04em; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
@@ -21,23 +21,23 @@
 .stats small { display: block; margin-top: 4px; font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
 .context { padding: 76px 0 0; }
 .sectionHeading { display: flex; justify-content: space-between; align-items: end; gap: 40px; margin-bottom: 26px; }
-.sectionHeading h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(32px, 3.6vw, 52px); line-height: .98; letter-spacing: -.04em; font-weight: 500; }
+.sectionHeading h2 { margin: 0; font-family: var(--serif); font-size: clamp(32px, 3.6vw, 52px); line-height: .98; letter-spacing: -.04em; font-weight: 500; }
 .sectionHeading > p { max-width: 430px; margin: 0; color: var(--ink-soft); font-size: 11px; line-height: 1.55; }
-.empty { margin: 0; padding: 22px 0; border-top: 1px solid var(--ink); color: var(--ink-soft); font-family: Georgia, serif; font-size: 14px; line-height: 1.55; }
+.empty { margin: 0; padding: 22px 0; border-top: 1px solid var(--ink); color: var(--ink-soft); font-family: var(--serif); font-size: 14px; line-height: 1.55; }
 .mentions { margin: 0; padding: 0; border-top: 1px solid var(--ink); list-style: none; }
 .mentions li { display: grid; grid-template-columns: minmax(170px, 1fr) 1fr 90px; gap: 18px; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
-.mentions a { font-family: Georgia, serif; font-size: 15px; }
+.mentions a { font-family: var(--serif); font-size: 15px; }
 .mentions a:hover { color: var(--accent); }
 .mentions span { color: var(--ink-soft); font-size: 9px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .mentions strong { justify-self: end; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
 .sourceNote { display: grid; grid-template-columns: .8fr 1.8fr auto; gap: 28px; align-items: center; margin: 76px 0 64px; padding: 22px 0; border: solid var(--ink); border-width: 1px 0; }
-.sourceNote strong { display: block; margin-top: 7px; font-family: Georgia, "Times New Roman", serif; font-size: 15px; font-weight: 500; }
+.sourceNote strong { display: block; margin-top: 7px; font-family: var(--serif); font-size: 15px; font-weight: 500; }
 .sourceNote p { margin: 0; color: var(--ink-soft); font-size: 10px; line-height: 1.55; }
 .warn { color: var(--accent) !important; }
 .footer { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; margin-top: -24px; padding: 40px 0 44px; border-top: 3px solid var(--ink); }
 .footer > div { display: flex; flex-direction: column; gap: 5px; }
 .footer strong { font-size: 12px; letter-spacing: .13em; }
-.footer span { color: var(--ink-soft); font-family: Georgia, serif; font-size: 12px; }
+.footer span { color: var(--ink-soft); font-family: var(--serif); font-size: 12px; }
 
 @media (max-width: 1000px) {
   .stats { grid-template-columns: repeat(4, 1fr); }

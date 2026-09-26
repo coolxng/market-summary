@@ -74,8 +74,14 @@ export default function ShareSummaryButton({
       context.lineTo(1128, 164);
       context.stroke();
 
+      // --serif puts the lining-figure digits ahead of Georgia. Canvas draws only with fonts that are
+      // already loaded, so load them before measuring the headline.
+      const serif = getComputedStyle(document.documentElement).getPropertyValue("--serif").trim() || "Georgia, serif";
+      const headlineFont = `500 58px ${serif}`;
+      await document.fonts.load(headlineFont, "0123456789");
+
       context.fillStyle = foreground;
-      context.font = "500 58px Georgia, serif";
+      context.font = headlineFont;
       const lines = wrapText(context, headline, 940);
       lines.forEach((value, index) => {
         context.fillStyle = index === lines.length - 1 && lines.length > 1 ? accent : foreground;
