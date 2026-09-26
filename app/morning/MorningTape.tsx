@@ -141,6 +141,22 @@ function RatesBoard({ rates }: { rates: TreasuryRates | null | undefined }) {
   );
 }
 
+/** Hero headline built from the S&P 500 and Nasdaq 100 futures, so the biggest line on the page carries data. */
+function futuresHeadline(snapshot: MorningSnapshot, awaiting: boolean) {
+  if (awaiting) return { lead: "Pre-Market brief", accent: null };
+  const move = (symbol: string, name: string) => {
+    const quote = snapshot.futures[symbol];
+    if (!quote || quote.error || quote.stale || quote.pct_change == null) return null;
+    const pct = quote.pct_change;
+    return Math.abs(pct) < 0.005 ? `${name} flat` : `${name} ${pct > 0 ? "up" : "down"} ${Math.abs(pct).toFixed(2)}%`;
+  };
+  const spx = move("ES=F", "S&P 500 futures");
+  const ndx = move("NQ=F", "Nasdaq 100");
+  if (spx) return { lead: spx, accent: ndx };
+  if (ndx) return { lead: ndx.replace("Nasdaq 100", "Nasdaq 100 futures"), accent: null };
+  return { lead: "Futures quotes unavailable", accent: null };
+}
+
 const PREVIEW_ITEMS = [
   ["Futures", "S&P 500, Nasdaq and Dow futures against yesterday's close"],
   ["Overnight markets", "Tokyo, Hong Kong, London and Europe as they traded"],
@@ -158,6 +174,7 @@ export default function MorningTape({ snapshot, latestClose }: { snapshot: Morni
   const matters = (snapshot.what_matters_today ?? []).map((item) => typeof item === "string" ? { label: "", text: item } : item);
   const statusLabel = snapshot.status === "ready" ? "Ready" : snapshot.status === "partial" ? "Partial" : "Pending";
   const feeds = snapshot.data_quality.feeds ?? [];
+  const headline = futuresHeadline(snapshot, awaiting);
 
   return (
     <main id="main">
@@ -173,7 +190,7 @@ export default function MorningTape({ snapshot, latestClose }: { snapshot: Morni
           <div className={styles.heroGrid}>
             <div>
               <p className={styles.kicker}>BEFORE THE BELL</p>
-              <h1>Know the setup<br /><em>before it moves.</em></h1>
+              <h1>{headline.lead}{headline.accent && <em>{headline.accent}</em>}</h1>
               <p className={styles.dek}>Futures, overnight markets, the official Treasury curve, the dollar, commodities, crypto, today&apos;s calendar and overnight developments before the U.S. session opens.</p>
             </div>
             <aside className={styles.health} aria-label="Morning data health">
@@ -236,27 +253,27 @@ export default function MorningTape({ snapshot, latestClose }: { snapshot: Morni
             </section>
 
             <section className={styles.section} id="overnight" aria-labelledby="overnight-title">
-              <div className={styles.heading}><div><p className={styles.kicker}>02 / OVERNIGHT</p><h2 id="overnight-title">What traded before New York</h2></div><p>Asia has closed its session; Europe is usually trading at publication. Each move is measured from that market&apos;s prior close.</p></div>
+              <div className={styles.heading}><div><p className={styles.kicker}>02 / OVERNIGHT</p><h2 id="overnight-title">Asia and Europe</h2></div><p>Asia has closed its session; Europe is usually trading at publication. Each move is measured from that market&apos;s prior close.</p></div>
               <QuoteGrid items={snapshot.global_markets} label="Global equity markets" marketDate={snapshot.market_date} />
             </section>
 
             <section className={styles.section} id="cross-asset" aria-labelledby="cross-title">
-              <div className={styles.heading}><div><p className={styles.kicker}>03 / CROSS-ASSET</p><h2 id="cross-title">The pressure points</h2></div><p>Volatility, rates proxies, the dollar, commodities and crypto. Yield rows show basis-point changes.</p></div>
+              <div className={styles.heading}><div><p className={styles.kicker}>03 / CROSS-ASSET</p><h2 id="cross-title">Volatility, the dollar, commodities and crypto</h2></div><p>Volatility, rates proxies, the dollar, commodities and crypto. Yield rows show basis-point changes.</p></div>
               <QuoteGrid items={snapshot.cross_asset} label="Cross-asset markets" marketDate={snapshot.market_date} />
             </section>
 
             <section className={styles.section} id="rates" aria-labelledby="rates-title">
-              <div className={styles.heading}><div><p className={styles.kicker}>04 / TREASURY CURVE</p><h2 id="rates-title">The official close</h2></div><p>The latest U.S. Treasury par yield curve. It is published once a day, so it reflects the prior session, not overnight trading.</p></div>
+              <div className={styles.heading}><div><p className={styles.kicker}>04 / TREASURY CURVE</p><h2 id="rates-title">Treasury yields at the prior close</h2></div><p>The latest U.S. Treasury par yield curve. It is published once a day, so it reflects the prior session, not overnight trading.</p></div>
               <RatesBoard rates={snapshot.treasury_rates} />
             </section>
 
             <section className={styles.section} id="calendar" aria-labelledby="calendar-title">
-              <div className={styles.heading}><div><p className={styles.kicker}>05 / TODAY&apos;S CALENDAR</p><h2 id="calendar-title">On the clock</h2></div><p>U.S. releases, Treasury auctions, tracked earnings and market-structure dates for today and the next session. Times in Central Time.</p></div>
+              <div className={styles.heading}><div><p className={styles.kicker}>05 / TODAY&apos;S CALENDAR</p><h2 id="calendar-title">Scheduled for today</h2></div><p>U.S. releases, Treasury auctions, tracked earnings and market-structure dates for today and the next session. Times in Central Time.</p></div>
               <MarketCalendarList calendar={calendar} currentLabel="Today" />
             </section>
 
             <section className={styles.section} id="catalysts" aria-labelledby="catalysts-title">
-              <div className={styles.heading}><div><p className={styles.kicker}>06 / OVERNIGHT CATALYSTS</p><h2 id="catalysts-title">On the record overnight</h2></div><p>Published since the prior U.S. close by official sources or allowlisted publishers. Context only, never a claimed cause.</p></div>
+              <div className={styles.heading}><div><p className={styles.kicker}>06 / OVERNIGHT CATALYSTS</p><h2 id="catalysts-title">News since the prior close</h2></div><p>Published since the prior U.S. close by official sources or allowlisted publishers. Context only, never a claimed cause.</p></div>
               <CatalystList catalysts={catalysts} assetBaseHref="../assets/" />
             </section>
           </>

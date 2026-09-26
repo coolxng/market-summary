@@ -43,12 +43,12 @@ REQUIRED = (
 
 CONTENT = (
     ("index.html", "THE DAILY TAPE"),
-    ("index.html", "What’s on the tape"),
+    ("index.html", "Upcoming events"),
     ("reports/2026-09-18/index.html", "ARCHIVED DAILY TAPE"),
-    ("reports/index.html", "Browse the tape"),
+    ("reports/index.html", "All sessions"),
     ("morning/index.html", "Morning Tape"),
-    ("search/index.html", "Find the tape"),
-    ("assets/index.html", "Every market on the tape"),
+    ("search/index.html", "Search markets and sessions"),
+    ("assets/index.html", "Tracked markets"),
 )
 
 SECRET_PATTERNS = (

@@ -203,7 +203,7 @@ def what_matters_today(market_date, futures, global_markets, calendar, catalysts
 
     if catalysts["items"]:
         first = catalysts["items"][0]
-        items.append({"label": "On the record", "text": f'{first["title"]} ({first["publisher"]}).'})
+        items.append({"label": "News", "text": f'{first["title"]} ({first["publisher"]}).'})
     return items[:5]
 
 

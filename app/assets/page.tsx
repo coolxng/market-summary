@@ -68,7 +68,7 @@ export default function AssetsPage() {
         <section className={styles.hero}>
           <Breadcrumbs items={[{ label: "Today", href: "../" }, { label: "Assets" }]} />
           <p className={styles.kicker}>MARKETS TRACKED · {assetCatalog.length} ASSETS</p>
-          <h1>Every market on the tape.</h1>
+          <h1>Tracked markets.</h1>
           <span className={styles.sub}>Latest close and one-day move from the {session} session. Open any asset for its price history, trend references and archive record.</span>
         </section>
 

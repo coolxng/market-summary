@@ -6,7 +6,7 @@
 .issueLine b { margin-right: 6px; font-size: 8px; }
 .heroGrid { display: grid; grid-template-columns: 1.5fr .5fr; gap: clamp(50px, 8vw, 120px); align-items: end; padding: clamp(58px, 8vw, 100px) 0 72px; }
 .kicker { margin: 0 0 14px; color: var(--accent); font-size: 9px; font-weight: 900; letter-spacing: .17em; }
-.hero h1 { margin: 0; max-width: 930px; font-family: var(--serif); font-size: clamp(52px, 6.5vw, 96px); line-height: .92; letter-spacing: -.055em; font-weight: 500; }
+.hero h1 { margin: 0; max-width: 930px; font-family: var(--serif); font-size: clamp(52px, 6.5vw, 96px); line-height: .92; letter-spacing: -.055em; font-weight: 500; text-wrap: balance; }
 .hero h1 em { display: block; color: var(--accent); font-weight: 400; }
 .dek { max-width: 780px; margin: 26px 0 0; color: var(--ink-soft); font-family: var(--serif); font-size: clamp(17px, 1.45vw, 22px); line-height: 1.55; }
 .health { padding: 22px; border: 1px solid var(--line); background: var(--panel); }

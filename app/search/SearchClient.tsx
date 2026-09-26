@@ -57,7 +57,7 @@ export default function SearchClient({
         <section className={styles.hero}>
           <Breadcrumbs items={[{ label: "Today", href: "../" }, { label: "Search" }]} />
           <p>POWER SEARCH</p>
-          <h1>Find the tape.</h1>
+          <h1>Search markets and sessions.</h1>
           <span>Search tracked assets, sectors, rates, commodities, crypto, and archived sessions without leaving the Daily Tape.</span>
           <div className={styles.searchBox}>
             <span>/</span>

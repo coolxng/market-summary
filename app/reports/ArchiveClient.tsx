@@ -94,7 +94,7 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
         {timeline.length > 0 && (
           <section className={styles.regimeSection} aria-labelledby="regime-title">
             <div className={styles.sectionHeading}>
-              <div><p className={styles.kicker}>REGIME HISTORY</p><h2 id="regime-title">How the tape has read</h2></div>
+              <div><p className={styles.kicker}>REGIME HISTORY</p><h2 id="regime-title">Recent regimes</h2></div>
               <p>Rules-based historical classification, not a forecast. Select a day to see its inputs; published days open that issue.</p>
             </div>
             <RegimeStrip entries={timeline} hrefBase="./" rule={rule} />
@@ -103,7 +103,7 @@ export default function ArchiveClient({ reports, timeline, rule }: { reports: Ar
 
         <section className={styles.listSection} aria-labelledby="sessions-title">
           <div className={styles.sectionHeading}>
-            <div><p className={styles.kicker}>SESSION HISTORY</p><h2 id="sessions-title">Browse the tape</h2></div>
+            <div><p className={styles.kicker}>SESSION HISTORY</p><h2 id="sessions-title">All sessions</h2></div>
             <p>Newest first. Search by date, headline, sector or ticker, or filter by regime. Press / to search.</p>
           </div>
 

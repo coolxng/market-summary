@@ -74,4 +74,4 @@ jobs:
           grep -q '/morning/' out/sitemap.xml
           grep -q '/assets/nvda/' out/sitemap.xml
           grep -q 'Morning Tape' out/morning/index.html
-          grep -q 'Find the tape' out/search/index.html
+          grep -q 'Search markets and sessions' out/search/index.html

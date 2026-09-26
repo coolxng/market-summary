@@ -440,7 +440,7 @@ export default function DailyTape({
           </div>
 
           <section className="opening-tape scorecard" id="scorecard" aria-labelledby="scorecard-title">
-            <SectionHeading id="scorecard" chapter="Brief" kicker="The tape" title="The tape, at a glance" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
+            <SectionHeading id="scorecard" chapter="Brief" kicker="The tape" title="Major indexes" share={shareFor("scorecard", "Scorecard")}>Previous close to latest close. Sparklines show the verified regular-hours session path when available.</SectionHeading>
             <div className="index-grid">
               <IndexCard item={market["^GSPC"]} chart={dailyReport.session_charts["^GSPC"]} name="S&P 500" short="SPX" slug="spx" assetBaseHref={assetBaseHref} />
               <IndexCard item={market["^IXIC"]} chart={dailyReport.session_charts["^IXIC"]} name="Nasdaq Composite" short="COMP" slug="nasdaq" assetBaseHref={assetBaseHref} />
@@ -469,7 +469,7 @@ export default function DailyTape({
             <section className="report-subsection regime-history" id="regime" aria-labelledby="regime-title">
               <div className="regime-history__head">
                 <p className="section-kicker"><span className="section-kicker__chapter">Overview</span><span>Regime history</span></p>
-                <h3 id="regime-title">How the tape has read</h3>
+                <h3 id="regime-title">Recent regimes</h3>
                 <p>Today&apos;s regime in the context of recent sessions. Select a day to see its inputs.</p>
               </div>
               <RegimeStrip entries={regimeTimeline} hrefBase={regimeHrefBase} rule={dailyReport.regime_history?.rule} />
@@ -524,7 +524,7 @@ export default function DailyTape({
           ]}
         >
           <section className="report-subsection" id="sectors" aria-labelledby="sectors-title">
-            <SectionHeading id="sectors" chapter="Leadership" kicker="Sector leadership" title="Where the tape actually moved" share={shareFor("sectors", "Sector leadership")}>All 11 sector ETFs ranked by session return, with weighting and participation checks.</SectionHeading>
+            <SectionHeading id="sectors" chapter="Leadership" kicker="Sector leadership" title="Sector returns, ranked" share={shareFor("sectors", "Sector leadership")}>All 11 sector ETFs ranked by session return, with weighting and participation checks.</SectionHeading>
             <div className="comparison-strip" aria-label="Market breadth comparison">
               <div><span>CAP-WEIGHTED (SPY)</span><strong className={toneClass(breadth.spy_pct_change)}>{breadth.spy_pct_change == null ? "Unavailable" : formatPct(breadth.spy_pct_change)}</strong></div>
               <div><span>EQUAL-WEIGHT (RSP)</span><strong className={toneClass(breadth.rsp_pct_change)}>{breadth.rsp_pct_change == null ? "Unavailable" : formatPct(breadth.rsp_pct_change)}</strong></div>
@@ -551,12 +551,12 @@ export default function DailyTape({
           <div className={hasRelativeStrength ? "report-grid report-grid--split" : "report-grid"}>
             {hasRelativeStrength && (
               <section className="report-subsection" id="relative-strength" aria-labelledby="relative-strength-title">
-                <SectionHeading id="relative-strength" chapter="Leadership" kicker="Relative strength" title="Who is actually outperforming?" share={shareFor("relative-strength", "Relative strength")}>Persistent leaders versus one-day winners, measured against SPY.</SectionHeading>
+                <SectionHeading id="relative-strength" chapter="Leadership" kicker="Relative strength" title="Performance versus SPY" share={shareFor("relative-strength", "Relative strength")}>Persistent leaders versus one-day winners, measured against SPY.</SectionHeading>
                 <RelativeStrength rows={dailyReport.relative_strength?.rows} assetBaseHref={assetBaseHref} />
               </section>
             )}
             <section className="report-subsection internals-section" id="internals" aria-labelledby="internals-title">
-              <SectionHeading id="internals" chapter="Leadership" kicker="Market internals" title="Is the move holding underneath?" share={shareFor("internals", "Market internals")}>
+              <SectionHeading id="internals" chapter="Leadership" kicker="Market internals" title="Breadth and participation" share={shareFor("internals", "Market internals")}>
                 Participation measured across stated, tracked universes. None of these is presented as NYSE or Nasdaq constituent breadth.
               </SectionHeading>
               <MarketInternals report={dailyReport} />
@@ -572,7 +572,7 @@ export default function DailyTape({
           contents={[["catalysts", "Verified catalysts"], ["interpretation", "Interpretation"], ["mega-cap", "Mega-cap & AI"]]}
         >
           <section className="report-subsection catalyst-section" id="catalysts" aria-labelledby="catalysts-title">
-            <SectionHeading id="catalysts" chapter="Drivers" kicker="Verified catalysts" title="On the record" share={shareFor("catalysts", "Verified catalysts")}>
+            <SectionHeading id="catalysts" chapter="Drivers" kicker="Verified catalysts" title="Verified news from the session" share={shareFor("catalysts", "Verified catalysts")}>
               Developments published between the prior close and this report, from official sources first and allowlisted publishers second. Listed as context, never as the cause of a move.
             </SectionHeading>
             <CatalystList catalysts={catalysts} assetBaseHref={assetBaseHref} />
@@ -585,7 +585,7 @@ export default function DailyTape({
           </section>
 
           <section className="report-subsection" id="mega-cap" aria-labelledby="mega-cap-title">
-            <SectionHeading id="mega-cap" chapter="Drivers" kicker="Mega-cap & AI" title="The leadership engine" share={shareFor("mega-cap", "Mega-cap & AI")}>The market’s largest leaders, ordered by market cap: close, session range, daily return, and the latest verified price path.</SectionHeading>
+            <SectionHeading id="mega-cap" chapter="Drivers" kicker="Mega-cap & AI" title="Largest companies by market cap" share={shareFor("mega-cap", "Mega-cap & AI")}>The market’s largest leaders, ordered by market cap: close, session range, daily return, and the latest verified price path.</SectionHeading>
             {editorial && <p className="section-read">{editorial.megacap_leadership.observed} <strong>Interpretation:</strong> {editorial.megacap_leadership.interpretation}</p>}
             <div className="mega-grid">
               {megaCaps.map(({ ticker, name, marketCap, item, chartValues, chartAxis: axis, chartSource }) => (
@@ -649,14 +649,14 @@ export default function DailyTape({
           </section>
 
           <section className="report-subsection rates-section" id="rates" aria-labelledby="rates-title">
-            <SectionHeading id="rates" chapter="Macro" kicker="Rates & credit" title="The cost-of-capital board" share={shareFor("rates", "Rates & credit")}>
+            <SectionHeading id="rates" chapter="Macro" kicker="Rates & credit" title="Treasury yields and credit" share={shareFor("rates", "Rates & credit")}>
               Session yields, the official Treasury curve, actual credit spreads and bond ETF proxies, each labeled with its source and date.
             </SectionHeading>
             <RatesCredit report={dailyReport} assetBaseHref={assetBaseHref} />
           </section>
 
           <section className="report-subsection global-section" id="global" aria-labelledby="global-title">
-            <SectionHeading id="global" chapter="Macro" kicker="Global check" title="A split tape beyond Wall Street" share={shareFor("global", "Global check")}>Regional closes, daily direction, and each market’s latest verified path. Local closing times differ from New York.</SectionHeading>
+            <SectionHeading id="global" chapter="Macro" kicker="Global check" title="Overseas closes" share={shareFor("global", "Global check")}>Regional closes, daily direction, and each market’s latest verified path. Local closing times differ from New York.</SectionHeading>
             <div className="global-table" role="table" aria-label="Global market performance">
               <div className="global-row table-head" role="row"><span role="columnheader">MARKET</span><span role="columnheader">REGION</span><span role="columnheader">CLOSE</span><span role="columnheader">1D</span><span role="columnheader">PATH</span></div>
               {globalMarkets.map(([symbol, name, region]) => {
@@ -676,7 +676,7 @@ export default function DailyTape({
           </section>
 
           <section className="report-subsection digital-section" id="digital" aria-labelledby="digital-title">
-            <SectionHeading id="digital" chapter="Macro" kicker="Digital assets" title="The liquidity read" share={shareFor("digital", "Digital assets")}>Crypto trades around the clock; each move is measured over the reported session.</SectionHeading>
+            <SectionHeading id="digital" chapter="Macro" kicker="Digital assets" title="Major cryptocurrencies" share={shareFor("digital", "Digital assets")}>Crypto trades around the clock; each move is measured over the reported session.</SectionHeading>
             <div className="digital-grid">
               {cryptoMarkets.map(([symbol, name, ticker, narrativeKey]) => {
                 const item = verified(market[symbol]);
@@ -705,17 +705,17 @@ export default function DailyTape({
           id="next-session"
           number="05"
           title="Next session"
-          dek="What matters next: the decisions this close sets up, the scheduled events, and what could break the setup."
+          dek="What matters next: the takeaways from this close, the scheduled events, and what to watch."
           contents={[["decision", "Decision summary"], ["calendar", "Market calendar"], ["ahead", "Forward look"]]}
           className="report-chapter--ahead"
         >
           <div className="report-grid report-grid--agenda">
             <section className="report-subsection decision-section" id="decision" aria-labelledby="decision-title">
-              <SectionHeading id="decision" chapter="Ahead" kicker="Decision summary" title="Three decisions, not another essay" share={shareFor("decision", "Decision summary")}>The move, the cross-asset read, and the marker that matters next.</SectionHeading>
+              <SectionHeading id="decision" chapter="Ahead" kicker="Decision summary" title="Three takeaways" share={shareFor("decision", "Decision summary")}>The move, the cross-asset read, and the marker that matters next.</SectionHeading>
               <div className="decision-rows">{decisionSummary.map(([label, body], index) => <article key={label}><span>{String(index + 1).padStart(2, "0")}</span><strong>{label}</strong><p>{body}</p></article>)}</div>
             </section>
             <section className="report-subsection calendar-section" id="calendar" aria-labelledby="calendar-title">
-              <SectionHeading id="calendar" chapter="Ahead" kicker="Market calendar" title="What’s on the tape" share={shareFor("calendar", "Market calendar")}>
+              <SectionHeading id="calendar" chapter="Ahead" kicker="Market calendar" title="Upcoming events" share={shareFor("calendar", "Market calendar")}>
                 {archived ? "Scheduled events as recorded when this issue was published. " : ""}U.S. releases, Treasury auctions, tracked earnings and market-structure dates for this session and the next. Times in Central Time.
               </SectionHeading>
               <MarketCalendarList calendar={calendar} currentLabel="Report session" />
@@ -723,7 +723,7 @@ export default function DailyTape({
           </div>
 
           <section className="report-subsection ahead" id="ahead" aria-labelledby="ahead-title">
-            <SectionHeading id="ahead" chapter="Ahead" kicker="Forward look" title="What can break the setup" share={shareFor("ahead", "Forward look")}>Variables to monitor next, framed as conditions rather than predictions.</SectionHeading>
+            <SectionHeading id="ahead" chapter="Ahead" kicker="Forward look" title="What to watch next" share={shareFor("ahead", "Forward look")}>Variables to monitor next, framed as conditions rather than predictions.</SectionHeading>
             {editorial && <ul className="ahead-watch">{editorial.watchlist.map((item) => <li key={item}>{item}</li>)}</ul>}
             <div className="ahead-grid">{outlookItems.map(([number, title, bullets]) => <details key={number}><summary><span>{number}</span><strong>{title}</strong><i aria-hidden="true">+</i></summary><ul>{bullets.slice(0, 2).map((bullet) => <li key={bullet}>{decodeText(bullet)}</li>)}</ul></details>)}</div>
           </section>
